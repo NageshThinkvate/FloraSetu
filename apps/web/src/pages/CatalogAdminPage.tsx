@@ -4,7 +4,7 @@ import { apiGet, apiPatch, apiPost } from '../lib/api/client';
 interface Masters {
   qualityAttributes: { id: string; code: string; name: string; status: string }[];
   defectTypes: { id: string; code: string; name: string; defect_class: string; status: string }[];
-  units: { id: string; code: string; name: string; status: string; data_classification: string }[];
+  units: { id: string; code: string; name: string; status: string; validation_status: string }[];
   colours: { id: string; code: string; name: string; status: string }[];
 }
 
@@ -13,7 +13,7 @@ interface Category {
   code: string;
   name: string;
   status: string;
-  data_classification: string;
+  validation_status: string;
 }
 
 interface ProductRow {
@@ -21,7 +21,7 @@ interface ProductRow {
   ref: string;
   name: string;
   status: string;
-  data_classification: string;
+  validation_status: string;
   launch_enabled: boolean;
   launch_cities: string[];
 }
@@ -85,7 +85,7 @@ export function CatalogAdminPage(): JSX.Element {
         <h2>Categories</h2>
         <ul className="plain-list">
           {categories.map((c) => (
-            <li key={c.id}>{c.code} — {c.name} · {c.status} · {c.data_classification}</li>
+            <li key={c.id}>{c.code} — {c.name} · {c.status} · {c.validation_status}</li>
           ))}
         </ul>
         <form className="inline-form" data-testid="category-form" onSubmit={(e: FormEvent) => { e.preventDefault(); void run(() => apiPost('/catalog/admin/categories', categoryForm), 'Category created'); }}>
@@ -100,7 +100,7 @@ export function CatalogAdminPage(): JSX.Element {
         <ul className="plain-list">
           {products.map((p) => (
             <li key={p.id} data-testid={`admin-product-${p.id}`}>
-              {p.ref} — {p.name} · {p.status} · {p.data_classification}
+              {p.ref} — {p.name} · {p.status} · {p.validation_status}
               {p.launch_enabled && ` · launch: ${p.launch_cities.join(', ')}`}
               <button className="ghost-btn" data-testid={`launch-toggle-${p.id}`} onClick={() => void run(() =>
                 apiPatch(`/catalog/admin/products/${p.id}/launch-flags`,
@@ -139,7 +139,7 @@ export function CatalogAdminPage(): JSX.Element {
         <section className="panel" data-testid="admin-masters">
           <h2>Units · attributes · defects</h2>
           <p className="hint">
-            Units: {masters.units.map((u) => `${u.code} (${u.data_classification})`).join(', ')}
+            Units: {masters.units.map((u) => `${u.code} (${u.validation_status})`).join(', ')}
           </p>
           <p className="hint">Attributes: {masters.qualityAttributes.map((a) => a.code).join(', ') || '—'}</p>
           <p className="hint">Defects: {masters.defectTypes.map((d) => d.code).join(', ') || '—'}</p>
@@ -192,7 +192,7 @@ export function CatalogAdminPage(): JSX.Element {
             void run(() => apiPost('/catalog/admin/grade-profiles', {
               commodityId: gradeForm.commodityId, gradeCode: gradeForm.gradeCode,
               rules: [{ attribute: 'stem_length_cm', op: 'MIN', min: Number(gradeForm.minStemLength) }],
-              effectiveFrom: new Date().toISOString(), activate: false, dataClassification: 'DEMO'
+              effectiveFrom: new Date().toISOString(), activate: false, validationStatus: 'DEMO'
             }), 'Grade profile version created (DRAFT)');
           }}>
             <select data-testid="grade-product" style={selectStyle} value={gradeForm.commodityId} onChange={(e) => setGradeForm({ ...gradeForm, commodityId: e.target.value })} required>
@@ -208,7 +208,7 @@ export function CatalogAdminPage(): JSX.Element {
             void run(() => apiPost('/catalog/admin/handling-profiles', {
               code: handlingForm.code, tempMinC: Number(handlingForm.tempMinC), tempMaxC: Number(handlingForm.tempMaxC),
               effectiveFrom: new Date().toISOString(), activate: false,
-              changeReason: handlingForm.changeReason || 'admin-ui', dataClassification: 'DEMO'
+              changeReason: handlingForm.changeReason || 'admin-ui', validationStatus: 'DEMO'
             }), 'Handling profile version created (DRAFT, DEMO)');
           }}>
             <input data-testid="handling-code" placeholder="PROFILE_CODE" value={handlingForm.code} onChange={(e) => setHandlingForm({ ...handlingForm, code: e.target.value.toUpperCase() })} required />

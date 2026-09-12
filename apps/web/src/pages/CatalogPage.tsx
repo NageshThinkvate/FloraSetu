@@ -7,7 +7,7 @@ interface ProductSummary {
   name: string;
   commercial_name: string | null;
   status: string;
-  data_classification: 'DEMO' | 'VALIDATED';
+  validation_status: 'DEMO' | 'VALIDATED';
   launch_enabled: boolean;
   launch_cities: string[];
   category_code?: string;
@@ -18,11 +18,11 @@ interface ProductDetail extends ProductSummary {
   botanical_name: string | null;
   common_name: string | null;
   aliases: { id: string; alias: string; alias_type: string }[];
-  varieties: { id: string; name: string; status: string; colour: string | null; data_classification: string }[];
-  gradeProfiles: { id: string; grade_code: string; version_no: number; status: string; effective_from: string; data_classification: string }[];
+  varieties: { id: string; name: string; status: string; colour: string | null; validation_status: string }[];
+  gradeProfiles: { id: string; grade_code: string; version_no: number; status: string; effective_from: string; validation_status: string }[];
   packDefinitions: { id: string; code: string; name: string; level: string; contains_qty: string; uom: string; version_no: number; status: string }[];
   unitConversions: { id: string; from_uom: string; to_uom: string; factor: string; version_no: number; status: string }[];
-  handlingProfiles: { id: string; code: string; version_no: number; temp_min_c: string | null; temp_max_c: string | null; status: string; data_classification: string }[];
+  handlingProfiles: { id: string; code: string; version_no: number; temp_min_c: string | null; temp_max_c: string | null; status: string; validation_status: string }[];
 }
 
 export function CatalogPage(): JSX.Element {
@@ -79,8 +79,8 @@ export function CatalogPage(): JSX.Element {
               {p.matched_alias ? ` · matched alias “${p.matched_alias}”` : ''}
             </p>
             <p>
-              <span className={`state-chip${p.data_classification === 'DEMO' ? '' : ' frozen'}`}>
-                {p.data_classification === 'DEMO' ? 'DEMO — not validated' : 'VALIDATED'}
+              <span className={`state-chip${p.validation_status === 'DEMO' ? '' : ' frozen'}`}>
+                {p.validation_status === 'DEMO' ? 'DEMO — not validated' : 'VALIDATED'}
               </span>{' '}
               {p.launch_enabled && <span className="state-chip frozen">Launch: {p.launch_cities.join(', ')}</span>}
             </p>
@@ -101,14 +101,14 @@ export function CatalogPage(): JSX.Element {
           <ul className="plain-list">
             {detail.varieties.map((v) => (
               <li key={v.id} data-testid={`detail-variety-${v.id}`}>
-                {v.name} {v.colour ? `· ${v.colour}` : ''} · {v.status} · {v.data_classification}
+                {v.name} {v.colour ? `· ${v.colour}` : ''} · {v.status} · {v.validation_status}
               </li>
             ))}
           </ul>
           <h3 className="sub-h">Grade profiles</h3>
           <ul className="plain-list">
             {detail.gradeProfiles.map((g) => (
-              <li key={g.id}>Grade {g.grade_code} v{g.version_no} — {g.status} (from {new Date(g.effective_from).toLocaleDateString()}) · {g.data_classification}</li>
+              <li key={g.id}>Grade {g.grade_code} v{g.version_no} — {g.status} (from {new Date(g.effective_from).toLocaleDateString()}) · {g.validation_status}</li>
             ))}
           </ul>
           <h3 className="sub-h">Packs & conversions</h3>
@@ -124,7 +124,7 @@ export function CatalogPage(): JSX.Element {
           <ul className="plain-list">
             {detail.handlingProfiles.map((h) => (
               <li key={h.id}>
-                {h.code} v{h.version_no} — {h.temp_min_c ?? '—'}…{h.temp_max_c ?? '—'} °C · {h.status} · {h.data_classification}
+                {h.code} v{h.version_no} — {h.temp_min_c ?? '—'}…{h.temp_max_c ?? '—'} °C · {h.status} · {h.validation_status}
               </li>
             ))}
           </ul>

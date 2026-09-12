@@ -41,6 +41,21 @@ Status legend: **RESOLVED — OWNER APPROVED** (all six). Master Spec v2.0 remai
 - Media via signed URLs (cross-platform).
 - Implementation: web PWA shell + interface layers. See docs/01, docs/09.
 
+## ADR-008 — Commercial UoM explicitness (OD-07) — RESOLVED — OWNER APPROVED (Pre-Build-3 gate)
+- No hidden universal buyer default UoM. Every commercial requirement/order/quote line persists an explicit `uom_id`.
+- `preferred_order_uom_id` (commodity/pack level) is UI preselection convenience only; never inferred at persistence.
+- Supplier quotations: preserve original quantity + uom_id + conversion version used; normalized comparison quantity computed only via an ACTIVE version-controlled conversion; original commercial quantity never overwritten.
+- Foundation shipped: `POST /catalog/commercial-line/validate` (400 UOM_REQUIRED when omitted), `POST /catalog/normalize-preview` (returns originals + conversionVersionId + normalizedQty, mutates nothing). RFQ/order enforcement comes with those builds.
+
+## ADR-009 — Validation lifecycle separate from lifecycle status (OD-08) — RESOLVED — OWNER APPROVED (Pre-Build-3 gate)
+- `validation_status` (DEMO → PENDING_REVIEW → VALIDATED | REJECTED) is independent of `status` (DRAFT/ACTIVE/RETIRED). A master may be ACTIVE but unvalidated.
+- Review metadata: requested_by/at, reviewed_by/at, validation_reference, reviewer_notes, rejection_reason; audit events on request + review.
+- Reviewer must differ from proposer on grade profiles, handling profiles, UoM conversions (SELF_APPROVAL → 403); pack definitions follow the same workflow (conservative extension, recorded here).
+- `catalog.validate` permission + CATALOG_VALIDATOR system role.
+- Production commercial use requires ACTIVE + VALIDATED (+ in effective window), unless `CATALOG_ALLOW_DEMO_MASTERS=true` in a non-production environment.
+- Historical validated versions are never mutated to change commercial rules — new version + validate that; a VALIDATED version may later be RETIRED while remaining resolvable.
+- Replaces the Build 2 binary `data_classification` (migrated: DEMO→DEMO, VALIDATED→VALIDATED).
+
 ## Tooling deviation (owner-approved)
 Backend tooling deviates from environment default (NestJS + PostgreSQL + Redis vs FastAPI + MongoDB template). Approved by owner as part of Build 0 authorization.
 

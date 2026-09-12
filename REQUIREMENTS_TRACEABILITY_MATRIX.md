@@ -75,4 +75,15 @@
 | REQ-B2-UI-01 | Catalog browse/search + admin + capabilities screens, mobile 360/390/412 | CatalogPage, CatalogAdminPage, CapabilitiesPage + responsive nav/table-wrap | testing agent viewport checks (iterations 4–6) | PASS |
 | REQ-B2-INACTIVE-01 | Inactive definitions rejected for new use; historical resolution preserved | capabilities add guard + variety read | build2 e2e (16,17) | PASS |
 
+## Pre-Build-3 control gate
+
+| Req ID | Requirement | Where implemented | Verification | Status |
+|---|---|---|---|---|
+| REQ-G3-UOM-01 | OD-07: explicit uom_id at transaction boundary; preferred UoM preselects only; originals + conversion version preserved on normalization | migration 009 preferred_order_uom_id; ValidationService.validateCommercialLine / normalizePreview | prebuild3-gate e2e (F1–F3) | PASS |
+| REQ-G3-VAL-01 | OD-08: validation_status lifecycle + review metadata + separate reviewer + catalog.validate + CATALOG_VALIDATOR | migration 009 + ValidationService.request/reviewValidation | prebuild3-gate e2e (F6 + rejection flow) | PASS |
+| REQ-G3-VAL-02 | Production commercial use requires ACTIVE+VALIDATED (env-flagged demo exception); retired validated versions resolve | ValidationService.commercialCheck | prebuild3-gate e2e (F4, F5, F7) | PASS |
+| REQ-G3-COUNT-01 | Migration 008 actual new-table count verified: **11** (reporting typo corrected) | migration 008 inspection | grep/schema inventory | PASS |
+| REQ-G3-CANON-01 | Lisianthus/Eustoma canonicalization verified: one canonical commodity, alias architecture, no duplicates, zero transactional references | seed inspection | psql verification | PASS |
+| REQ-G3-GIT-01 | VCS baseline: repo initialized, env secrets gitignored, baseline commit + tag florasetu-build2-accepted | git (no remote push without owner authorization) | git log/tag | PASS |
+
 **Build 0 gate: ALL PASS.** Business functionality intentionally absent.

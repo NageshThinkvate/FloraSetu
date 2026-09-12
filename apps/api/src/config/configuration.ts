@@ -8,6 +8,7 @@ export interface AppConfig {
   jwtDevSecret: string;
   corsOrigins: string[];
   rateLimitPerMinute: number;
+  catalogAllowDemoMasters: boolean;
 }
 
 const schema = Joi.object({
@@ -17,7 +18,8 @@ const schema = Joi.object({
   REDIS_URL: Joi.string().uri({ scheme: ['redis'] }).required(),
   JWT_DEV_SECRET: Joi.string().min(16).required(),
   CORS_ORIGINS: Joi.string().required(),
-  RATE_LIMIT_PER_MINUTE: Joi.number().integer().min(1).required()
+  RATE_LIMIT_PER_MINUTE: Joi.number().integer().min(1).required(),
+  CATALOG_ALLOW_DEMO_MASTERS: Joi.string().valid('true', 'false').optional()
 });
 
 export function loadConfig(): AppConfig {
@@ -32,6 +34,7 @@ export function loadConfig(): AppConfig {
     redisUrl: value.REDIS_URL,
     jwtDevSecret: value.JWT_DEV_SECRET,
     corsOrigins: String(value.CORS_ORIGINS).split(','),
-    rateLimitPerMinute: value.RATE_LIMIT_PER_MINUTE
+    rateLimitPerMinute: value.RATE_LIMIT_PER_MINUTE,
+    catalogAllowDemoMasters: value.CATALOG_ALLOW_DEMO_MASTERS === 'true'
   };
 }

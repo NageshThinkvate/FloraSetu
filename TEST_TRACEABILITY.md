@@ -19,7 +19,8 @@
 | test/e2e/zz-migrations.e2e-spec.ts | REQ-DB-01 | e2e (GATE) | yes | PASS |
 | test/e2e/build1-identity.e2e-spec.ts | REQ-B1-* (auth, MFA, rate-limit, tenancy, IDOR, roles, KYB, bank dual-approval, suspension, immutability, support access, privilege escalation) | e2e (GATE) | yes | PASS (12 tests) |
 | test/e2e/build2-catalog.e2e-spec.ts | REQ-B2-* — mandates (1)(2)(3)(4)(5)(6)(7)(8)(9)(10)(11)(12)(13)(14)(15)(16)(17)(18)(19)(20)(21)(22)(23) | e2e (GATE) | yes | PASS (20 tests) |
+| test/e2e/prebuild3-gate.e2e-spec.ts | REQ-G3-* — control-gate tests F1–F7 (explicit UoM, preferred-vs-submitted, original preservation, DEMO rejected, ACTIVE+VALIDATED accepted, no self-approval, retired-validated resolves; rejection-reason flow) | e2e (GATE) | yes | PASS (8 tests) |
 | mobile layout smoke (24) | REQ-B2-UI-01 | viewport checks (360/390/412) via testing agent | yes | PASS (iterations 4–6: nav overflow + tap targets + table wrap fixed & verified) |
 
-Build 2 totals: 18 suites, 76 tests, 0 failures.
-Acceptance gate sequence: build ✅ · typecheck ✅ · lint ✅ · migrations up/down (8 migrations) ✅ · unit ✅ · architecture ✅ · all e2e incl. Build 1+2 gates ✅.
+Pre-Build-3 gate totals: 19 suites, 84 tests, 0 failures.
+Acceptance gate sequence: build ✅ · typecheck ✅ · lint ✅ · migrations up/down (9 migrations) ✅ · unit ✅ · architecture ✅ · tenant isolation ✅ · catalog gates ✅ · validation workflow ✅ · commercial-UoM ✅ · all Build 0–2 e2e ✅.

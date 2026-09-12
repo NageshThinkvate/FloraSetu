@@ -1,5 +1,5 @@
 // Dev-only catalog seed (Build 2). Phase-1 basket from Master as INITIAL CONFIGURATION
-// EXAMPLES — all biological/commercial values are data_classification='DEMO'
+// EXAMPLES — all biological/commercial values are validation_status='DEMO'
 // (NOT VALIDATED; subject to buyer/supplier field validation). Units are VALIDATED
 // canonical structure only. Gated on NODE_ENV=development.
 import { Pool } from 'pg';
@@ -96,14 +96,14 @@ async function main(): Promise<void> {
 
     for (const [code, name] of UNITS) {
       await client.query(
-        `INSERT INTO catalog.units_of_measure (code, name, data_classification)
+        `INSERT INTO catalog.units_of_measure (code, name, validation_status)
          VALUES ($1, $2, 'VALIDATED') ON CONFLICT (code) DO NOTHING`,
         [code, name]
       );
     }
     for (const c of CATS) {
       await client.query(
-        `INSERT INTO catalog.categories (ref, code, name, data_classification)
+        `INSERT INTO catalog.categories (ref, code, name, validation_status)
          VALUES ('CAT-SEED-' || $1, $1, $2, $3) ON CONFLICT (code) DO NOTHING`,
         [c.code, c.name, c.cls]
       );
@@ -143,7 +143,7 @@ async function main(): Promise<void> {
       const cat = await client.query<{ id: string }>(`SELECT id FROM catalog.categories WHERE code = $1`, [p.category]);
       const stemUom = await client.query<{ id: string }>(`SELECT id FROM catalog.units_of_measure WHERE code = 'STEM'`);
       const commodity = await client.query<{ id: string }>(
-        `INSERT INTO catalog.commodities (ref, category_id, name, botanical_name, common_name, commercial_name, default_uom_id, data_classification)
+        `INSERT INTO catalog.commodities (ref, category_id, name, botanical_name, common_name, commercial_name, default_uom_id, validation_status)
          VALUES ('PRD-SEED-' || $1, $2, $3, $4, $5, $6, $7, 'DEMO')
          ON CONFLICT (ref) DO NOTHING RETURNING id`,
         [p.code, cat.rows[0].id, p.name, p.botanical ?? null, p.common ?? null, p.commercial ?? null, stemUom.rows[0].id]
@@ -165,7 +165,7 @@ async function main(): Promise<void> {
           ? (await client.query<{ id: string }>(`SELECT id FROM catalog.colours WHERE code = $1`, [v.colour])).rows[0].id
           : null;
         await client.query(
-          `INSERT INTO catalog.varieties (ref, commodity_id, name, colour_id, product_form, data_classification)
+          `INSERT INTO catalog.varieties (ref, commodity_id, name, colour_id, product_form, validation_status)
            VALUES ('VAR-SEED-' || $1 || '-' || $2, $3, $4, $5, $6, 'DEMO') ON CONFLICT (ref) DO NOTHING`,
           [p.code, v.name.replace(/\s+/g, '_').toUpperCase(), commodityId, v.name, colourId, v.form ?? null]
         );
@@ -173,7 +173,7 @@ async function main(): Promise<void> {
       // DEMO grade profile v1 (declarative rules; NOT validated for commercial use).
       await client.query(
         `INSERT INTO catalog.grade_profiles
-           (commodity_id, grade_code, version_no, rules, status, effective_from, change_reason, created_by, data_classification)
+           (commodity_id, grade_code, version_no, rules, status, effective_from, change_reason, created_by, validation_status)
          SELECT $1, 'A', 1, $2, 'ACTIVE', now(), 'Initial DEMO seed', $3, 'DEMO'
          WHERE NOT EXISTS (
            SELECT 1 FROM catalog.grade_profiles WHERE commodity_id = $1 AND grade_code = 'A' AND version_no = 1)`,
@@ -187,7 +187,7 @@ async function main(): Promise<void> {
       await client.query(
         `INSERT INTO catalog.handling_profiles
            (commodity_id, code, version_no, temp_min_c, temp_max_c, status, effective_from,
-            change_reason, created_by, data_classification, handling_group_code)
+            change_reason, created_by, validation_status, handling_group_code)
          SELECT $1, 'DEMO_GENERAL', 1, NULL, NULL, 'ACTIVE', now(),
                 'DEMO placeholder — ranges intentionally unset pending field validation', $2, 'DEMO', 'DEMO_GROUP'
          WHERE NOT EXISTS (

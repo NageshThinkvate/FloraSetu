@@ -172,9 +172,9 @@ describe('GATE Build 2: catalog & standards', () => {
 
     it('(23) demo vs validated classification is explicit', async () => {
       const masters = await t.http.get('/api/catalog/admin/masters').set(admin());
-      expect(masters.body.units.every((u: { data_classification: string }) => u.data_classification === 'VALIDATED')).toBe(true);
+      expect(masters.body.units.every((u: { validation_status: string }) => u.validation_status === 'VALIDATED')).toBe(true);
       const product = await t.http.get(`/api/catalog/products/${productId}`).set(asOrg(buyer.accessToken, buyerOrgId));
-      expect(product.body.data_classification).toBe('DEMO');
+      expect(product.body.validation_status).toBe('DEMO');
     });
   });
 
@@ -278,12 +278,12 @@ describe('GATE Build 2: catalog & standards', () => {
   describe('handling profiles (versioned; DEMO never presented as validated)', () => {
     it('(10) invalid ranges rejected', async () => {
       const bad = await t.http.post('/api/catalog/admin/handling-profiles').set(admin()).send({
-        code: hpTestCode, tempMinC: 8, tempMaxC: 2, effectiveFrom: new Date().toISOString(), dataClassification: 'DEMO'
+        code: hpTestCode, tempMinC: 8, tempMaxC: 2, effectiveFrom: new Date().toISOString(), validationStatus: 'DEMO'
       });
       expect(bad.status).toBe(400);
       const badHumidity = await t.http.post('/api/catalog/admin/handling-profiles').set(admin()).send({
         code: hpTestCode, humidityMinPct: 10, humidityMaxPct: 130,
-        effectiveFrom: new Date().toISOString(), dataClassification: 'DEMO'
+        effectiveFrom: new Date().toISOString(), validationStatus: 'DEMO'
       });
       expect(badHumidity.status).toBe(400);
     });
@@ -292,14 +292,14 @@ describe('GATE Build 2: catalog & standards', () => {
       const v1 = await t.http.post('/api/catalog/admin/handling-profiles').set(admin()).send({
         code: hpCode, commodityId: productId, tempMinC: 1, tempMaxC: 4, maxHoldingHours: 72,
         precoolingRequired: true, effectiveFrom: new Date(Date.now() - 3600e3).toISOString(),
-        effectiveTo: new Date(Date.now() + 24 * 3600e3).toISOString(), activate: true, dataClassification: 'DEMO'
+        effectiveTo: new Date(Date.now() + 24 * 3600e3).toISOString(), activate: true, validationStatus: 'DEMO'
       });
       expect(v1.status).toBe(201);
       handlingV1Id = v1.body.id;
       const v2 = await t.http.post('/api/catalog/admin/handling-profiles').set(admin()).send({
         code: hpCode, commodityId: productId, tempMinC: 2, tempMaxC: 5, maxHoldingHours: 48,
         precoolingRequired: true, effectiveFrom: new Date(Date.now() + 48 * 3600e3).toISOString(),
-        activate: true, changeReason: 'revised demo holding window', dataClassification: 'DEMO'
+        activate: true, changeReason: 'revised demo holding window', validationStatus: 'DEMO'
       });
       expect(v2.status).toBe(201);
       handlingV2Id = v2.body.id;

@@ -76,10 +76,10 @@ export class CatalogAdminService {
       const seasonality = dto.seasonalityMonths ? { available_months: dto.seasonalityMonths } : null;
       const result = await client.query(
         `INSERT INTO catalog.commodities
-           (ref, category_id, name, botanical_name, common_name, commercial_name, default_uom_id, seasonality, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id, ref, name`,
+           (ref, category_id, name, botanical_name, common_name, commercial_name, default_uom_id, preferred_order_uom_id, seasonality, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id, ref, name`,
         [ref, dto.categoryId, dto.name, dto.botanicalName ?? null, dto.commonName ?? null,
-         dto.commercialName ?? null, dto.defaultUomId ?? null,
+         dto.commercialName ?? null, dto.defaultUomId ?? null, dto.preferredOrderUomId ?? null,
          seasonality ? JSON.stringify(seasonality) : null, this.actor()]
       );
       await this.audit.record(client, {
@@ -272,12 +272,12 @@ export class CatalogAdminService {
       const result = await client.query(
         `INSERT INTO catalog.grade_profiles
            (commodity_id, grade_code, version_no, rules, status, effective_from, effective_to,
-            change_reason, created_by, data_classification)
+            change_reason, created_by, validation_status)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
          RETURNING id, grade_code, version_no, status`,
         [dto.commodityId, dto.gradeCode, versionNo, JSON.stringify(dto.rules), status,
          dto.effectiveFrom, dto.effectiveTo ?? null, dto.changeReason ?? null, this.actor(),
-         dto.dataClassification ?? 'DEMO']
+         dto.validationStatus ?? 'DEMO']
       );
       await this.audit.record(client, {
         action: 'catalog.grade_profile.create', objectType: 'grade_profile', objectId: result.rows[0].id,
@@ -302,12 +302,12 @@ export class CatalogAdminService {
       }
       const result = await client.query(
         `INSERT INTO catalog.pack_definitions
-           (commodity_id, code, name, level, contains_qty, contains_uom_id, parent_pack_id, version_no,
+           (commodity_id, code, name, level, contains_qty, contains_uom_id, parent_pack_id, preferred_order_uom_id, version_no,
             status, effective_from, effective_to, change_reason, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
          RETURNING id, code, version_no, status`,
         [dto.commodityId ?? null, dto.code, dto.name, dto.level, dto.containsQty, dto.containsUomId,
-         dto.parentPackId ?? null, versionNo, status, dto.effectiveFrom, dto.effectiveTo ?? null,
+         dto.parentPackId ?? null, dto.preferredOrderUomId ?? null, versionNo, status, dto.effectiveFrom, dto.effectiveTo ?? null,
          dto.changeReason ?? null, this.actor()]
       );
       await this.audit.record(client, {
@@ -409,20 +409,20 @@ export class CatalogAdminService {
            (commodity_id, code, version_no, temp_min_c, temp_max_c, humidity_min_pct, humidity_max_pct,
             light_sensitivity, ethylene_sensitivity, hydration_note, max_holding_hours, precooling_required,
             packaging_requirements, orientation_fragility_notes, transport_restrictions, handling_group_code,
-            status, effective_from, effective_to, change_reason, created_by, data_classification)
+            status, effective_from, effective_to, change_reason, created_by, validation_status)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
-         RETURNING id, code, version_no, status, data_classification`,
+         RETURNING id, code, version_no, status, validation_status`,
         [dto.commodityId ?? null, dto.code, versionNo, dto.tempMinC ?? null, dto.tempMaxC ?? null,
          dto.humidityMinPct ?? null, dto.humidityMaxPct ?? null, dto.lightSensitivity ?? null,
          dto.ethyleneSensitivity ?? null, dto.hydrationNote ?? null, dto.maxHoldingHours ?? null,
          dto.precoolingRequired ?? null, dto.packagingRequirements ?? null,
          dto.orientationFragilityNotes ?? null, dto.transportRestrictions ?? null,
          dto.handlingGroupCode ?? null, status, dto.effectiveFrom, dto.effectiveTo ?? null,
-         dto.changeReason ?? null, this.actor(), dto.dataClassification]
+         dto.changeReason ?? null, this.actor(), dto.validationStatus]
       );
       await this.audit.record(client, {
         action: 'catalog.handling_profile.create', objectType: 'handling_profile', objectId: result.rows[0].id,
-        after: { code: dto.code, versionNo, status, classification: dto.dataClassification }
+        after: { code: dto.code, versionNo, status, classification: dto.validationStatus }
       });
       if (status === 'ACTIVE') {
         await this.publish(client, 'handling_profiles', result.rows[0].id, versionNo);
@@ -518,7 +518,7 @@ export class CatalogAdminService {
     const [attrs, defects, uoms, colours] = await Promise.all([
       this.db.query(`SELECT id, code, name, data_type, status FROM catalog.quality_attributes ORDER BY code`),
       this.db.query(`SELECT id, code, name, defect_class, status FROM catalog.defect_types ORDER BY code`),
-      this.db.query(`SELECT id, code, name, status, data_classification FROM catalog.units_of_measure ORDER BY code`),
+      this.db.query(`SELECT id, code, name, status, validation_status FROM catalog.units_of_measure ORDER BY code`),
       this.db.query(`SELECT id, code, name, hex, status FROM catalog.colours ORDER BY code`)
     ]);
     return { qualityAttributes: attrs.rows, defectTypes: defects.rows, units: uoms.rows, colours: colours.rows };

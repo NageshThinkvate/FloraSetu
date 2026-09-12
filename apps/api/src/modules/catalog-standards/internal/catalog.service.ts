@@ -13,7 +13,7 @@ export class CatalogService {
     }
     const result = await this.db.query(
       `SELECT DISTINCT c.id, c.ref, c.name, c.common_name, c.commercial_name, c.botanical_name,
-              c.status, c.data_classification, c.launch_enabled, c.launch_cities,
+              c.status, c.validation_status, c.launch_enabled, c.launch_cities,
               cat.name AS category, m.matched_alias
        FROM catalog.commodities c
        JOIN catalog.categories cat ON cat.id = c.category_id
@@ -37,7 +37,7 @@ export class CatalogService {
 
   async listCategories(): Promise<{ items: unknown[] }> {
     const result = await this.db.query(
-      `SELECT id, code, name, parent_id, status, data_classification FROM catalog.categories
+      `SELECT id, code, name, parent_id, status, validation_status FROM catalog.categories
        WHERE deleted_at IS NULL ORDER BY code`
     );
     return { items: result.rows };
@@ -46,14 +46,14 @@ export class CatalogService {
   async listProducts(categoryCode?: string): Promise<{ items: unknown[] }> {
     const result = categoryCode
       ? await this.db.query(
-          `SELECT c.id, c.ref, c.name, c.commercial_name, c.status, c.data_classification,
+          `SELECT c.id, c.ref, c.name, c.commercial_name, c.status, c.validation_status,
                   c.launch_enabled, c.launch_cities, cat.code AS category_code
            FROM catalog.commodities c JOIN catalog.categories cat ON cat.id = c.category_id
            WHERE c.deleted_at IS NULL AND cat.code = $1 ORDER BY c.name`,
           [categoryCode]
         )
       : await this.db.query(
-          `SELECT c.id, c.ref, c.name, c.commercial_name, c.status, c.data_classification,
+          `SELECT c.id, c.ref, c.name, c.commercial_name, c.status, c.validation_status,
                   c.launch_enabled, c.launch_cities, cat.code AS category_code
            FROM catalog.commodities c JOIN catalog.categories cat ON cat.id = c.category_id
            WHERE c.deleted_at IS NULL ORDER BY c.name`
@@ -75,20 +75,20 @@ export class CatalogService {
     const [aliases, varieties, grades, packs, conversions, handling, media] = await Promise.all([
       this.db.query(`SELECT id, alias, alias_type, status FROM catalog.product_aliases WHERE commodity_id = $1`, [id]),
       this.db.query(
-        `SELECT v.id, v.ref, v.name, v.status, v.data_classification, v.product_form, v.commercial_use,
+        `SELECT v.id, v.ref, v.name, v.status, v.validation_status, v.product_form, v.commercial_use,
                 v.stem_length_cm_min, v.stem_length_cm_max, co.code AS colour
          FROM catalog.varieties v LEFT JOIN catalog.colours co ON co.id = v.colour_id
          WHERE v.commodity_id = $1 AND v.deleted_at IS NULL`,
         [id]
       ),
       this.db.query(
-        `SELECT id, grade_code, version_no, rules, status, effective_from, effective_to, data_classification
+        `SELECT id, grade_code, version_no, rules, status, effective_from, effective_to, validation_status
          FROM catalog.grade_profiles WHERE commodity_id = $1 ORDER BY grade_code, version_no DESC`,
         [id]
       ),
       this.db.query(
         `SELECT p.id, p.code, p.name, p.level, p.contains_qty, u.code AS uom, p.version_no, p.status,
-                p.effective_from, p.effective_to, p.data_classification
+                p.effective_from, p.effective_to, p.validation_status
          FROM catalog.pack_definitions p JOIN catalog.units_of_measure u ON u.id = p.contains_uom_id
          WHERE (p.commodity_id = $1 OR p.commodity_id IS NULL) AND p.status <> 'DRAFT' ORDER BY p.level, p.version_no DESC`,
         [id]
@@ -106,7 +106,7 @@ export class CatalogService {
       this.db.query(
         `SELECT id, code, version_no, temp_min_c, temp_max_c, humidity_min_pct, humidity_max_pct,
                 ethylene_sensitivity, max_holding_hours, precooling_required, status,
-                effective_from, effective_to, data_classification
+                effective_from, effective_to, validation_status
          FROM catalog.handling_profiles WHERE (commodity_id = $1 OR commodity_id IS NULL)
          ORDER BY code, version_no DESC`,
         [id]

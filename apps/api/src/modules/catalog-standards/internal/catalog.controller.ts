@@ -1,12 +1,35 @@
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { CatalogService } from './catalog.service';
+import { ValidationService } from './validation.service';
 import { RbacGuard, RequirePermission } from '../../../common/authz/rbac.guard';
+import { CommercialLineDto, NormalizePreviewDto } from './dto';
+import { Body, Post } from '@nestjs/common';
 
 @Controller('catalog')
 @UseGuards(RbacGuard)
-@RequirePermission('catalog.read')
 export class CatalogController {
-  constructor(private readonly catalog: CatalogService) {}
+  constructor(
+    private readonly catalog: CatalogService,
+    private readonly validation: ValidationService
+  ) {}
+
+  @Post('commercial-line/validate')
+  @RequirePermission('catalog.read')
+  validateCommercialLine(@Body() dto: CommercialLineDto) {
+    return this.validation.validateCommercialLine(dto);
+  }
+
+  @Post('normalize-preview')
+  @RequirePermission('catalog.read')
+  normalizePreview(@Body() dto: NormalizePreviewDto) {
+    return this.validation.normalizePreview(dto);
+  }
+
+  @Get('commercial-check/:entity/:id')
+  @RequirePermission('catalog.read')
+  commercialCheck(@Param('entity') entity: string, @Param('id') id: string) {
+    return this.validation.commercialCheck(entity, id);
+  }
 
   @Get('search')
   search(@Query('q') q: string, @Query('limit') limit?: string) {

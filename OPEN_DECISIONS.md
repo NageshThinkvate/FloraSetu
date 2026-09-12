@@ -19,8 +19,8 @@
 | OD-04 | Web push VAPID / FCM / APNs credentials | TBD | Live push delivery (gateway abstraction ready) |
 | OD-05 | Webhook providers needing signature schemes | TBD | Concrete verifier configs (interface + HMAC verifier shipped) |
 | OD-06 | e-NAM / government integrations | explicitly out of Build 0 | — |
-| OD-07 | Buyer-side UoM default when commodity has no `default_uom_id` (relaxed to NULL in Build 2 per "not all flowers use stems") | defer to demand/RFQ build | none for Build 2 |
-| OD-08 | VALIDATED promotion workflow (who approves DEMO→VALIDATED flip; `approved_by` exists, process undefined) | owner decision before launch | none for Build 2 |
+| OD-07 | Buyer-side UoM default | **RESOLVED — OWNER APPROVED** (Pre-Build-3 gate): no hidden universal default; every commercial line persists explicit `uom_id`; `preferred_order_uom_id` is UI preselection only; supplier quotes preserve original qty/uom + conversion version; normalization only via active version-controlled conversion |
+| OD-08 | DEMO→VALIDATED promotion | **RESOLVED — OWNER APPROVED** (Pre-Build-3 gate): `validation_status` lifecycle DEMO→PENDING_REVIEW→VALIDATED/REJECTED, separate from lifecycle `status`; requested/reviewed metadata + evidence; reviewer ≠ proposer on grade/handling/conversion masters; `catalog.validate` permission + CATALOG_VALIDATOR role; production use requires ACTIVE+VALIDATED unless env enables demo masters |
 
 Ambiguities documented during Build 2 (did not block implementation):
 - "Search" scope limited to canonical product + alias + variety name fields; faceted analytics search deferred to measured need (Postgres FTS chosen, no OpenSearch).

@@ -3,7 +3,8 @@
 Updated: 2026-06 (Build 2 — Catalog & Standards)
 
 ## Build 2 implemented
-- Canonical product model: categories (stable codes, optional hierarchy), commodities (botanical/common/commercial names, seasonality, launch flags, substitution defaults, DEMO/VALIDATED), varieties (colour, form, stem-length range, commercial use), product_aliases (canonical, case-insensitive unique), product_media metadata.
+- Canonical product model: categories (stable codes, optional hierarchy), commodities (botanical/common/commercial names, seasonality, launch flags, substitution defaults, validation status), varieties (colour, form, stem-length range, commercial use), product_aliases (canonical, case-insensitive unique), product_media metadata.
+- Pre-Build-3 gate: OD-07 (explicit commercial uom_id foundation + preferred_order_uom_id + normalize-preview preserving originals + conversion version) and OD-08 (validation_status lifecycle DEMO→PENDING_REVIEW→VALIDATED/REJECTED with review metadata, separate-reviewer enforcement, catalog.validate + CATALOG_VALIDATOR, production-use check ACTIVE+VALIDATED) implemented and tested; migration 008 table count corrected to **11** (reporting typo in Build 2 report).
 - Versioned masters (auto version_no, DRAFT→ACTIVE→RETIRED, effective windows, overlap rejection): grade_profiles (declarative JSONB rules vs quality_attributes dictionary), pack_definitions (nestable), unit_conversions (product/pack-scoped; cycle + same-unit + unknown-UoM + non-positive rejection), handling_profiles (temp/humidity/light/ethylene/hydration/holding/precool/packaging/transport).
 - Defect taxonomy master (11 classes seeded). Transport compatibility metadata (no blocking). Supplier product capabilities (org-scoped, supplier-side only).
 - Postgres FTS + alias search returning canonical products only.

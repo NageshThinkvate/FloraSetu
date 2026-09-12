@@ -17,6 +17,7 @@ export class CreateProductDto {
   @IsOptional() @IsString() commonName?: string;
   @IsOptional() @IsString() commercialName?: string;
   @IsOptional() @IsUUID() defaultUomId?: string;
+  @IsOptional() @IsUUID() preferredOrderUomId?: string;
   @IsOptional() @IsArray() @IsInt({ each: true }) @ArrayMinSize(1) seasonalityMonths?: number[];
 }
 
@@ -66,6 +67,7 @@ export class CreatePackDto {
   @IsNumber() @IsPositive() containsQty: number;
   @IsUUID() containsUomId: string;
   @IsOptional() @IsUUID() parentPackId?: string;
+  @IsOptional() @IsUUID() preferredOrderUomId?: string;
   @IsISO8601() effectiveFrom: string;
   @IsOptional() @IsISO8601() effectiveTo?: string;
   @IsOptional() @IsString() changeReason?: string;
@@ -89,7 +91,7 @@ export class CreateGradeProfileDto {
   @IsOptional() @IsISO8601() effectiveTo?: string;
   @IsOptional() @IsString() changeReason?: string;
   @IsOptional() @IsBoolean() activate?: boolean;
-  @IsOptional() @IsIn(['DEMO', 'VALIDATED']) dataClassification?: string;
+  @IsOptional() @IsIn(['DEMO', 'PENDING_REVIEW', 'VALIDATED', 'REJECTED']) validationStatus?: string;
 }
 
 export class CreateQualityAttributeDto {
@@ -128,7 +130,26 @@ export class CreateHandlingProfileDto {
   @IsOptional() @IsISO8601() effectiveTo?: string;
   @IsOptional() @IsString() changeReason?: string;
   @IsOptional() @IsBoolean() activate?: boolean;
-  @IsIn(['DEMO', 'VALIDATED']) dataClassification: string;
+  @IsIn(['DEMO', 'PENDING_REVIEW', 'VALIDATED', 'REJECTED']) validationStatus: string;
+}
+
+export class ReviewValidationDto {
+  @IsIn(['VALIDATED', 'REJECTED']) decision: string;
+  @IsOptional() @IsString() reference?: string;
+  @IsOptional() @IsString() notes?: string;
+  @IsOptional() @IsString() rejectionReason?: string;
+}
+
+export class CommercialLineDto {
+  @IsUUID() commodityId: string;
+  @IsOptional() @IsUUID() uomId?: string;
+}
+
+export class NormalizePreviewDto {
+  @IsUUID() commodityId: string;
+  @IsNumber() @IsPositive() qty: number;
+  @IsUUID() uomId: string;
+  @IsUUID() targetUomId: string;
 }
 
 export class CreateTransportRuleDto {
