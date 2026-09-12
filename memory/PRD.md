@@ -53,6 +53,21 @@ Org admin, buyer, supplier, QC agent, logistics ops, finance ops, support agent,
 ## Status
 BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. PRE-BUILD-3 CONTROL GATE: PASS. Deviations: NestJS+Postgres+Redis vs env default — owner-approved (Build 0). Tech debt: stub media signer, dev HMAC token format (pending OD-02), KMS for TOTP secrets, audit partitioning, /auth/login returns 201 (semantic 200 — cosmetic). Open blockers: none. NEXT BUILD STARTED: NO — waiting for owner acceptance.
 
+## Implemented — 2026-06 (Build 3, after Pre-Build-3 gate)
+- Canonical demand model: events/ceremonies/BOM (user-defined), versioned requirements (QUICK/EVENT/FORMAL modes converge — no parallel model), RFQs + invitations, clarifications (visibility rules), immutable versioned quotations with OD-07 explicit UOM + OD-08 normalization metadata, awards with quantity invariants + deviation consent, ops procurement desk (procurement.manage).
+- Migrations 010–011 (reversible; down-migration purge of Build-3 RFQ rows). Permissions + PROCUREMENT_OPS role seeded. Suspended orgs lose Build 3 transactional permissions.
+- Guardrail A verified fail-closed (DEMO masters rejected; CATALOG_ALLOW_DEMO_MASTERS hard startup error in production; dev-only escape enabled in .env.development). Guardrail B: server-side master eligibility on every requirement line.
+- Concurrency: one open RFQ per requirement (unique partial index), one quote per supplier per RFQ (23505→409), FOR UPDATE lifecycle transitions, award race invariants, idempotency on submit/publish/quote/revise/award.
+- Cross-context DI via @Global contract modules (catalog/identity/notifications) — architecture boundary suites pass.
+- Award→order conversion is an inert interface (PENDING_BUILD_5) — Build 4/5 not authorized.
+- Frontend: Quick Request (mobile-first), demand home, requirement workspace (submit/publish/evaluate/revise/consent/cancel), events + BOM→requirement, RFQ comparison + award (consent checkbox), supplier inbox + quote builder + clarifications, my quotes, ops desk. Permission-gated nav; stale-org login fix.
+- Docs: docs/STATE_MACHINES.md, docs/SECURITY_MODEL.md created; RTM/DOMAIN_MODEL/API_INVENTORY/IMPLEMENTATION_STATUS updated.
+- Tests: 20 suites / 146 tests green (new build3-demand gate: 48 tests, groups A–I). Testing agent iteration_8: 11/11 frontend E2E flows PASS (desktop + 360/390/412 mobile), no functional bugs.
+- Git baseline: commit 6e1a8eb, tag florasetu-build3-accepted.
+
+## Status
+BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. PRE-BUILD-3 GATE: PASS. BUILD 3: PASS (backend 146/146 green, frontend 11/11 testing-agent verified). NEXT: awaiting owner acceptance + Build 4 authorization (orders/lots/logistics remain NOT authorized).
+
 ## Prioritized backlog (next builds)
 - P0 (Build 2 candidates): Catalog & Standards activation; Supply & Inventory service flows (ADR-001 runtime); OIDC provider selection (OD-02) to replace dev HMAC tokens; S3 endpoint + real media signing (OD-03); class-validator DTOs + ValidationPipe hardening; secondary per-IP rate-limit counter.
 - P1: RFQ lifecycle (multi-supplier award), order allocation, payments provider (OD-01), shipments + excursion workers, claims, notification delivery (OD-04/05).
