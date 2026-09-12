@@ -52,4 +52,27 @@
 | REQ-B1-UI-01 | Onboarding/account/admin interfaces only | apps/web pages: Login/Register/Onboarding/Account/Admin | web build + typecheck + lint PASS; screenshot | PASS |
 | REQ-B1-PRIV-01 | Privilege escalation blocked (system roles not org-assignable; tampered tokens rejected) | ORG_ASSIGNABLE_ROLES allowlist + HMAC verify | build1 e2e escalation test | PASS |
 
+## Build 2 — Catalog & Standards
+
+| Req ID | Requirement | Where implemented | Verification | Status |
+|---|---|---|---|---|
+| REQ-B2-MODEL-01 | Canonical product model (category/product/botanical/common/commercial names, variety, colour, form, seasonality, launch flags, media metadata) | migration 008 (commodities ext, product_aliases, colours, varieties ext, product_media) | build2 e2e reads/detail | PASS |
+| REQ-B2-ALIAS-01 | Canonical aliases; no duplicate products from synonyms (Lisianthus/Eustoma) | product_aliases + case-insensitive active unique index | build2 e2e (1,2,18,19,20) | PASS |
+| REQ-B2-TAX-01 | Configurable categories FLOWER/FILLER/FOLIAGE, optional hierarchy, not hardcoded | categories.code + parent_id; category list API | build2 e2e; admin UI | PASS |
+| REQ-B2-GOV-01 | Versioned effective-dated masters; no destructive edits; created_by/change_reason/status | grade_profiles, pack_definitions, unit_conversions, handling_profiles; status transitions only | build2 e2e (6,7,8,9); overlap 409 | PASS |
+| REQ-B2-UOM-01 | Canonical UoM + explicit versioned product-scoped conversions; reject invalid/circular/non-positive/ambiguous | units_of_measure + unit_conversions + cycle/overlap guards | build2 e2e (3,4,5,6) | PASS |
+| REQ-B2-GRADE-01 | Declarative versioned grade profiles against attribute dictionary; no universal A/B/C hardcode | grade_profiles.rules JSONB + quality_attributes | build2 e2e (7,8 + unknown-attr 400) | PASS |
+| REQ-B2-DEFECT-01 | Configurable defect taxonomy for later QC/claims | defect_types (classes; 11 seeded classes) | masters endpoint; build2 e2e audit test | PASS |
+| REQ-B2-HANDLING-01 | Versioned handling profiles (temp/humidity/light/ethylene/hydration/holding/precool/packaging/transport) | handling_profiles w/ range CHECKs + DTO validation | build2 e2e (9,10) | PASS |
+| REQ-B2-TRANSPORT-01 | Transport compatibility metadata foundation (no shipment blocking) | transport_compatibility_rules (normalized pair unique index) | build2 e2e (9) | PASS |
+| REQ-B2-SUBST-01 | Substitution attributes foundation only (no auto-substitution) | commodities.substitution_defaults JSONB | schema + doc | PASS (foundation) |
+| REQ-B2-SEARCH-01 | Postgres FTS search over product/commercial/alias → canonical entities | CatalogService.search (tsvector + alias ILIKE) | build2 e2e (19,20) | PASS |
+| REQ-B2-AUTHZ-01 | Separate catalog.read vs catalog.write; suppliers own capabilities only; buyers/suppliers can't modify masters | permissions + CATALOG_MANAGER role + org-scoped capabilities | build2 e2e (11–15) | PASS |
+| REQ-B2-VALID-01 | class-validator DTOs on all Build 2 writes; Build 1 shared infra addressed via global ValidationPipe | dto.ts + main.ts/helpers.ts ValidationPipe(whitelist, forbidNonWhitelisted) | build2 e2e (unknown-field 400, range 400s) | PASS |
+| REQ-B2-AUDIT-01 | Audit all master changes with actor/org/trace/before-after | audit.record in every admin write + outbox publish | build2 e2e (21) | PASS |
+| REQ-B2-SEED-01 | Phase-1 basket seeded DEMO; units VALIDATED; no demo value presented as validated | seed/catalog-seed.ts + UI DEMO chips | build2 e2e (23); UI badges | PASS |
+| REQ-B2-LAUNCH-01 | Launch city/category flags, audited | launch_enabled + launch_cities + PATCH endpoint | build2 e2e (22) | PASS |
+| REQ-B2-UI-01 | Catalog browse/search + admin + capabilities screens, mobile 360/390/412 | CatalogPage, CatalogAdminPage, CapabilitiesPage + responsive nav/table-wrap | testing agent viewport checks (iterations 4–6) | PASS |
+| REQ-B2-INACTIVE-01 | Inactive definitions rejected for new use; historical resolution preserved | capabilities add guard + variety read | build2 e2e (16,17) | PASS |
+
 **Build 0 gate: ALL PASS.** Business functionality intentionally absent.

@@ -19,7 +19,7 @@ module.exports = {
     '@typescript-eslint/no-floating-promises': 'error',
     'no-restricted-syntax': [
       'error',
-      { selector: 'Literal[value=/^-?\\d+\\.\\d+$/]', message: 'Float literals are forbidden for money; use integer minor units.' }
+      { selector: 'Literal[raw=/^-?\\d+\\.\\d+$/]', message: 'Float literals are forbidden for money; use integer minor units.' }
     ]
   }
 };

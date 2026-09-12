@@ -43,3 +43,12 @@ Status legend: **RESOLVED — OWNER APPROVED** (all six). Master Spec v2.0 remai
 
 ## Tooling deviation (owner-approved)
 Backend tooling deviates from environment default (NestJS + PostgreSQL + Redis vs FastAPI + MongoDB template). Approved by owner as part of Build 0 authorization.
+
+## ADR-007 — Master-data versioning & canonical identity (Build 2) — RESOLVED — OWNER APPROVED (per Build 2 authorization)
+- Canonical product identity lives in `catalog.commodities`; market/botanical synonyms live in `catalog.product_aliases` with a case-insensitive active-alias unique index. Aliases never spawn duplicate products.
+- Grade profiles, pack definitions, unit conversions, handling profiles are **versioned effective-dated** rows (`version_no` server-assigned, DRAFT→ACTIVE→RETIRED, `effective_from/to`); overlapping ACTIVE windows per natural key are rejected (409 VERSION_OVERLAP). Historical references resolve old versions forever; no destructive edits of referenced definitions (status transitions only).
+- Unit conversions are product/pack-scoped configuration (never global assumptions); service rejects from==to, unknown/inactive UoMs, non-positive factors, and circular conversion chains (graph check at write time).
+- Handling *requirement* profiles live in `catalog.handling_profiles`; excursion *severity* policy stays in `logistics.handling_profiles` (ADR-002). Two tables, two purposes — recorded to avoid confusion.
+- Every master record carries `data_classification` DEMO|VALIDATED; seeds are DEMO except canonical UoM codes (VALIDATED structure). DEMO is never presented as a validated commercial standard.
+- Grade rules are declarative JSONB referencing the `quality_attributes` dictionary (codes, not English labels); unknown codes rejected at write.
+- Transport compatibility is metadata-only in Build 2 (`transport_compatibility_rules`); no shipment blocking.

@@ -4,7 +4,7 @@ Single source of truth: Master Spec v2.0. This file narrates the ERD (docs/02) a
 
 ## Bounded contexts & core aggregates
 1. **Identity & Party** — `Organization` (buyer/supplier/both), `User`, `Membership`, `Role/Permission`, `KycRecord` (immutable), `BankAccount` (immutable history) + `BankChangeRequest` (PENDING_REVERIFICATION, dual approval — ADR-004), `AuthIdentity` (OIDC subject — ADR-006), `MfaEnrollment`.
-2. **Catalog & Standards** — `Category → Commodity → Variety`, canonical `UnitOfMeasure`, versioned effective-dated `GradeStandard`, `PackType`.
+2. **Catalog & Standards** — `Category`(coded, hierarchical) → `Commodity` (canonical product: botanical/common/commercial names, aliases via `ProductAlias`, seasonality, launch flags, DEMO/VALIDATED) → `Variety` (colour, form, stem-length range). Versioned effective-dated masters: `GradeProfile` (declarative rules vs `QualityAttribute` dictionary), `PackDefinition` (nestable), `UnitConversion` (product-scoped, cycle-safe), `HandlingProfile` (requirement ranges; severity policy stays in Logistics). `DefectType` taxonomy, `TransportCompatibilityRule` metadata, `SupplierProductCapability` (org-owned). Canonical `UnitOfMeasure`. (Build 2 — live; ADR-007.)
 3. **Supply & Inventory** — `Terminal`/`Warehouse` (PostGIS), `SupplyLot` (available/reserved/allocated, CHECK-enforced — ADR-001), `InventoryReservation` (row-locked), `AvailabilityForecast`, `SupplyRiskEvent`.
 4. **Demand/Events/RFQ** — `DemandIntent`, `ProcurementEvent`, `Rfq/RfqLine` (fill policy per line), `RfqInvitation`, `RfqBid`, `RfqAward` (multi-supplier).
 5. **Auction & Market** — `Auction/AuctionLot`, immutable `Bid`, immutable `AuctionResult`, `MarketPriceSnapshot`.

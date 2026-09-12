@@ -1,0 +1,46 @@
+{
+  "summary": "Build 2 gate testing complete. Regression 18/18 suites, 76/76 jest tests green; yarn lint + typecheck clean; web build passes. Wrote 15 pytest gates against preview URL — all 15 pass (health, alias search 'eustoma'→Lisianthus + 'statice'→Limonium, product list/detail with DEMO+child collections, buyer read/write authz 403, 5 validation rejections, versioning v1→v2 + overlap 409, grower capability 201 + buyer capability 403). Playwright mobile smoke on /catalog and /catalog/admin at 360/390/412px: login/pages/search/DEMO chips OK but nav has horizontal overflow (scrollW≈613) and 7 nav links are 36px tall (below 44px minimum).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AppHeader/Nav", "issue": "Top nav bar does not collapse/wrap on mobile — horizontal document scrollWidth=613px at viewports 360/390/412px causing horizontal scroll on all mandated mobile widths", "selector": "nav / header", "priority": "HIGH"},
+      {"component": "AppHeader nav links", "issue": "All 7 nav <a> elements render at 36px height (below 44px touch-target minimum) — FloraSetu, Catalog, Capabilities, Catalog admin, Account, New organization, Logout", "selector": "header a", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Mobile /catalog & /catalog/admin", "issues": ["Horizontal overflow forces user to scroll sideways to see full nav; page shifts under finger"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/build2_catalog_gates.py",
+    "/app/test_reports/pytest/build2_gates.xml",
+    "/app/test_reports/catalog_360.png",
+    "/app/test_reports/catalog_390.png",
+    "/app/test_reports/catalog_412.png",
+    "/app/test_reports/catalog_admin_390.png"
+  ],
+  "action_items": [
+    "Make the top navigation responsive at ≤412px — collapse into a hamburger menu OR allow wrap; ensure documentElement.scrollWidth ≤ viewport width at 360/390/412 (test 24 per Build 2 mandate)",
+    "Increase nav link tap-target height to ≥44px (add py-3 / min-h) to meet WCAG 2.5.5 / Apple HIG touch-target guidance"
+  ],
+  "critical_code_review_comments": [
+    "class-scoped fixture-on-instance-method deprecation warning in pytest 9 (cosmetic; convert helper to @staticmethod/@classmethod when refactoring).",
+    "Login endpoint returns 201 Created for /api/auth/login — semantically that should be 200 OK; not blocking but worth aligning (login does not create a resource, only a session token)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/build2_catalog_gates.py"
+  ],
+  "success_rate": {
+    "backend": "100% (15/15 preview gates + 76/76 jest)",
+    "frontend": "80% (functional flows pass; mobile responsiveness fails 2/3 gates: overflow + touch-target)"
+  },
+  "test_credentials": "Owner nagesh.kgpl@gmail.com / FloraSetu-Owner-2026, platform org id 514737d2-b7ce-4f20-9724-48752dd9000f (from /app/memory/test_credentials.md).",
+  "seed_data_creation": "Test suite registers fresh buyer/grower users + orgs per class via /api/auth/register + /api/orgs (BUYER/GROWER categories). Creates one grade profile with grade_code VTEST<hex> per versioning run — harmless demo data on seeded Anthurium product.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend gates all green via /app/backend/tests/build2_catalog_gates.py (15 pytest cases). Key API contract confirmed: (a) product id == commodity id, (b) search returns {items:[…, matched_alias:…]}, (c) grade-profile create DTO uses commodityId, gradeCode, rules[{attribute, op:MIN/MAX/BETWEEN/EQ/IN, min/max/value}], effectiveFrom, activate?, (d) POST /api/orgs takes {name, category} not {ref,type} (ref auto-gen), (e) login returns 201. Frontend uses data-testid=login-email/login-password/login-submit — good coverage on auth form. Remaining work is UI-only: fix responsive nav collapse + 44px tap targets.",
+  "rca of the issue": "Mobile overflow: the header <nav> renders all links inline without a hamburger toggle nor flex-wrap; total intrinsic width (~613px) exceeds ≤412px viewports so the whole document scrolls. Fix in /app/apps/web/src/components/AppHeader (or equivalent) — add md: breakpoint hamburger; alternatively flex-wrap gap-2 + min-h-11 on <a>. Touch targets are set only via horizontal padding without vertical padding hitting 44px."
+}

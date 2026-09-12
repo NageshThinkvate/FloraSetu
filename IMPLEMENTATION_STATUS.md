@@ -1,8 +1,20 @@
-# Implementation Status — Build 0 + Build 1
+# Implementation Status — Build 0 + Build 1 + Build 2
 
-Updated: 2026-06 (Build 1 — Identity & Party)
+Updated: 2026-06 (Build 2 — Catalog & Standards)
 
-## Build 1 implemented
+## Build 2 implemented
+- Canonical product model: categories (stable codes, optional hierarchy), commodities (botanical/common/commercial names, seasonality, launch flags, substitution defaults, DEMO/VALIDATED), varieties (colour, form, stem-length range, commercial use), product_aliases (canonical, case-insensitive unique), product_media metadata.
+- Versioned masters (auto version_no, DRAFT→ACTIVE→RETIRED, effective windows, overlap rejection): grade_profiles (declarative JSONB rules vs quality_attributes dictionary), pack_definitions (nestable), unit_conversions (product/pack-scoped; cycle + same-unit + unknown-UoM + non-positive rejection), handling_profiles (temp/humidity/light/ethylene/hydration/holding/precool/packaging/transport).
+- Defect taxonomy master (11 classes seeded). Transport compatibility metadata (no blocking). Supplier product capabilities (org-scoped, supplier-side only).
+- Postgres FTS + alias search returning canonical products only.
+- Permissions: catalog.read / catalog.write / catalog.capability.write + CATALOG_MANAGER system role.
+- DTO validation: class-validator DTOs on all Build 2 writes + global ValidationPipe (whitelist, forbidNonWhitelisted) — closes the Build 1 shared-infra debt for touched paths.
+- UI: /catalog (search + canonical detail with DEMO badges), /catalog/admin (all masters + version history + launch flags), /catalog/capabilities (supplier).
+- Seed: Phase-1 basket (Dendrobium, Anthurium, Gerbera, Premium/Dutch Rose, Lilium, Carnation, Chrysanthemum/Disbud, Gypsophila, Solidago, Limonium/Statice, Eucalyptus, Lisianthus/Eustoma alias pair) — all DEMO; units VALIDATED.
+- Docs: API_INVENTORY.md, SCREEN_INVENTORY.md, MASTER_SPEC_REFERENCE.md created; RTM/TEST_TRACEABILITY/OPEN_DECISIONS (OD-07, OD-08) updated; ADR-007 recorded.
+- Tests: build2-catalog.e2e-spec.ts (20 gate tests, mandates 1–23) + full regression — 18 suites / 76 tests green; migrations up/down (8) green.
+
+## Build 1 implemented (recap)
 - Full org category vocabulary (17 active categories; EXPORTER/GOVERNMENT feature-gated via `org.exporter_government`).
 - Entities: Organization (KYB status), Branch, Address (PostGIS-ready), Contact, User + credentials (bcrypt), Membership (multi-org), Role/Permission/RolePermission (system roles seeded in migration 007), Documents, verification history (immutable), org restrictions/suspension, bank accounts (immutable history) + dual-approval change requests, support access grants (immutable, time-boxed).
 - Auth: email/password register+login, HMAC bearer access tokens (15 min, exp-checked) + rotating refresh tokens (7d), TOTP MFA enroll/verify (otplib) enforced at login, Redis login lockout (5 failures → 15 min, 429 RATE_LIMITED).

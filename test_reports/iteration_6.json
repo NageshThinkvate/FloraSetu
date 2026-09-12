@@ -1,0 +1,22 @@
+{
+  "summary": "Final Build 2 verification PASS. RETEST-1 (page-body no horizontal overflow on /admin, /catalog, /catalog/admin, /account at 360/390/412px): document.documentElement.scrollWidth == viewport at all 12 combinations. RETEST-2 nav: nav scrollWidth == clientWidth at all mobile widths, minimum link height 44px at every route/width; desktop 1920px unaffected (docSW=1920, nav height 61px in single row). Regression: pytest build2_catalog_gates.py 15/15 PASS, apps/api jest 18 suites/76 tests PASS, yarn lint clean (api+web), yarn typecheck clean (api+web). The .table-wrap utility in index.css and AdminPage.tsx wrapper are correctly applied — Organizations table scrolls internally without forcing page overflow (confirmed by screenshot at 360px). Build 2 is ready.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/build2_catalog_gates.py",
+    "/app/test_reports/pytest/build2_gates_final.xml",
+    "/app/test_reports/admin_360_final.png"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    ".table-wrap { overflow-x:auto; max-width:100% } utility is correct, reusable and minimal. Recommend applying it to any future wide data tables (catalog admin, capabilities) to prevent regressions."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Owner nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 (worked)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Build 2 fully verified end-to-end at iteration_6. Backend 15/15 pytest, 76/76 jest, lint+typecheck clean. Mobile pages have no horizontal overflow at 360/390/412; nav wraps within viewport; tap targets >=44px; desktop 1920 unchanged. Screenshot at /app/test_reports/admin_360_final.png shows Organizations table with internal scroll only.",
+  "rca of the issue": "Prior iteration_5 /admin overflow root cause was an un-wrapped wide Organizations <table> forcing document width to ~597px. Fix applied by main agent: added .table-wrap utility in /app/apps/web/src/index.css and wrapped the table in /app/apps/web/src/pages/AdminPage.tsx (line 62). Verified: docSW now equals viewport (360/390/412) while table scrolls inside its container."
+}

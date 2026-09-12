@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { loadConfig } from './config/configuration';
 import { TraceMiddleware } from './common/tracing/trace.middleware';
@@ -15,6 +16,7 @@ async function bootstrap(): Promise<void> {
   app.use(new TraceMiddleware().use);
   app.use(new AuthMiddleware(config.jwtDevSecret).use);
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   await app.listen(config.port, '0.0.0.0');
 }
 

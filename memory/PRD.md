@@ -33,6 +33,18 @@ Org admin, buyer, supplier, QC agent, logistics ops, finance ops, support agent,
 - Owner account: nagesh.kgpl@gmail.com (PLATFORM_ADMIN, dev-seeded from env).
 - Tests: build1-identity.e2e (12 gate tests) + all Build 0 suites — 17 suites / 56 tests green; migrations up/down (7) green; testing-agent verified incl. 4 bug fixes (ref-counter seed collision, ingress lockout bypass, admin X-Org-Id persistence, silent 500 logging).
 
+## Implemented — 2026-06 (Build 2, after Builds 0+1)
+- Catalog & Standards: canonical product model (categories with stable codes + optional hierarchy; commodities with botanical/common/commercial names; canonical aliases — Lisianthus/Eustoma; varieties with colour/form/stem-length; seasonality; launch city flags; product media metadata).
+- Versioned effective-dated masters with overlap rejection: grade profiles (declarative JSONB rules vs attribute dictionary), pack definitions (nestable), product-scoped unit conversions (circular-chain/invalid rejection), handling profiles (range-validated).
+- Defect taxonomy (11 classes), transport compatibility metadata (no blocking), supplier product capabilities (org-scoped), Postgres FTS + alias search returning canonical products only.
+- Permissions: catalog.read / catalog.write / catalog.capability.write + CATALOG_MANAGER role. class-validator DTOs + global ValidationPipe (closes Build 1 DTO debt on shared infra).
+- UI: /catalog, /catalog/admin, /catalog/capabilities (mobile 360/390/412). Seed: Phase-1 basket, DEMO-classified; units VALIDATED.
+- ADR-007 (master-data versioning + canonical identity), OD-07/OD-08 (documented ambiguities).
+- Tests: 18 suites / 76 tests green (build2 gate: 20 tests covering mandates 1–23; mandate 24 = agent viewport checks, PASS at 360/390/412 after nav/table-wrap fixes, iteration_6 final).
+
+## Status
+BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS (acceptance gates green; testing-agent verified, iterations 4–6). Deviations: NestJS+Postgres+Redis vs env default — owner-approved (Build 0). Tech debt: stub media signer, dev HMAC token format (pending OD-02), KMS for TOTP secrets, audit partitioning, /auth/login returns 201 (semantic 200 — cosmetic). Open blockers: none. NEXT BUILD STARTED: NO — waiting for owner acceptance.
+
 ## Prioritized backlog (next builds)
 - P0 (Build 2 candidates): Catalog & Standards activation; Supply & Inventory service flows (ADR-001 runtime); OIDC provider selection (OD-02) to replace dev HMAC tokens; S3 endpoint + real media signing (OD-03); class-validator DTOs + ValidationPipe hardening; secondary per-IP rate-limit counter.
 - P1: RFQ lifecycle (multi-supplier award), order allocation, payments provider (OD-01), shipments + excursion workers, claims, notification delivery (OD-04/05).
@@ -44,4 +56,4 @@ Org admin, buyer, supplier, QC agent, logistics ops, finance ops, support agent,
 3. Build 2: Catalog & Standards + Supply & Inventory against frozen schema.
 
 ## Status
-BUILD 0: PASS. BUILD 1: PASS (acceptance gates green, testing-agent verified). Deviations: NestJS+Postgres+Redis vs env default — owner-approved. Tech debt: stub media signer, dev HMAC token format (pending OIDC), TOTP secrets stored unencrypted (KMS pending), audit partitioning, DTO validation hardening. Open blockers: none.
+BUILD 0: PASS. BUILD 1: PASS (acceptance gates green, testing-agent verified). Tech debt: stub media signer, dev HMAC token format (pending OIDC), TOTP secrets stored unencrypted (KMS pending), audit partitioning, /auth/login 201-vs-200 semantic nit. Open blockers: none.

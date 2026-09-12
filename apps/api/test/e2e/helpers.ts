@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
@@ -33,6 +33,7 @@ export async function bootTestApp(): Promise<TestApp> {
   app.use(new TraceMiddleware().use);
   app.use(new AuthMiddleware(config.jwtDevSecret).use);
   app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   await app.init();
   const verifier = new DevTokenVerifier(config.jwtDevSecret);
   return {

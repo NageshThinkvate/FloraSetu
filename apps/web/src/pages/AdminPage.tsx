@@ -59,6 +59,7 @@ export function AdminPage(): JSX.Element {
       </header>
       <section className="panel">
         <h2>Organizations</h2>
+        <div className="table-wrap">
         <table className="data-table" data-testid="admin-orgs-table">
           <thead>
             <tr><th>Ref</th><th>Name</th><th>Type</th><th>Status</th><th>KYB</th><th></th></tr>
@@ -74,6 +75,7 @@ export function AdminPage(): JSX.Element {
             ))}
           </tbody>
         </table>
+        </div>
       </section>
 
       {selected && (

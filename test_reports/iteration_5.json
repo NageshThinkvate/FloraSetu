@@ -1,0 +1,32 @@
+{
+  "summary": "Retest of iteration_4 nav fixes. Nav overflow and 44px touch-target fixes both VERIFIED across 360/390/412px mobile viewports on /catalog, /catalog/admin, /account. Desktop 1920px nav renders correctly in a single row (height 61px). Backend build2_catalog_gates.py regression: 15/15 PASS. However, /admin route still shows page-level horizontal overflow (scrollWidth=597px) at all three mobile viewports due to the wide Organizations table content (not the nav). Nav CSS changes are fully working; the /admin table is an unrelated pre-existing page-body overflow.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AdminOrganizationsPage", "issue": "Page-level horizontal overflow at mobile widths: documentElement.scrollWidth=597 vs viewport 360/390/412. Root cause is the wide Organizations <table> (Ref, Name, Type, Status, Created, Actions columns) which does not shrink or scroll within a container. Nav itself no longer overflows.", "selector": "/admin route -> .table or table containing 'Organizations'", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/admin (mobile)", "issues": ["Data table forces the whole page to horizontally scroll; wrap the table in an overflow-x:auto container so only the table (not the entire page) scrolls."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/build2_catalog_gates.py",
+    "/app/test_reports/pytest/build2_gates_retest.xml"
+  ],
+  "action_items": [
+    "Wrap the Organizations table on /admin (and any other wide tables) in a div with overflow-x:auto and max-width:100% so the mobile page itself does not horizontally scroll. Then re-verify RETEST-1 acceptance on /admin at 360/390/412px."
+  ],
+  "critical_code_review_comments": [
+    "index.css .top-nav fix is correct and minimal: flex-wrap + max-width:100vw + min-height:44px inline-flex on links. No regressions on desktop.",
+    "Consider adding a shared .table-wrap { overflow-x:auto; max-width:100%; } utility to prevent any wide-table page-overflow across admin views."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "92%"},
+  "test_credentials": "Owner nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 (worked)",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Nav overflow + 44px targets are confirmed fixed at all mobile viewports for /catalog, /catalog/admin, /account. Only remaining item is /admin page-body horizontal overflow from Organizations table (scrollWidth=597 at 360/390/412). Backend gates 15/15 green (see build2_gates_retest.xml). Live preview URL: https://flora-modular-core.preview.emergentagent.com. Login testids: login-email / login-password / login-submit.",
+  "rca of the issue": "Nav fix: verified. Remaining /admin overflow RCA — the AdminOrganizationsPage renders a raw <table> with 6+ columns of fixed-width text (org refs, names, timestamps). Because no scrollable wrapper exists, the table forces the document to a min width of ~597px, so documentElement.scrollWidth exceeds any mobile viewport. Mitigation: wrap the table in <div style={{overflowX:'auto', maxWidth:'100%'}}> or a .table-wrap CSS class."
+}
