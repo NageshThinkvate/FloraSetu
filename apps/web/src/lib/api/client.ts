@@ -61,7 +61,7 @@ export class ApiError extends Error {
   }
 }
 
-async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function call<T>(method: string, path: string, body?: unknown, opts?: { idempotencyKey?: string }): Promise<T> {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   const session = getSession();
   if (session) {
@@ -69,6 +69,9 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   }
   if (activeOrgId) {
     headers['x-org-id'] = activeOrgId;
+  }
+  if (opts?.idempotencyKey) {
+    headers['idempotency-key'] = opts.idempotencyKey;
   }
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
@@ -83,5 +86,9 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 }
 
 export const apiGet = <T>(path: string): Promise<T> => call<T>('GET', path);
-export const apiPost = <T>(path: string, body?: unknown): Promise<T> => call<T>('POST', path, body);
+export const apiPost = <T>(path: string, body?: unknown, opts?: { idempotencyKey?: string }): Promise<T> =>
+  call<T>('POST', path, body, opts);
 export const apiPatch = <T>(path: string, body?: unknown): Promise<T> => call<T>('PATCH', path, body);
+
+export const newIdempotencyKey = (): string =>
+  (crypto.randomUUID ? crypto.randomUUID() : `idem-${Date.now()}-${Math.random().toString(36).slice(2)}`);

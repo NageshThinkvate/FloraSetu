@@ -87,3 +87,23 @@
 | REQ-G3-GIT-01 | VCS baseline: repo initialized, env secrets gitignored, baseline commit + tag florasetu-build2-accepted | git (no remote push without owner authorization) | git log/tag | PASS |
 
 **Build 0 gate: ALL PASS.** Business functionality intentionally absent.
+
+## Build 3 — Demand / Events / RFQ / Quotations / Evaluation / Award
+
+| Req ID | Requirement | Where implemented | Verification | Status |
+|---|---|---|---|---|
+| REQ-B3-CANON-01 | Progressive procurement: QUICK / EVENT / FORMAL converge on the canonical Requirement model (no parallel lightweight model) | demand.requirements.mode + shared services | build3 e2e (B4, C4); UI flows | PASS |
+| REQ-B3-EVENT-01 | First-class events, user-defined ceremonies, BOM lines w/ sourcing status; BOM→requirement linking | events.service + migration 010 | build3 e2e (A1–A7) | PASS |
+| REQ-B3-UOM-01 | OD-07: explicit uomId on every requirement/quote line; 400 UOM_REQUIRED otherwise | requirements.service buildLineRows | build3 e2e (B1) | PASS |
+| REQ-B3-GUARD-01 | Guardrail A/B: server-side master eligibility (ACTIVE+VALIDATED+window+UOM); DEMO fail-closed, env escape non-prod only | catalog-standards assertCommercialLine; configuration demoFlag startup error in production | build3 e2e (B2, B3) | PASS |
+| REQ-B3-IDEM-01 | Idempotency-Key mandatory on submit/publish/quote/revise/award; replays return stored response | claim/complete in transactions | build3 e2e (C1, C2, D3, E4, E8, H1, H5) | PASS |
+| REQ-B3-CONC-01 | Race safety: one open RFQ per requirement (unique partial index + FOR UPDATE), one quotation per supplier per RFQ (23505→409), award quantity invariants under row locks | rfqs.publish, quotes.submit, awards.create | build3 e2e (D4, E5, H4) | PASS |
+| REQ-B3-LIFE-01 | Requirement lifecycle DRAFT→…→AWARDED/PARTIALLY_AWARDED with illegal-transition 409s; cancel cascades RFQs/quotes/awards | demand-policies REQUIREMENT_TRANSITIONS; requirements.cancel | build3 e2e (C3, B6, H13) | PASS |
+| REQ-B3-REV-01 | Revision invalidates open quotes (RECONFIRMATION_REQUIRED), re-points RFQs; ops override requires recorded buyer consent | requirements.revise/consent | build3 e2e (F1, F2, H7) | PASS |
+| REQ-B3-QUOTE-01 | OD-08: original quoted qty/UOM immutable; versioned revisions supersede; normalization metadata via ACTIVE VALIDATED conversion only | quotes.service + quotation_versions/lines | build3 e2e (E3, E7, E8) | PASS |
+| REQ-B3-AWARD-01 | Award invariants: Σ awarded ≤ requirement qty (EXCEEDS_REQUIREMENT); current+SUBMITTED/PARTIALLY_ACCEPTED+unexpired versions only; deviation consent recorded; self-award 403 | awards.service | build3 e2e (H2, H3, H6, H7, H8, H9) | PASS |
+| REQ-B3-VIS-01 | Tenant isolation & visibility: cross-org 404s, supplier sees no competitor data, own award lines only, clarification visibility rules | service-level guards | build3 e2e (B5, D7, E1, E11, G4, H10, I4) | PASS |
+| REQ-B3-OPS-01 | Managed procurement desk: needs-sourcing/open RFQs (deadline risk)/uncovered demand/clarifications/assistance + audited sourcing notes; procurement.manage gated | ops.service/controller | build3 e2e (I1–I4) | PASS |
+| REQ-B3-SUSP-01 | Suspended orgs lose Build 3 transactional permissions, keep reads | rbac.guard TRANSACTIONAL_PERMISSIONS | build3 e2e (A7) | PASS |
+| REQ-B3-BOUND-01 | Award→order conversion is an inert interface (PENDING_BUILD_5); no orders created | awards.prepareOrderConversion | build3 e2e (H12) | PASS |
+| REQ-B3-UI-01 | Buyer (Quick Request mobile-first, events, RFQ workspace, comparison/award), supplier (inbox, quote builder, clarifications), ops desk UIs | apps/web pages: Demand*, Quick*, Event*, Rfq*, Supplier*, MyQuotes, OpsDesk | typecheck + testing agent | PASS |

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { IdentityParty_SERVICE } from './contracts';
 import { IdentityPartyServiceImpl } from './internal/identity-party.service';
 import { AuthService } from './internal/auth.service';
@@ -14,6 +14,9 @@ import { BankController } from './internal/bank.controller';
 import { AdminService } from './internal/admin.service';
 import { AdminController } from './internal/admin.controller';
 
+// Global contract provider: other contexts inject IdentityParty_SERVICE without
+// importing this module (docs/04 — contracts-only boundary, enforced mechanically).
+@Global()
 @Module({
   controllers: [AuthController, OrgsController, MembersController, KybController, BankController, AdminController],
   providers: [

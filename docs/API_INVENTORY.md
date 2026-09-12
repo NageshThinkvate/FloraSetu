@@ -66,3 +66,31 @@ All endpoints under `/api`. Bearer auth; org-scoped routes also require `X-Org-I
 | GET | /catalog/admin/versions/:entity | catalog.write | version history for the 4 versioned entities |
 
 All catalog writes are audited (core.audit_events, trace_id) and publish `catalog.standard.published`/`catalog.product.created` outbox events.
+
+## Demand / RFQ (Build 3) — DTO-validated, idempotent writes (Idempotency-Key header)
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| GET | /catalog/units | authenticated | ACTIVE UoM list for pickers |
+| POST/GET | /demand/events | event.write / event.read | |
+| GET/PATCH | /demand/events/:id | event.read / event.write | cross-org 404 |
+| POST | /demand/events/:id/ceremonies · /bom-lines | event.write | BOM validates commodity + ceremony scope |
+| POST/GET | /demand/requirements | demand.write / demand.read | lines carry master_snapshot; 400 UOM_REQUIRED / MASTER_NOT_COMMERCIAL |
+| GET | /demand/requirements/:id | demand.read | lines, versions, awardedByLine |
+| POST | /demand/requirements/:id/submit | demand.submit | idempotent; QUICK auto-publishes managed RFQ |
+| POST | /demand/requirements/:id/revise | demand.write | invalidates open quotes; ops override → consent_required |
+| POST | /demand/requirements/:id/evaluate | quote.evaluate | QUOTING/CLARIFICATION → EVALUATION |
+| POST | /demand/requirements/:id/consent · /cancel | demand.write | cancel cascades RFQ/quotes/awards |
+| POST | /demand/requirements/:id/publish-rfq | rfq.publish | idempotent; one open RFQ per requirement (409) |
+| GET | /demand/rfqs · /demand/rfqs/inbox | rfq.read | buyer list / supplier invitations |
+| GET | /demand/rfqs/:id | rfq.read | supplier view excludes competitor data |
+| POST | /demand/rfqs/:id/viewed · /intend · /decline · /cancel | rfq.read / quote.submit / rfq.read / rfq.publish | decline requires reason |
+| POST/GET | /demand/rfqs/:id/clarifications | rfq.read | visibility BUYER_PRIVATE/PUBLIC |
+| POST | /demand/clarifications/:id/respond | rfq.read | buyer/ops only; single answer (409) |
+| POST | /demand/rfqs/:id/quotes | quote.submit | idempotent; deadline + invitation + stale-version guards; 23505 race → 409 |
+| GET | /demand/quotes · /demand/quotes/:id | quote.read | owner/buyer/ops only |
+| POST | /demand/quotes/:id/revise | quote.submit | supersedes current version; originals immutable |
+| GET | /demand/rfqs/:id/comparison | quote.evaluate | originals + normalization metadata; landed-cost INDICATIVE |
+| POST/GET | /demand/rfqs/:id/awards | award.create / award.read | idempotent; Σ ≤ requirement qty; deviation consent; supplier sees own lines |
+| POST | /demand/awards/:id/prepare-order | award.read | inert CreateOrderFromAward (PENDING_BUILD_5) |
+| GET | /demand/ops/desk | procurement.manage | cross-tenant queues + deadline risk |
+| POST/GET | /demand/ops/requirements/:id/sourcing-notes | procurement.manage | audited |

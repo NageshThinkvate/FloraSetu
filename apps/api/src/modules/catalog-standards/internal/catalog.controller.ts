@@ -41,6 +41,11 @@ export class CatalogController {
     return this.catalog.listCategories();
   }
 
+  @Get('units')
+  units() {
+    return this.catalog.listUnits();
+  }
+
   @Get('products')
   products(@Query('category') category?: string) {
     return this.catalog.listProducts(category);

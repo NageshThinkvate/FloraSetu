@@ -5,6 +5,8 @@ export interface IdentityPartyService {
   contextKey(): 'identity-party';
   orgExists(orgId: string): Promise<boolean>;
   userExists(userId: string): Promise<boolean>;
+  // Managed sourcing filter: subset of orgIds that are ACTIVE (optionally by type).
+  filterActiveOrgs(orgIds: string[], supplierSideOnly?: boolean): Promise<string[]>;
 }
 
 export const IdentityParty_SERVICE = 'IdentityParty_SERVICE';

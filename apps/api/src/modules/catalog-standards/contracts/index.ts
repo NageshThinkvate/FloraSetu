@@ -7,6 +7,22 @@ export interface CatalogStandardsService {
   varietyExists(varietyId: string): Promise<boolean>;
   // Canonical UOM conversion (versioned, product-scoped). Null when no chain exists.
   convert(commodityId: string | null, fromUomCode: string, toUomCode: string, qty: number): Promise<number | null>;
+  // GUARDRAIL B: authoritative server-side commercial eligibility for a requirement line.
+  // Throws ApiException unless every referenced master exists, is ACTIVE + VALIDATED
+  // (unless env permits DEMO), inside its effective window, and relationships hold.
+  assertCommercialLine(input: {
+    commodityId: string;
+    varietyId?: string | null;
+    gradeProfileId?: string | null;
+    packDefinitionId?: string | null;
+    uomId: string;
+  }): Promise<{ masterSnapshot: Record<string, unknown> }>;
+  // Versioned conversion for supplier quote normalization; null when none valid (never invent).
+  normalize(commodityId: string, fromUomId: string, toUomId: string, qty: number): Promise<{
+    factor: number; conversionVersionId: string; conversionVersionNo: number; normalizedQty: number;
+  } | null>;
+  // Managed sourcing: orgs with ACTIVE capability on varieties of these commodities.
+  findCapableSuppliers(commodityIds: string[]): Promise<string[]>;
 }
 
 export const CatalogStandards_SERVICE = 'CatalogStandards_SERVICE';

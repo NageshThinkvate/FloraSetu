@@ -19,4 +19,18 @@ export class IdentityPartyServiceImpl implements IdentityPartyService {
     const r = await this.db.query('SELECT 1 FROM identity.users WHERE id = $1', [userId]);
     return (r.rowCount ?? 0) > 0;
   }
+
+  async filterActiveOrgs(orgIds: string[], supplierSideOnly = false): Promise<string[]> {
+    if (orgIds.length === 0) {
+      return [];
+    }
+    const r = await this.db.query<{ id: string }>(
+      `SELECT id FROM identity.organizations
+       WHERE id = ANY($1) AND status = 'ACTIVE' AND deleted_at IS NULL
+         AND ($2 = false OR type IN ('GROWER','GROWER_GROUP','IMPORTER','AGGREGATION_HUB',
+              'WHOLESALER','QC_PARTNER','LOGISTICS_PROVIDER','COLD_CHAIN_PARTNER'))`,
+      [orgIds, supplierSideOnly]
+    );
+    return r.rows.map((row) => row.id);
+  }
 }

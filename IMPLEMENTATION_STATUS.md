@@ -52,3 +52,16 @@ All business functionality and feature screens; live auctions; AI; native code; 
 
 ## Open blockers
 None for Build 0 acceptance.
+
+## Build 3 — Demand / Events / RFQ / Quotations / Evaluation / Award (PASS)
+- Canonical demand model live: events/ceremonies/BOM, versioned requirements, RFQs + invitations,
+  clarifications, immutable versioned quotations with normalization metadata, awards with quantity
+  invariants + deviation consent, ops procurement desk. Migrations 010–011 (reversible).
+- Guardrails: server-side master eligibility (ACTIVE+VALIDATED+window, fail-closed DEMO with
+  non-prod env escape), explicit UoM, quote immutability, idempotent writes, race-safe
+  publish/quote/award, tenant-scoped visibility (cross-org 404).
+- Cross-context DI via @Global contract modules (boundary rule enforced mechanically).
+- Frontend: Quick Request (mobile-first), requirement workspace, events, RFQ comparison + award,
+  supplier inbox + quote builder, ops desk.
+- Tests: 20 suites / 146 tests green (build3-demand gate: 48 tests, groups A–I).
+- Docs added: docs/STATE_MACHINES.md, docs/SECURITY_MODEL.md.

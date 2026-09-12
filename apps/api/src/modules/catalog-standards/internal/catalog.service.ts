@@ -43,6 +43,13 @@ export class CatalogService {
     return { items: result.rows };
   }
 
+  async listUnits(): Promise<{ items: unknown[] }> {
+    const result = await this.db.query(
+      `SELECT id, code, name, status FROM catalog.units_of_measure WHERE status = 'ACTIVE' ORDER BY code`
+    );
+    return { items: result.rows };
+  }
+
   async listProducts(categoryCode?: string): Promise<{ items: unknown[] }> {
     const result = categoryCode
       ? await this.db.query(

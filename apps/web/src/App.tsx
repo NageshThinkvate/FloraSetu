@@ -9,6 +9,17 @@ import { AdminPage } from './pages/AdminPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { CatalogAdminPage } from './pages/CatalogAdminPage';
 import { CapabilitiesPage } from './pages/CapabilitiesPage';
+import { DemandHomePage } from './pages/DemandHomePage';
+import { QuickRequestPage } from './pages/QuickRequestPage';
+import { RequirementDetailPage } from './pages/RequirementDetailPage';
+import { EventsPage } from './pages/EventsPage';
+import { EventDetailPage } from './pages/EventDetailPage';
+import { RfqsPage } from './pages/RfqsPage';
+import { RfqDetailPage } from './pages/RfqDetailPage';
+import { SupplierInboxPage } from './pages/SupplierInboxPage';
+import { SupplierRfqPage } from './pages/SupplierRfqPage';
+import { MyQuotesPage } from './pages/MyQuotesPage';
+import { OpsDeskPage } from './pages/OpsDeskPage';
 
 function Protected({ children }: { children: JSX.Element }): JSX.Element {
   const { me, loading } = useAuth();
@@ -24,12 +35,17 @@ function Nav(): JSX.Element {
     return <></>;
   }
   const platform = me.memberships.some((m) => m.type === 'PLATFORM_OPS' && m.roles.includes('PLATFORM_ADMIN'));
+  const ops = me.memberships.some((m) =>
+    m.roles.includes('PROCUREMENT_OPS') || m.roles.includes('PLATFORM_ADMIN'));
   return (
     <nav className="top-nav" data-testid="top-nav">
       <Link to="/" data-testid="nav-home">FloraSetu</Link>
+      <Link to="/demand" data-testid="nav-demand">Procurement</Link>
+      <Link to="/supply/inbox" data-testid="nav-inbox">Inbox</Link>
       <Link to="/catalog" data-testid="nav-catalog">Catalog</Link>
       <Link to="/catalog/capabilities" data-testid="nav-capabilities">Capabilities</Link>
       <Link to="/catalog/admin" data-testid="nav-catalog-admin">Catalog admin</Link>
+      {ops && <Link to="/ops/desk" data-testid="nav-ops-desk">Ops desk</Link>}
       <Link to="/account" data-testid="nav-account">Account</Link>
       <Link to="/onboarding" data-testid="nav-onboarding">New organization</Link>
       {platform && <Link to="/admin" data-testid="nav-admin">Admin</Link>}
@@ -52,6 +68,17 @@ export default function App(): JSX.Element {
           <Route path="/catalog" element={<Protected><CatalogPage /></Protected>} />
           <Route path="/catalog/admin" element={<Protected><CatalogAdminPage /></Protected>} />
           <Route path="/catalog/capabilities" element={<Protected><CapabilitiesPage /></Protected>} />
+          <Route path="/demand" element={<Protected><DemandHomePage /></Protected>} />
+          <Route path="/demand/quick" element={<Protected><QuickRequestPage /></Protected>} />
+          <Route path="/demand/requirements/:id" element={<Protected><RequirementDetailPage /></Protected>} />
+          <Route path="/demand/events" element={<Protected><EventsPage /></Protected>} />
+          <Route path="/demand/events/:id" element={<Protected><EventDetailPage /></Protected>} />
+          <Route path="/demand/rfqs" element={<Protected><RfqsPage /></Protected>} />
+          <Route path="/demand/rfqs/:id" element={<Protected><RfqDetailPage /></Protected>} />
+          <Route path="/supply/inbox" element={<Protected><SupplierInboxPage /></Protected>} />
+          <Route path="/supply/rfqs/:id" element={<Protected><SupplierRfqPage /></Protected>} />
+          <Route path="/supply/quotes" element={<Protected><MyQuotesPage /></Protected>} />
+          <Route path="/ops/desk" element={<Protected><OpsDeskPage /></Protected>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

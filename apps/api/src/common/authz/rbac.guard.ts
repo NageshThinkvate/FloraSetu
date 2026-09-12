@@ -10,7 +10,9 @@ export const RequirePermission = (...permissions: string[]) => SetMetadata(PERMI
 // Privileges a suspended/restricted org loses; read permissions stay available.
 export const TRANSACTIONAL_PERMISSIONS = new Set([
   'org.write', 'branch.write', 'contact.write', 'member.invite',
-  'role.manage', 'kyb.submit', 'bank.write', 'config.write'
+  'role.manage', 'kyb.submit', 'bank.write', 'config.write',
+  'event.write', 'demand.write', 'demand.submit', 'rfq.publish',
+  'quote.submit', 'award.create'
 ]);
 
 @Injectable()

@@ -26,3 +26,15 @@ Single source of truth: Master Spec v2.0. This file narrates the ERD (docs/02) a
 
 ## Inactive in Build 0
 Live auctions, AI, native mobile, government/e-NAM integrations, buyer credit, export, national launch, owned infrastructure, all buyer/supplier feature screens. Their tables exist; no endpoints/UI activate them.
+
+## Build 3 — canonical demand model (implemented)
+
+The Demand/RFQ context (#4) is now live with the canonical model: `Event` (+`Ceremony`, `BomLine`),
+`Requirement` (+`RequirementVersion`, `RequirementLine` with commercial `master_snapshot`),
+`Rfq` (extended: requirement link, mode, deadlines, published audit) + `RfqLine` + `RfqInvitation`
+(INVITED→VIEWED→INTENDS_TO_QUOTE→QUOTED | DECLINED), `Clarification` (OPEN→ANSWERED; BUYER_PRIVATE|PUBLIC),
+`Quotation` + immutable `QuotationVersion` + `QuotationLine` (original quoted qty/UoM immutable;
+normalized metadata + conversion version alongside — OD-07/08), `Award` + `AwardLine`
+(Σ awarded ≤ requirement qty; buyer_consent for deviations), `SourcingNote` (ops desk).
+QUICK/EVENT/FORMAL are modes of one Requirement — no parallel lightweight model.
+See docs/STATE_MACHINES.md and docs/SECURITY_MODEL.md.
