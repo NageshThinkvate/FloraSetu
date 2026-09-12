@@ -3,10 +3,15 @@
 
 export interface IdentityPartyService {
   contextKey(): 'identity-party';
+  orgExists(orgId: string): Promise<boolean>;
+  userExists(userId: string): Promise<boolean>;
 }
 
 export const IdentityParty_SERVICE = 'IdentityParty_SERVICE';
 
 // Domain events published by this context (payloads versioned, additive-only).
 export type IdentityPartyEvent =
-  | { v: 1; type: 'identity-party.scaffold.ready'; at: string };
+  | { v: 1; type: 'party.org.created'; orgId: string; ref: string; category: string; at: string }
+  | { v: 1; type: 'party.user.registered'; userId: string; at: string }
+  | { v: 1; type: 'party.kyb.updated'; orgId: string; toStatus: string; at: string }
+  | { v: 1; type: 'party.bank.change.requested'; orgId: string; requestId: string; at: string };

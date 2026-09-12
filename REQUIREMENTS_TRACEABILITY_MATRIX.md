@@ -32,4 +32,24 @@
 | REQ-SEED-01 | Dev-only seed | apps/api/seed/seed.ts (NODE_ENV gate) | `yarn seed` ran green | PASS |
 | REQ-PWA-01 | Mobile-first PWA shell scaffold, zero native code | apps/web (Vite + React + TS + manifest) | web build + typecheck + lint PASS | PASS |
 
+## Build 1 — Identity, Party, Organizations & RBAC
+
+| Req ID | Requirement | Where implemented | Verification | Status |
+|---|---|---|---|---|
+| REQ-B1-ORG-01 | All Master org categories (17 active); exporter/government feature-gated | migration 007 type vocabulary + flag `org.exporter_government`; OrgsService.createOrg gating | build1 e2e "category gating" | PASS |
+| REQ-B1-ORG-02 | Organization, Branch/Location, Address, Contact entities | identity.organizations/organization_branches/addresses/contacts | build1 e2e onboarding + getOrg | PASS |
+| REQ-B1-USR-01 | User, credentials (bcrypt), multi-org membership (no single global role string) | users, user_credentials, org_memberships, user_roles(org-scoped) | build1 e2e auth + membership flows | PASS |
+| REQ-B1-RBAC-01 | Role/Permission/RolePermission model; least privilege; platform privileged roles | migration 007 permission catalog + 6 system roles; OrgContextService per-request resolution | build1 e2e role tests; rbac.guard.spec | PASS |
+| REQ-B1-AUTH-01 | Secure password auth, bearer tokens w/ expiry, refresh rotation, lockout | AuthService + RateLimitService (Redis, 5 fails → 15 min) | build1 e2e auth + rate-limit tests | PASS |
+| REQ-B1-AUTH-02 | MFA architecture for privileged users (TOTP) | mfa_enrollments + otplib enroll/verify + login enforcement | build1 e2e MFA test | PASS |
+| REQ-B1-AUTHZ-01 | Tenant isolation + object-level authz (404 on cross-org) | assertOrgAccess policies + org-scoped queries | build1 e2e tenant isolation + IDOR | PASS |
+| REQ-B1-AUTHZ-02 | Audited support access, no shared admin passwords | support_access_grants (immutable, 30-min) + security audit on grant+read | build1 e2e support access test | PASS |
+| REQ-B1-KYB-01 | KYB submission/review + immutable verification history | documents + verification_history (IMM trigger) | build1 e2e KYB test | PASS |
+| REQ-B1-BANK-01 | Bank/payout profile: masked reads, supplier-side only, immutable history | BankService + bank_accounts (IMM), masking | build1 e2e supplier-only + masked read | PASS |
+| REQ-B1-BANK-02 | High-risk change: PENDING_REVERIFICATION, payout freeze, dual approval, dual audit streams | bank_change_requests + verification_history + security_audit_events | build1 e2e dual-approval test | PASS |
+| REQ-B1-SUSP-01 | Suspension removes transactional privileges, keeps reads, audited | org_restrictions + TRANSACTIONAL_PERMISSIONS in RbacGuard | build1 e2e suspension test | PASS |
+| REQ-B1-IMM-01 | Payout/settlement history not alterable by any role | payments.settlements IMM trigger; no mutation API | build1 e2e immutability test | PASS |
+| REQ-B1-UI-01 | Onboarding/account/admin interfaces only | apps/web pages: Login/Register/Onboarding/Account/Admin | web build + typecheck + lint PASS; screenshot | PASS |
+| REQ-B1-PRIV-01 | Privilege escalation blocked (system roles not org-assignable; tampered tokens rejected) | ORG_ASSIGNABLE_ROLES allowlist + HMAC verify | build1 e2e escalation test | PASS |
+
 **Build 0 gate: ALL PASS.** Business functionality intentionally absent.

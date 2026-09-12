@@ -1,0 +1,22 @@
+{
+  "summary": "Retest of iteration_2 findings on preview URL. All four fixes verified GREEN. RETEST-1 register 500 duplicate ref: fixed — seed upserts core.reference_counters (USR,ORG) with GREATEST; fresh register returns 201 with tokens. RETEST-2 lockout bypass on preview: fixed — auth.service now uses email-only lockKey and express trust proxy=1 is enabled; 5 failed logins → 6th returns 429 RATE_LIMITED envelope; correct password while locked also 429 (proves email-scoped lock holds even across ingress-split IPs). RETEST-3 /admin 403: fixed — web client persists activeOrg in localStorage.florasetu.activeOrg and attaches X-Org-Id; Platform administration table loads for owner and survives page reload; no KYC/bank fields present in payload. RETEST-4 exception logging: http-exception.filter.ts now console.errors [traceId] + stack for non-ApiException/HttpException. REGRESSION: yarn test 17/17 suites, 56/56 tests green; yarn typecheck clean; yarn lint clean; web yarn build succeeds. Custom HTTP gate suite (build1_gates_test.py) 5/5 pass on localhost:8001.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/build1_gates_test.py",
+    "/app/test_reports/pytest/build1_gates.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Consider still adding class-validator DTOs + ValidationPipe for POST /auth/register, POST /orgs, etc. — @Body() currently trusts raw shapes; not a regression, but was flagged in iteration_2 and remains open.",
+    "Email-only lockout key removes IP dimension; that fixes preview bypass but slightly increases risk of a single attacker locking a victim's account. Consider a global per-IP secondary counter as future hardening."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (jest 56/56, gates 5/5, all retests pass on preview URL)", "frontend": "100% (admin table loads owner-side, persists on reload, no bank/kyc leakage)"},
+  "test_credentials": "nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 (owner). Retest users registered on-the-fly via /api/auth/register.",
+  "seed_data_creation": "Registered two throwaway users on preview DB during retest (retest_*, lockout_* @dev.florasetu.local). Lockout user has an active 15-min Redis lockout entry rl:login:<email>.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All iteration_2 bugs are closed. Seed is now idempotent for reference counters. Lockout is email-scoped over preview URL. Admin UI uses persisted activeOrg. Jest 17/17 must stay green. Preview URL: https://a58e29e4-b933-42ad-bc57-a163f74143ee.preview.emergentagent.com (web /, api /api). Localhost API: http://localhost:8001.",
+  "rca of the issue": "N/A — verification-only iteration. All four fixes reproduced as green."
+}

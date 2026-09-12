@@ -1,20 +1,74 @@
 // Typed API client — bearer-token auth only, no cookie-only sessions (ADR-006).
 const BASE_URL = import.meta.env.VITE_API_URL as string;
 
-let bearerToken: string | null = null;
+const STORAGE_KEY = 'florasetu.session';
 
-export function setBearerToken(token: string | null): void {
-  bearerToken = token;
+export interface Session {
+  accessToken: string;
+  refreshToken: string;
+  userId: string;
+}
+
+export function getSession(): Session | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Session) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setSession(session: Session | null): void {
+  if (session) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
+const ORG_STORAGE_KEY = 'florasetu.activeOrg';
+
+let activeOrgId: string | null = null;
+try {
+  activeOrgId = localStorage.getItem(ORG_STORAGE_KEY);
+} catch {
+  activeOrgId = null;
+}
+export function setActiveOrg(orgId: string | null): void {
+  activeOrgId = orgId;
+  if (orgId) {
+    localStorage.setItem(ORG_STORAGE_KEY, orgId);
+  } else {
+    localStorage.removeItem(ORG_STORAGE_KEY);
+  }
+}
+export function getActiveOrg(): string | null {
+  return activeOrgId;
 }
 
 export interface ErrorEnvelope {
   error: { code: string; message: string; trace_id: string; details?: Record<string, unknown> };
 }
 
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string,
+    public readonly details?: Record<string, unknown>
+  ) {
+    super(message);
+  }
+}
+
 async function call<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
-  if (bearerToken) {
-    headers.authorization = `Bearer ${bearerToken}`;
+  const session = getSession();
+  if (session) {
+    headers.authorization = `Bearer ${session.accessToken}`;
+  }
+  if (activeOrgId) {
+    headers['x-org-id'] = activeOrgId;
   }
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
@@ -23,10 +77,11 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   });
   if (!res.ok) {
     const envelope = (await res.json().catch(() => null)) as ErrorEnvelope | null;
-    throw new Error(envelope?.error.message ?? `request failed: ${res.status}`);
+    throw new ApiError(res.status, envelope?.error.code ?? 'INTERNAL_ERROR', envelope?.error.message ?? `request failed: ${res.status}`, envelope?.error.details);
   }
   return (await res.json()) as T;
 }
 
 export const apiGet = <T>(path: string): Promise<T> => call<T>('GET', path);
-export const apiPost = <T>(path: string, body: unknown): Promise<T> => call<T>('POST', path, body);
+export const apiPost = <T>(path: string, body?: unknown): Promise<T> => call<T>('POST', path, body);
+export const apiPatch = <T>(path: string, body?: unknown): Promise<T> => call<T>('PATCH', path, body);

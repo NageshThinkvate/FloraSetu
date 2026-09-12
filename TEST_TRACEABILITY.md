@@ -17,6 +17,7 @@
 | test/e2e/idempotency.e2e-spec.ts | REQ-XCUT-05 | e2e (GATE) | yes | PASS (2 tests) |
 | test/e2e/outbox.e2e-spec.ts | REQ-XCUT-04 | e2e (GATE) | yes | PASS (2 tests) |
 | test/e2e/zz-migrations.e2e-spec.ts | REQ-DB-01 | e2e (GATE) | yes | PASS |
+| test/e2e/build1-identity.e2e-spec.ts | REQ-B1-* (auth, MFA, rate-limit, tenancy, IDOR, roles, KYB, bank dual-approval, suspension, immutability, support access, privilege escalation) | e2e (GATE) | yes | PASS (12 tests) |
 
-Totals: 15 suites, 33 tests, 0 failures (unit 16 / e2e 11 / architecture 6).
-Acceptance gate sequence executed locally: build ✅ · typecheck ✅ · lint ✅ · migrations up/down ✅ · unit ✅ · tenant-isolation ✅ · audit-event ✅ · idempotency ✅.
+Build 1 totals: 17 suites, 56 tests, 0 failures.
+Acceptance gate sequence: build ✅ · typecheck ✅ · lint ✅ · migrations up/down (7 migrations) ✅ · unit ✅ · all e2e baselines incl. Build 1 gates ✅.

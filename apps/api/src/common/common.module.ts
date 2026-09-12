@@ -8,6 +8,8 @@ import { FeatureFlagsService } from './flags/feature-flags.service';
 import { MediaService } from './media/media.service';
 import { ReferenceIdService } from './pagination/reference-id.service';
 import { RbacGuard } from './authz/rbac.guard';
+import { OrgContextService } from './authz/org-context.service';
+import { RateLimitService } from './rate-limit/rate-limit.service';
 import { HealthController } from './health/health.controller';
 import { BaselineController } from './baseline/baseline.controller';
 
@@ -21,6 +23,8 @@ export class CommonModule {
       FeatureFlagsService,
       MediaService,
       ReferenceIdService,
+      OrgContextService,
+      RateLimitService,
       Reflector
     ];
     const controllers: Type<unknown>[] = [HealthController];
@@ -32,7 +36,7 @@ export class CommonModule {
       imports: [DatabaseModule.forRoot(config)],
       controllers,
       providers,
-      exports: [AuditService, OutboxService, FeatureFlagsService, MediaService, ReferenceIdService]
+      exports: [AuditService, OutboxService, FeatureFlagsService, MediaService, ReferenceIdService, OrgContextService, RateLimitService]
     };
   }
 }

@@ -23,15 +23,25 @@ Org admin, buyer, supplier, QC agent, logistics ops, finance ops, support agent,
 - Tests: 4 architecture suites (boundary, no-cross-table, common-purity, no-cycles), 6 unit suites, 6 e2e suites — 15 suites / 35 tests, all green. Gate sequence all PASS.
 - CI baseline workflow; infra bootstrap script (`scripts/bootstrap-infra.sh`); test credentials doc.
 
+## Implemented — 2026-06 (Build 1, after Build 0)
+- Identity & Party foundation: 17 org categories (exporter/government feature-gated), branches/addresses/contacts, multi-org memberships, permission catalog + 6 system roles seeded in migration 007.
+- Auth: email/password (bcrypt), HMAC bearer access tokens (15 min) + rotating refresh tokens (7 d), TOTP MFA (enroll/verify, enforced at login), email-scoped Redis login lockout (5 fails → 15 min), `trust proxy` enabled.
+- AuthZ: per-request DB-resolved org context (`X-Org-Id`), least privilege, 404-on-foreign object-level authz, suspension revokes transactional privileges (reads retained), platform privileged roles, audited time-boxed support access, role-assignment escalation allowlist.
+- KYB: document submission + review workflow + immutable verification history.
+- Bank/payout (ADR-004): immutable account history, masked reads, supplier-side only, PENDING_REVERIFICATION + payout freeze + dual approval (distinct approvers), dual audit streams. Settlement immutability verified against platform admin.
+- UI: /login, /register, /onboarding, /account (profile, MFA, orgs, members, KYB, bank), /admin (masked org list, KYB review, suspend/lift, bank approvals).
+- Owner account: nagesh.kgpl@gmail.com (PLATFORM_ADMIN, dev-seeded from env).
+- Tests: build1-identity.e2e (12 gate tests) + all Build 0 suites — 17 suites / 56 tests green; migrations up/down (7) green; testing-agent verified incl. 4 bug fixes (ref-counter seed collision, ingress lockout bypass, admin X-Org-Id persistence, silent 500 logging).
+
 ## Prioritized backlog (next builds)
-- P0 (Build 1 candidates): OIDC provider selection + real auth (OD-02); payment provider selection (OD-01); S3 endpoint + real media signing (OD-03); supply-lot reservation/allocation service flows (ADR-001 runtime); webhook ingress with real provider signature configs (OD-05).
-- P1: RFQ lifecycle services (multi-supplier award), order allocation flows, shipment + excursion detection workers, claims workflow, notification delivery (web push VAPID, OD-04).
-- P2: auction engine (live), analytics snapshots pipeline, control-tower dashboards, Capacitor wrap, audit table partitioning, platform cron for sweepers.
+- P0 (Build 2 candidates): Catalog & Standards activation; Supply & Inventory service flows (ADR-001 runtime); OIDC provider selection (OD-02) to replace dev HMAC tokens; S3 endpoint + real media signing (OD-03); class-validator DTOs + ValidationPipe hardening; secondary per-IP rate-limit counter.
+- P1: RFQ lifecycle (multi-supplier award), order allocation, payments provider (OD-01), shipments + excursion workers, claims, notification delivery (OD-04/05).
+- P2: live auctions, analytics pipeline, Capacitor wrap, audit partitioning.
 
 ## Next tasks
-1. Owner review of Build 0 gate report → authorize Build 1 scope.
-2. Resolve OD-01/OD-02/OD-03 (payment, OIDC, object storage providers).
-3. Build 1: activate Identity & Party + Supply & Inventory service layers against the frozen schema.
+1. Owner review of Build 1 acceptance report → authorize Build 2 scope.
+2. Resolve OD-01/OD-02/OD-03 provider decisions.
+3. Build 2: Catalog & Standards + Supply & Inventory against frozen schema.
 
 ## Status
-BUILD 0 STATUS: PASS. Tests: 35 passed / 0 failed. Deviations: backend tooling (NestJS+Postgres+Redis vs env default) — owner-approved. Tech debt: audit/outbox partitioning, stub media signer, dev token verifier, BullMQ/Redis queue behind QueuePort. Open blockers: none. Ready for Build 1: YES (pending owner authorization + provider decisions).
+BUILD 0: PASS. BUILD 1: PASS (acceptance gates green, testing-agent verified). Deviations: NestJS+Postgres+Redis vs env default — owner-approved. Tech debt: stub media signer, dev HMAC token format (pending OIDC), TOTP secrets stored unencrypted (KMS pending), audit partitioning, DTO validation hardening. Open blockers: none.

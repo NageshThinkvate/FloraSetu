@@ -23,6 +23,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       res.status(status).json(buildErrorEnvelope(code, exception.message, traceId));
       return;
     }
+    console.error(`[${traceId}] unhandled exception`, exception);
     res.status(500).json(buildErrorEnvelope('INTERNAL_ERROR', 'Unexpected error', traceId));
   }
 }

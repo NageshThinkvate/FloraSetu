@@ -17,9 +17,13 @@ export class AuthMiddleware {
         const ctx = RequestContext.get();
         ctx.actorType = 'user';
         ctx.userId = claims.sub;
-        ctx.orgId = claims.orgId;
-        ctx.roles = claims.roles;
-        ctx.permissions = claims.permissions;
+        // Dev/test tokens may carry full context; real login tokens carry sub only —
+        // org context is then resolved from DB by the RBAC guard (x-org-id header).
+        if (claims.orgId) {
+          ctx.orgId = claims.orgId;
+          ctx.roles = claims.roles ?? [];
+          ctx.permissions = claims.permissions ?? [];
+        }
       }
     }
     next();

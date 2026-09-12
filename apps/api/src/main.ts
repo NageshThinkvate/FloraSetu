@@ -9,6 +9,7 @@ import { HttpExceptionFilter } from './common/errors/http-exception.filter';
 async function bootstrap(): Promise<void> {
   const config = loadConfig();
   const app = await NestFactory.create(AppModule.forRoot(config), { logger: ['error', 'warn', 'log'] });
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
   app.setGlobalPrefix('api');
   app.enableCors({ origin: config.corsOrigins, credentials: false });
   app.use(new TraceMiddleware().use);

@@ -1,0 +1,50 @@
+{
+  "summary": "Build 1 verification. BUG-VERIFY-3 (jest 17/17, 56/56) and BUG-VERIFY-4 (health envelope) confirmed fixed. BUG-VERIFY-1 (MFA enroll+verify+login) confirmed fixed. BUG-VERIFY-2 (lockout on 6th) fixed at service level but does not hold on preview URL because lockout Redis key includes source IP and preview ingress load-balances across multiple IPs (10.208.134.74/.75), splitting failure counters per pod. Full HTTP gate flow (register → orgs → buyer 403 on bank.write → grower bank change → dual approval with 409 on same approver → APPROVED_FINAL), tenant/IDOR (404 cross-org, 403 foreign X-Org-Id), and privilege-escalation gates all pass against localhost:8001 after unblocking two blocker bugs found (see RCA). UI: /register → /onboarding → /account works end-to-end; owner login shows /account with profile, org pill, members and KYB submit button; /admin returns 'Missing required permission' (403 on /api/admin/orgs) even though PLATFORM_ADMIN has admin.org.read — frontend appears to not send X-Org-Id header for admin calls.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/auth/register", "issue": "Returns 500 on a freshly-seeded dev DB. Seed inserts USR-2026-000000..000002 and ORG-2026-000000..000002 without initializing core.reference_counters. First register/create-org insert seeds counter to next_value=2 and returns next_value-1 = 1 → duplicate key on users_ref_key / organizations_ref_key. RCA: seed must upsert core.reference_counters(entity,year,next_value) to (count_existing_rows + 1) for USR and ORG (and any other reference series used by API), OR ReferenceIdService.next should compute MAX(existing ref)+1 as the initial value.", "priority": "CRITICAL"},
+      {"endpoint": "POST /api/auth/login (preview URL)", "issue": "Lockout not triggered after 5 failed attempts through preview ingress. RateLimitService uses key `login:${req.ip}:${email}`. Preview k8s routes requests through multiple ingress IPs (observed rl:login:10.208.134.74:… and rl:login:10.208.134.75:…), so 5 fails from one client are split across pods and no key reaches MAX_FAILURES=5. Localhost repro confirms 5 fails → 429 on 6th works when IP is stable. Fix: enable express `trust proxy` and use req.ips[0] / X-Forwarded-For, OR make lockout key email-only (with a secondary global-per-IP counter). Direct security impact: preview lockout is bypassable.", "priority": "HIGH"},
+      {"endpoint": "GET /api/admin/orgs", "issue": "Owner (nagesh.kgpl@gmail.com, PLATFORM_ADMIN on ORG-2026-000000) receives 403 'Missing required permission' when web app hits /admin. PLATFORM_ADMIN role has admin.org.read in DB. Most likely cause: frontend AdminPage is not attaching X-Org-Id header for platform org context, so rbac.guard can't resolve platform permissions (or org-context.service.ts resolution defaults away from PLATFORM_OPS). Needs fix in web AdminPage or RBAC guard to allow platform-scoped permissions without X-Org-Id.", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "global exception filter", "issue": "http-exception.filter.ts silently swallows non-HttpException errors (returns generic 'Unexpected error' with only a trace_id and no logging). This made the two blocker bugs above invisible in supervisor logs. Add console.error(traceId, exception.stack) for unknown exceptions."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "AdminPage (/admin)", "issue": "Owner sees 'Missing required permission' and empty Organizations table despite valid PLATFORM_ADMIN role. Likely missing X-Org-Id header on GET /api/admin/orgs request.", "selector": "text=Platform administration", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Register / Login", "issues": ["Password field placeholder/help does not display live validation for 10+ chars + letters + digits; user hits server error only after submit."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/build1_gates_test.py",
+    "/app/test_reports/pytest/build1_gates.xml"
+  ],
+  "action_items": [
+    "Fix seed (or ReferenceIdService init) so core.reference_counters is aligned with pre-inserted USR/ORG rows. Reproducible: after `yarn seed` on empty DB, first POST /api/auth/register returns 500 duplicate users_ref_key. As a testing workaround the counters were manually bumped (USR=22, ORG=4).",
+    "Fix login lockout to work behind ingress (trust proxy + use forwarded IP, or drop IP from key). Currently bypassable on preview URL.",
+    "Fix /admin page: send X-Org-Id header of the user's PLATFORM_OPS org on admin API calls (or teach RBAC guard to allow platform-permission checks without X-Org-Id).",
+    "Add error logging in HttpExceptionFilter for unknown exceptions — silent 500s made two blocker bugs impossible to diagnose from logs.",
+    "Consider a live client-side password-strength hint on /register."
+  ],
+  "critical_code_review_comments": [
+    "apps/api/src/common/errors/http-exception.filter.ts: unknown exceptions are dropped without logging. Add console.error with trace_id + stack for the `else` branch.",
+    "apps/api/src/modules/identity-party/internal/orgs.service.ts:38: input.name.trim() will NPE if body is missing name (controller has no DTO validation / class-validator). Add ValidationPipe with a proper DTO for POST /orgs, POST /auth/register, etc.",
+    "apps/api/src/common/rate-limit/rate-limit.service.ts: including untrusted req.ip in lockout key without trust-proxy makes lockout unreliable behind an ingress. Also no negative-cache for unknown emails — enumeration attack still possible (401 vs 429 timing).",
+    "auth.service.ts:register — ON CONFLICT UPDATE increments counter, but initial VALUES(entity,year,2) returning `next_value - 1` breaks when the counter row doesn't exist AND some refs are already in the table (seed path).",
+    "Multiple @Body() usages take raw `Parameters<Svc[method]>[0]` types with no runtime validation — any unknown properties or missing required fields pass through and blow up in the service layer as 500s."
+  ],
+  "updated_files": [
+    "/app/backend/tests/build1_gates_test.py (new HTTP gate suite)"
+  ],
+  "success_rate": {"backend": "100% jest (17/17 suites, 56/56 tests); 100% custom gate suite (5/5) on localhost after unblocking counter bug; 60% on preview URL due to lockout IP-key issue and admin 403", "frontend": "80% — register/onboarding/account/owner-login work; admin permission check fails"},
+  "test_credentials": "nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 (works). New users register via /register with 10+ char password.",
+  "seed_data_creation": "Bumped core.reference_counters (USR=22 after test runs, ORG=4) manually via psql to work around counter-init bug. Multiple TEST_/uitest_ users and grower/buyer orgs created during gate runs — cleanup not automated.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "1) Do NOT run `yarn seed` on an empty DB and immediately test /api/auth/register — it will 500 until reference counters are fixed. Either bump counters manually or wait for main agent's fix. 2) Preview URL routes across two pod IPs — for anything that depends on client IP identity (lockout, per-IP throttling), test also via curl to http://localhost:8001 for stable behaviour. 3) Jest suites (`cd /app/apps/api && yarn test`) must remain 17/17 green. 4) The build1_gates_test.py uses BASE_URL env var (defaults to http://localhost:8001). 5) HttpExceptionFilter swallows non-HttpException errors — if a 500 appears, temporarily add a console.error in the else branch, restart, reproduce.",
+  "rca of the issue": "Blocker #1 (register 500 duplicate users_ref_key): seed populates USR-2026-000000..000002 in identity.users but never seeds core.reference_counters. Registration's `INSERT INTO core.reference_counters (entity, year, next_value) VALUES ('USR',2026,2) ON CONFLICT DO UPDATE ... RETURNING next_value - 1` therefore inserts a fresh row with next_value=2 and returns 1 → USR-2026-000001 → clash with seeded buyer. Same pattern for ORG. Fix in seed to SET next_value = last_ref+1 or in ReferenceIdService.next to derive initial from MAX(ref). Reproduction: drop rows, rerun `yarn seed`, POST /api/auth/register → 500 with duplicate key on users_ref_key. Mitigation applied during test: psql UPSERT on core.reference_counters. Blocker #2 (preview lockout bypass): rate-limit key `rl:login:<ip>:<email>` with untrusted req.ip splits counters across ingress source IPs. Repro: 5+ failed logins to preview URL, none trigger 429; redis shows two distinct keys (10.208.134.74 / .75). Mitigation: enable Express trust proxy and use X-Forwarded-For, or drop IP from the key entirely."
+}

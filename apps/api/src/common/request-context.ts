@@ -7,6 +7,8 @@ export interface RequestContextData {
   orgId?: string;
   roles: string[];
   permissions: string[];
+  orgStatus?: string;
+  orgType?: string;
 }
 
 const storage = new AsyncLocalStorage<RequestContextData>();

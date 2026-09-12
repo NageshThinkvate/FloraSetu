@@ -11,6 +11,9 @@ fi
 pg_ctlcluster 15 main start 2>/dev/null || true
 redis-server --daemonize yes --port 6379 2>/dev/null || true
 
+# Legacy template programs hold :8001/:3000 after a pod restart — stop them.
+supervisorctl stop backend frontend mongodb 2>/dev/null || true
+
 if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='florasetu'" | grep -q 1; then
   sudo -u postgres psql -c "CREATE USER florasetu WITH PASSWORD 'florasetu_dev';"
 fi

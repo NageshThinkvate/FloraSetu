@@ -2,9 +2,11 @@ import { createHmac, timingSafeEqual } from 'crypto';
 
 export interface TokenClaims {
   sub: string;
-  orgId: string;
-  roles: string[];
-  permissions: string[];
+  orgId?: string;
+  roles?: string[];
+  permissions?: string[];
+  type?: 'access';
+  exp?: number;
 }
 
 export interface AuthTokenVerifier {
@@ -33,7 +35,14 @@ export class DevTokenVerifier implements AuthTokenVerifier {
       return null;
     }
     try {
-      return JSON.parse(b64urlDecode(payload).toString('utf8')) as TokenClaims;
+      const claims = JSON.parse(b64urlDecode(payload).toString('utf8')) as TokenClaims;
+      if (claims.exp !== undefined && claims.exp * 1000 <= Date.now()) {
+        return null;
+      }
+      if (claims.type !== undefined && claims.type !== 'access') {
+        return null;
+      }
+      return claims;
     } catch {
       return null;
     }
