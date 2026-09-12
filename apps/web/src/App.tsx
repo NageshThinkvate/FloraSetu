@@ -37,6 +37,8 @@ function Nav(): JSX.Element {
   const platform = me.memberships.some((m) => m.type === 'PLATFORM_OPS' && m.roles.includes('PLATFORM_ADMIN'));
   const ops = me.memberships.some((m) =>
     m.roles.includes('PROCUREMENT_OPS') || m.roles.includes('PLATFORM_ADMIN'));
+  const catalogManager = me.memberships.some((m) =>
+    m.roles.includes('CATALOG_MANAGER') || m.roles.includes('PLATFORM_ADMIN') || m.roles.includes('ORG_ADMIN'));
   return (
     <nav className="top-nav" data-testid="top-nav">
       <Link to="/" data-testid="nav-home">FloraSetu</Link>
@@ -44,7 +46,7 @@ function Nav(): JSX.Element {
       <Link to="/supply/inbox" data-testid="nav-inbox">Inbox</Link>
       <Link to="/catalog" data-testid="nav-catalog">Catalog</Link>
       <Link to="/catalog/capabilities" data-testid="nav-capabilities">Capabilities</Link>
-      <Link to="/catalog/admin" data-testid="nav-catalog-admin">Catalog admin</Link>
+      {catalogManager && <Link to="/catalog/admin" data-testid="nav-catalog-admin">Catalog admin</Link>}
       {ops && <Link to="/ops/desk" data-testid="nav-ops-desk">Ops desk</Link>}
       <Link to="/account" data-testid="nav-account">Account</Link>
       <Link to="/onboarding" data-testid="nav-onboarding">New organization</Link>

@@ -58,6 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   }, []);
 
   const completeLogin = async (data: { accessToken: string; refreshToken: string; userId: string }): Promise<void> => {
+    // Clear any stale org from a previous user before the profile call —
+    // /auth/me with a foreign x-org-id 403s and breaks the login.
+    setActiveOrg(null);
     setSession(data);
     const profile = await apiGet<Me>('/auth/me');
     setMe(profile);

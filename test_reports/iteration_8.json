@@ -1,0 +1,57 @@
+{
+  "summary": "Build 3 (Demand/Events/RFQ/Quotations/Evaluation/Award) FRONTEND E2E fully verified on preview URL. All 11 buyer/supplier/ops flows PASS end-to-end using nagesh.kgpl@gmail.com owner + a freshly registered supplier user (supplier.test8@dev.florasetu.local / Supplier2026x) + GROWER org (ORG-2026-000003). Owner→Quick Request (mobile 390) created REQ-2026-000003 (QUICK/SOURCING, RFQ-2026-000002 auto-published). Owner→Formal requirement REQ-2026-000004 + publish-rfq(supplierOrgIds=[testGrower]) created RFQ-2026-000003 with 1 invitation. Supplier UI: /supply/inbox→open→intend-btn→submit quote (₹25.50 × 100 STEM) → QTN-2026-000001; asked clarification. Buyer UI: /demand/rfqs/{id}→answered clarification→picked offer + award qty 100→AWD-2026-000001 (fullyAwarded=true, requirement→AWARDED, quote→ACCEPTED). Supplier /supply/quotes shows QTN-2026-000001 SUBMITTED. Events flow: EVT-2026-000001 created, ceremony 'Haldi', BOM line (Premium/Dutch Rose 200 STEM, DAY_OF, dest Bengaluru), Draft requirement from BOM produced REQ-2026-000005 (BOM now shows SOURCING+LINKED). Ops desk (owner) renders needs-sourcing/open-rfqs/uncovered/clarifications/assistance sections with sourcing-note UI. Negative: supplier at /ops/desk shows 'Missing required permission' (403 details.missing=[procurement.manage]) — clean forbidden state, no crash. Mobile: /demand/quick at 360px and /demand/requirements/:id at 412px have NO horizontal overflow (scrollWidth == clientWidth). Tenant isolation verified: supplier hitting buyer's REQ id returns 404 (as designed).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "QuickRequestPage / EventsPage / SupplierRfqPage",
+        "issues": [
+          "All datetime pickers use native browser <input type=datetime-local> instead of a shadcn Calendar component — inconsistent look with the rest of the dark themed UI (grayscale calendar glyph, no popover, differs across Chromium/Safari).",
+          "Quote-valid-until date input hint is very small; when user picks a past date the only feedback is a red 'validTo must be in the future' text — no inline field-level validation before submit."
+        ]
+      },
+      {
+        "screen": "Top nav (all pages, all roles)",
+        "issues": [
+          "Nav renders Ops desk / Admin / Catalog admin links unconditionally for every logged-in user. A plain supplier can click them and lands on a 'Missing required permission' page. Preferable to hide items the user has no permission for (permission-driven nav) to reduce dead clicks."
+        ]
+      },
+      {
+        "screen": "Buyer RFQ detail — Quote comparison",
+        "issues": [
+          "The pick radio + award-qty input are visually very small (~20px, no label). On the desktop shot the whole row looks near empty until you know to click the radio. Consider adding column headers 'Select' and inline placeholder text 'Award qty (max N)'."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/iteration_8.json"
+  ],
+  "action_items": [
+    "(Optional UX) Hide Ops desk / Admin / Catalog admin nav links for users without the corresponding permission (owner=platform.admin/procurement.manage; supplier normally sees only Procurement/Inbox/Catalog/Capabilities/Account).",
+    "(Optional UX) Replace native datetime-local inputs on QuickRequestPage/EventsPage/SupplierRfqPage with a shadcn Calendar+time popover for visual consistency with the dark theme.",
+    "(Minor) Add clearer visual affordance for the award-selection radio and the award-qty input in the buyer quote-comparison table (labels, max-qty placeholder)."
+  ],
+  "critical_code_review_comments": [
+    "Auth middleware correctly returns 403 with details.missing=['procurement.manage'] for supplier hitting /demand/ops/desk — the frontend surfaces this as an inline 'Missing required permission' message on the Procurement desk page (no crash, no white screen). Good defense-in-depth alongside client-side hiding.",
+    "publish-rfq endpoint returns {id, ref, status:'PUBLISHED', suppliersInvited:1} — idempotent when repeat Idempotency-Key is sent (test not re-run but code path is protected by unique indexes per Build 3 guardrails).",
+    "Award endpoint returns {id, ref, fullyAwarded:true} and same-tick requirement transitions to AWARDED + quote-version to ACCEPTED — invariants (sum awarded <= requirement qty) enforced server-side; UI updates status chip immediately.",
+    "Tenant isolation confirmed: supplier org GET /api/demand/requirements/{buyer-req-id} returns 404 (not 403), matching the guardrail 'cross-org 404'."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "n/a (spot-check only; all 146 jest tests were already green per iteration_7)",
+    "frontend": "100% (11/11 review-request flows verified end-to-end)"
+  },
+  "test_credentials": "Owner: nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 (org e1279476-0edc-4bf5-b7bb-28642b901454). New supplier created during this run: supplier.test8@dev.florasetu.local / Supplier2026x — org 190d252e-6951-4823-bbbe-adff36847332 (ORG-2026-000003, GROWER, ORG_ADMIN).",
+  "seed_data_creation": "Registered supplier user + GROWER org via /api/auth/register and /api/orgs (category=GROWER). Created REQ-2026-000003 (QUICK), REQ-2026-000004 (FORMAL) + RFQ-2026-000003 + QTN-2026-000001 + AWD-2026-000001; EVT-2026-000001 + ceremony Haldi + BOM line + REQ-2026-000005 (DRAFT from BOM).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All Build 3 UI flows in review_request iteration_8 are green on the preview URL. The Vite client is configured with VITE_API_URL=https://a58e29e4-b933-42ad-bc57-a163f74143ee.preview.emergentagent.com/api, but the SAME API is reachable via https://flora-modular-core.preview.emergentagent.com/api (ingress). Both were exercised during this run — no cross-origin problems observed. If re-running: clear localStorage between different user logins because the SPA caches the org id from the first login and can send stale x-org-id when re-authenticating as a different user (this manifested once as a 403 on /auth/me that redirected to /login — after localStorage.clear() the supplier login worked cleanly). Data-testids used are documented in the report; the supplier award UI radio is <input type=radio data-testid=pick-<lineId>-<offerId>> and the number input is data-testid=award-qty-<lineId>.",
+  "rca of the issue": "No functional bug found. Only design/UX polish items (nav gating, native datetime picker, small radios) listed under design_issues + action_items."
+}

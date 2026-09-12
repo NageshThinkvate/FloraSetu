@@ -109,7 +109,7 @@ export function RfqDetailPage(): JSX.Element {
               <div className="table-wrap">
                 <table className="data-table">
                   <thead>
-                    <tr><th>Offer</th><th>Quoted</th><th>Normalized</th><th>Unit price</th><th>Flags</th><th>Award qty</th></tr>
+                    <tr><th>Offer</th><th>Quoted</th><th>Normalized</th><th>Unit price</th><th>Flags</th><th>Select & award qty</th></tr>
                   </thead>
                   <tbody>
                     {comparison.offers.map((o) => {
@@ -128,12 +128,17 @@ export function RfqDetailPage(): JSX.Element {
                             {line.proposes_substitution && <span className="state-chip frozen">substitution</span>}
                           </td>
                           <td className="inline-form">
-                            <input type="radio" name={`pick-${rl.id}`} data-testid={`pick-${rl.id}-${o.version_id}`}
-                              checked={pick[rl.id] === o.version_id}
-                              onChange={() => setPick({ ...pick, [rl.id]: o.version_id })} />
+                            <label style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+                              <input type="radio" name={`pick-${rl.id}`} data-testid={`pick-${rl.id}-${o.version_id}`}
+                                aria-label={`Select offer ${o.ref}`}
+                                checked={pick[rl.id] === o.version_id}
+                                onChange={() => setPick({ ...pick, [rl.id]: o.version_id })} />
+                              <span className="hint">select</span>
+                            </label>
                             {pick[rl.id] === o.version_id && (
                               <input data-testid={`award-qty-${rl.id}`} type="number" min="0" step="any"
-                                placeholder={`max ${rl.quantity}`} value={qty[rl.id] ?? ''}
+                                aria-label={`Award quantity, max ${rl.quantity}`}
+                                placeholder={`Award qty (max ${rl.quantity})`} value={qty[rl.id] ?? ''}
                                 onChange={(e) => setQty({ ...qty, [rl.id]: e.target.value })} />
                             )}
                           </td>
