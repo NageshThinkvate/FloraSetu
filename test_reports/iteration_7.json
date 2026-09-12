@@ -1,0 +1,28 @@
+{
+  "summary": "PRE-BUILD-3 CONTROL GATE fully verified. yarn test 19 suites/84 tests PASS (incl. prebuild3-gate.e2e-spec.ts). yarn lint + yarn typecheck clean. Migrations 001..009 down/up clean (9 migrations). pytest build2_catalog_gates.py 15/15 PASS after fixing two stale asserts (renamed field data_classification -> validation_status per OD-08). New HTTP gate suite prebuild3_http_gate.py 7/7 PASS against preview URL, covering: F1 commercial-line missing uom -> 400 VALIDATION_FAILED; F2 valid uom -> 201 valid:true with preferredOrderUomId; F3 request-validation transitions DEMO grade_profile -> PENDING_REVIEW; F5 self-approval blocked with 403 code_detail=SELF_APPROVAL; F6 second reviewer (fresh user + CATALOG_VALIDATOR + org membership provisioned via SQL) -> VALIDATED; commercial-check post-validation -> usable:true; F7 normalize-preview PRD-SEED-ROSE_PREMIUM BUNCH->STEM qty 2 -> originalQty 2, originalUomId preserved, conversionVersionNo 1, normalizedQty 40, unit_conversions row unchanged. Git hygiene: no .env* tracked; tag florasetu-build2-accepted present; only test files modified during run.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/prebuild3_http_gate.py",
+    "/app/backend/tests/build2_catalog_gates.py",
+    "/app/test_reports/pytest/prebuild3_http.xml",
+    "/app/test_reports/pytest/prebuild3_gate.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "ValidationService.reviewValidation is clean: SELF_APPROVAL check after PENDING_REVIEW guard returns 403 with code_detail (correct precedence over RBAC because PLATFORM_ADMIN has both catalog.write and catalog.validate).",
+    "normalize-preview correctly returns originalQty/originalUomId + conversionVersionNo without mutating catalog.unit_conversions; ACTIVE row byte-identical before/after (id, factor, version_no).",
+    "commercial-line/validate correctly separates preferred_order_uom_id (UI preselection) from submitted uomId (transaction boundary) per OD-07."
+  ],
+  "updated_files": [
+    "/app/backend/tests/build2_catalog_gates.py (renamed data_classification -> validation_status in 2 asserts to match OD-08 rename)",
+    "/app/backend/tests/prebuild3_http_gate.py (new)"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "n/a (light check: web 200, api/health 200)"},
+  "test_credentials": "Owner nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 + X-Org-Id=514737d2-b7ce-4f20-9724-48752dd9000f (ORG-2026-000000). Second reviewer provisioned dynamically per run.",
+  "seed_data_creation": "Each F6 run registers a new validator+<hex>@dev.florasetu.local user and inserts an ACTIVE membership + CATALOG_VALIDATOR grant in identity.org_memberships/identity.user_roles for the platform org. Idempotent via ON CONFLICT DO NOTHING.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Prebuild3 gate green. Run: `cd /app/apps/api && yarn test` (84 tests) then `pytest /app/backend/tests/prebuild3_http_gate.py /app/backend/tests/build2_catalog_gates.py -o addopts=` (22 tests). The two suites are stable and reusable. Note DB schema deviations from any docs referencing identity.memberships/user_role_grants: actual tables are identity.org_memberships and identity.user_roles.",
+  "rca of the issue": "Two stale pytest asserts in build2_catalog_gates.py referenced legacy field name data_classification which OD-08 renamed to validation_status across all catalog masters. Fix: broadened assertions to accept both names (with new name preferred). No product-code changes needed."
+}

@@ -82,7 +82,7 @@ class TestCatalogProducts:
         items = body.get("items", body if isinstance(body, list) else [])
         assert len(items) >= 1
         # at least one should be DEMO
-        assert any((it.get("data_classification") or it.get("dataClassification")) == "DEMO" for it in items)
+        assert any((it.get("validation_status") or it.get("validationStatus") or it.get("data_classification") or it.get("dataClassification")) == "DEMO" for it in items)
 
     def test_product_detail_shape(self, owner_headers):
         list_r = requests.get(f"{API}/catalog/products", headers=owner_headers, timeout=15)
@@ -94,7 +94,7 @@ class TestCatalogProducts:
         # required child collections
         for key in ("varieties", "gradeProfiles", "packDefinitions", "unitConversions", "handlingProfiles"):
             assert key in d, f"missing {key}: keys={list(d.keys())}"
-        cls = d.get("data_classification") or d.get("dataClassification")
+        cls = d.get("validation_status") or d.get("validationStatus") or d.get("data_classification") or d.get("dataClassification")
         assert cls == "DEMO"
 
 

@@ -42,8 +42,16 @@ Org admin, buyer, supplier, QC agent, logistics ops, finance ops, support agent,
 - ADR-007 (master-data versioning + canonical identity), OD-07/OD-08 (documented ambiguities).
 - Tests: 18 suites / 76 tests green (build2 gate: 20 tests covering mandates 1–23; mandate 24 = agent viewport checks, PASS at 360/390/412 after nav/table-wrap fixes, iteration_6 final).
 
+## Implemented — 2026-06 (Pre-Build-3 control gate)
+- OD-07 RESOLVED — OWNER APPROVED: explicit `uom_id` at transaction boundaries; `preferred_order_uom_id` (commodity/pack) is UI preselection only; `POST /catalog/commercial-line/validate` (400 UOM_REQUIRED) + `POST /catalog/normalize-preview` (preserves original qty/uom, records conversionVersionId, normalized via ACTIVE versioned conversion only, mutates nothing).
+- OD-08 RESOLVED — OWNER APPROVED: `validation_status` lifecycle (DEMO→PENDING_REVIEW→VALIDATED/REJECTED) separate from `status`, review metadata columns, separate-reviewer enforcement (403 SELF_APPROVAL) on grade/handling/conversion masters, `catalog.validate` + CATALOG_VALIDATOR role, production-use check ACTIVE+VALIDATED (+effective window), env escape `CATALOG_ALLOW_DEMO_MASTERS`. data_classification renamed → validation_status (migration 009).
+- Migration 008 table count corrected: **11** new tables (Build 2 report typo).
+- Lisianthus/Eustoma verified: single canonical commodity `PRD-SEED-LISIANTHUS`, alias `Eustoma` (BOTANICAL), zero duplicates, zero transactional references.
+- Git baseline: commit `689543e`, tag `florasetu-build2-accepted`, `.env*` gitignored (no secrets committed; no remote push — awaiting owner authorization).
+- Tests: 19 suites / 84 tests green (new prebuild3-gate suite: F1–F7 + rejection flow).
+
 ## Status
-BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS (acceptance gates green; testing-agent verified, iterations 4–6). Deviations: NestJS+Postgres+Redis vs env default — owner-approved (Build 0). Tech debt: stub media signer, dev HMAC token format (pending OD-02), KMS for TOTP secrets, audit partitioning, /auth/login returns 201 (semantic 200 — cosmetic). Open blockers: none. NEXT BUILD STARTED: NO — waiting for owner acceptance.
+BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. PRE-BUILD-3 CONTROL GATE: PASS. Deviations: NestJS+Postgres+Redis vs env default — owner-approved (Build 0). Tech debt: stub media signer, dev HMAC token format (pending OD-02), KMS for TOTP secrets, audit partitioning, /auth/login returns 201 (semantic 200 — cosmetic). Open blockers: none. NEXT BUILD STARTED: NO — waiting for owner acceptance.
 
 ## Prioritized backlog (next builds)
 - P0 (Build 2 candidates): Catalog & Standards activation; Supply & Inventory service flows (ADR-001 runtime); OIDC provider selection (OD-02) to replace dev HMAC tokens; S3 endpoint + real media signing (OD-03); class-validator DTOs + ValidationPipe hardening; secondary per-IP rate-limit counter.
