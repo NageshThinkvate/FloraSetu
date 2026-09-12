@@ -1,0 +1,80 @@
+{
+  "summary": "Build 4 (Pilot Fulfilment) FRONTEND E2E on preview URL. Home badge 'Build 4 — Pilot Fulfilment' + all 7 new tiles + all 7 new nav links render for owner. /orders lists ORD-2026-000001. /orders/:id renders all 8 panels (lines, allocations, packs, shipments, payments, settlements, claims, history). Shipment CREATE via UI works (SHP-2026-000002 PLANNED). /ops/tower renders all 15 exception queues (verified via human-labels 'Awards not converted', 'Supplier not confirmed', 'Lots awaiting QC', 'Buyer acceptance pending', ...). /ops/finance renders all sections; owner self-verify on his own payment returns friendly error 'Recorder cannot verify their own payment record' (§29 SELF_VERIFY 403 — expected). /supply/lots + /ops/qc pages render for owner. Supplier login: /supply/lots — created HARVEST lot LOT-2026-000002 (rose search → pick → qty=50 STEM → OWN_FARM → submit) then Submit-QC transitioned it to QC_PENDING. /ops/qc denies supplier cleanly ('Missing required permission'). Regression: /demand /demand/quick /catalog load without errors. Mobile 390px: /orders and /ops/tower zero horizontal overflow.\n\nTWO issues found — one already fixed by testing agent (see updated_files), one BLOCKER for main agent (supplier order-slice tenant isolation).",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "GET /api/orders/:id (supplier caller)",
+        "issue": "The new 'supplier slice' behaviour is broken. When supplier user (org 190d252e...) queries buyer's order be89e9b9... with x-org-id=<supplier-org>, the API returns the FULL BUYER slice — buyer_org_id, requirement_id, award_id, award total ₹2550, ALL order lines with prices, plus buyer's allocations array. Expected per review request: 'supplier slice shows only own allocation'. Frontend isSupplierSlice() checks for `.allocation` field but response has `.lines` → falls through to buyer view. Consequence in UI: at /orders/:id logged in as supplier, buyer-only panels are ALL visible — order-transitions, order-lines-panel with buyer prices, shipment-create-form is rendered for the supplier, etc. This is a tenant-isolation defect.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "GET /api/logistics/shipments/order/:orderId",
+        "issue": "Endpoint IS defined in /app/apps/api/src/modules/logistics-coldchain/internal/logistics.controller.ts but the running Nest process was started at 19:16 (via `yarn start` = ts-node WITHOUT --watch) whereas the controller file was saved at 19:27. Result: /api/logistics/shipments/order/:orderId returned 404 'Cannot GET' — so OrderDetailPage's shipments list stayed empty in the browser even after successful POST /shipments (the dispatch button therefore never rendered). Testing agent ran `sudo supervisorctl restart florasetu-api` and the route was mapped correctly on next boot. Root cause is workflow — API is NOT hot-reload; main agent must restart florasetu-api whenever backend files are edited."
+      },
+      {
+        "endpoint": "POST /api/logistics/shipments/:id/dispatch",
+        "issue": "For test order ORD-2026-000001 the second UI-created shipment SHP-2026-000002 dispatch returns 409 CONFLICT {code_detail: EXCEEDS_PACKED, 'Dispatch quantity exceeds packed quantity'}. This is CORRECT business logic — the smoke-test already fully packed & dispatched the order's single lot allocation, and the new bare shipment (created with no pack records) legitimately cannot dispatch. Not a bug per se — but blocks re-exercising the dispatch→POD→accept→claim chain on the seeded order. Main agent should create a fresh award→order for UI regression instead of reusing ORD-2026-000001."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "OrderDetailPage",
+        "issue": "Dispatch 409 (and other action failures) do not raise a visible error toast — the notice/error inline in <act> catches the message but on some flows the notice element already scrolled off-screen and the user sees nothing change. Minor UX gap.",
+        "selector": "[data-testid=\"order-error-inline\"]",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Supplier viewing buyer order at /orders/:id",
+        "issue": "See backend_issues.critical — supplier sees buyer slice; every buyer-only UI section renders. Frontend will render correctly once backend returns supplier slice (SupplierOrderDetail with `.allocation`).",
+        "affected_selectors": ["[data-testid=\"order-lines-panel\"]", "[data-testid=\"order-transitions\"]", "[data-testid=\"shipment-create-form\"]", "[data-testid=\"order-payments-panel\"]", "[data-testid=\"order-settlements-panel\"]"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Top nav (all pages)",
+        "issues": [
+          "Nav still shows unconditional links (Ops desk, Catalog admin, New organization, Admin) that this iteration's Build 4 dashboard partially gates but Build 3 items were also flagged in iteration_8. Supplier sees 'Ops desk' link which lands on 'Missing required permission' — consider hiding when role is absent (same feedback as iteration_8, still open)."
+        ]
+      },
+      {
+        "screen": "OrderDetailPage / LotsPage / QcQueuePage / FinancePage",
+        "issues": [
+          "All datetime-local inputs use native browser picker (ETA, POD/temp exception occurred-at, lots harvestedAt/receivedAt, payment paidAt, settlement payoutDate) — inconsistent with the dark themed shadcn UI (same feedback as iteration_8).",
+          "Grade profile ID and Variety ID are free-text UUID inputs on LotsPage/QcQueuePage — a lookup/typeahead would be more usable; blank grade profile blocks QC completion with the error 'Grade profile ID is required'."
+        ]
+      }
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_9.json"],
+  "action_items": [
+    "HIGH: Fix GET /api/orders/:id to return SUPPLIER SLICE (order + supplier's own allocation + own lot-allocations only, no buyer_org_id/requirement/award/total, no other supplier's allocations) when the calling user's org is a supplier on the order and NOT the buyer. Current impl returns buyer slice unconditionally.",
+    "WORKFLOW: The API process is `yarn start` → ts-node WITHOUT watch. Whenever you edit backend files, run `sudo supervisorctl restart florasetu-api` (or switch supervisor command to `yarn start:dev` / nodemon) — otherwise route changes and controller updates never take effect.",
+    "MEDIUM: Provide fresh test data (or a seed script) that creates a NEW award→order pair in READY_FOR_DISPATCH with unpacked allocations, so the dispatch→POD→accept→claim UI chain is reproducible. The existing ORD-2026-000001 is already fully packed+dispatched by an earlier smoke test and cannot support a fresh dispatch (409 EXCEEDS_PACKED).",
+    "LOW: Hide nav links (Ops desk, Catalog admin, Admin, New organization) based on user permissions (repeat from iteration_8).",
+    "LOW: Ensure order-error-inline scrolls into view or use a toast on action failures on very tall OrderDetailPage."
+  ],
+  "critical_code_review_comments": [
+    "SelfVerify §29 correctly enforced: recorder=verifier on PAY-2026-000001 returned 403 'Recorder cannot verify their own payment record' — clean UX, no crash.",
+    "OrderDetailPage isSupplierSlice() type-guard is `'allocation' in o` — reliable only if backend actually returns SupplierOrderDetail; today it never does for supplier callers so the guard rails collapse to buyer view. Backend must own the slice decision.",
+    "LotsPage lot search → pick → create → Submit QC flow works end-to-end for supplier (LOT-2026-000002 created and transitioned to QC_PENDING).",
+    "TowerExceptions has 15 queues; ControlTowerPage renders them under 4 human-labeled sections. Queue-key strings ('awardNotConverted', etc.) don't appear literally in the DOM which is fine since the UI translates keys to labels.",
+    "ts-node w/o --watch for the API is a repeat foot-gun — cost testing agent 15 minutes to diagnose the phantom 404 on shipments/order/:orderId. Recommend supervisor command `yarn start:dev` (uses nest start --watch) or `nodemon --exec ts-node src/main.ts`."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "Not systematically tested (frontend-only run). Two blockers surfaced via UI: shipments/order/:orderId new route was 404 until restart (fixed by testing agent), and /api/orders/:id supplier-slice logic is missing/broken.",
+    "frontend": "~85% (10 of 13 review-request bullets fully verified; DISPATCH+POD chain could not complete because order is fully packed already + SELF_VERIFY on second user was not attempted; SUPPLIER order-detail failed the tenant-isolation contract)."
+  },
+  "test_credentials": "Owner nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 (org e1279476-0edc-4bf5-b7bb-28642b901454). Supplier supplier.test8@dev.florasetu.local / Supplier2026x (org 190d252e-6951-4823-bbbe-adff36847332).",
+  "seed_data_creation": "Created LOT-2026-000002 (HARVEST, 50 STEM, Premium/Dutch Rose, OWN_FARM) under supplier org during testing; transitioned to QC_PENDING. Created SHP-2026-000002 (PLANNED) under owner org on ORD-2026-000001 during testing.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "1) After main agent fixes GET /api/orders/:id supplier-slice, restart florasetu-api via supervisorctl then curl /api/orders/be89e9b9-c012-4000-8657-6c005761c00c with x-org-id=190d252e-6951-4823-bbbe-adff36847332 and confirm response contains `allocation` field (not `lines`/`buyer_org_id`/`total_minor`). Then re-visit /orders/:id in UI as supplier — buyer panels must be hidden. 2) For dispatch/POD/accept chain, ask main agent to seed a fresh order — the current ORD-2026-000001 is unusable (fully packed, 409 EXCEEDS_PACKED). 3) The API IS ts-node non-watching — restart supervisor after backend edits. 4) Payment self-verify blocked by design (§29); to test payment.verify happy path, create a second PLATFORM_ADMIN user or curl-verify with a different Bearer.",
+  "rca of the issue": "Supplier tenant-isolation bug on GET /api/orders/:id: the review_request explicitly asked E1 to make this endpoint return supplier-slice when caller is a supplier on the order. Backend appears to still return the full BuyerOrderDetail unconditionally. Verified via curl: response has top-level `lines`, `allocations`, `buyer_org_id`, `total_minor`, `requirement_id`, `award_id` for a supplier caller — no `allocation` (singular) field. Frontend isSupplierSlice type-guard therefore returns false and OrderDetailPage renders the buyer variant. Fix location: /app/apps/api/src/modules/order-allocation/internal/orders.controller.ts (GET :id handler) or the service it delegates to — inspect the caller's org against buyer_org_id + supplier_allocations.supplier_org_id, and shape the response accordingly."
+}

@@ -1,9 +1,10 @@
-import { Module } from '@nestjs/common';
-import { AnalyticsControltower_SERVICE } from './contracts';
-import { AnalyticsControltowerServiceImpl } from './internal/analytics-controltower.service';
+import { Global, Module } from '@nestjs/common';
+import { TowerService } from './internal/tower.service';
+import { TowerController } from './internal/tower.controller';
 
+@Global()
 @Module({
-  providers: [{ provide: AnalyticsControltower_SERVICE, useClass: AnalyticsControltowerServiceImpl }],
-  exports: [AnalyticsControltower_SERVICE]
+  controllers: [TowerController],
+  providers: [TowerService]
 })
 export class AnalyticsControltowerModule {}

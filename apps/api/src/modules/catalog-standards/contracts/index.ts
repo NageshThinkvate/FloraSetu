@@ -23,6 +23,12 @@ export interface CatalogStandardsService {
   } | null>;
   // Managed sourcing: orgs with ACTIVE capability on varieties of these commodities.
   findCapableSuppliers(commodityIds: string[]): Promise<string[]>;
+  // QC: versioned grade-profile snapshot at inspection time (never invent grades).
+  getGradeProfileSnapshot(gradeProfileId: string): Promise<{
+    id: string; versionNo: number; rules: unknown; status: string; validationStatus: string;
+  } | null>;
+  // Lot registration: current ACTIVE handling profile for a commodity (null when none).
+  getActiveHandlingProfile(commodityId: string): Promise<{ id: string; versionNo: number } | null>;
 }
 
 export const CatalogStandards_SERVICE = 'CatalogStandards_SERVICE';

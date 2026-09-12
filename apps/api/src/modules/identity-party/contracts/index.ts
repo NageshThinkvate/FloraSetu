@@ -7,6 +7,8 @@ export interface IdentityPartyService {
   userExists(userId: string): Promise<boolean>;
   // Managed sourcing filter: subset of orgIds that are ACTIVE (optionally by type).
   filterActiveOrgs(orgIds: string[], supplierSideOnly?: boolean): Promise<string[]>;
+  // ADR-004: true when the org has an open payout-freezing bank change.
+  hasPayoutFreeze(orgId: string): Promise<boolean>;
 }
 
 export const IdentityParty_SERVICE = 'IdentityParty_SERVICE';

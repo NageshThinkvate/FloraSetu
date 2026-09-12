@@ -1,0 +1,41 @@
+{
+  "summary": "Build 4 (Pilot Fulfilment) FRONTEND retest #2 after iteration_10 fixes. ALL FOUR HIGH/MEDIUM regressions from iter_10 are now GREEN. (1) Claim transition chain via UI now works end-to-end — walked a NEW CLM-2026-000002 through SUBMITTED → EVIDENCE_VALIDATION → UNDER_REVIEW → PROPOSED_RESOLUTION → APPROVED → FINANCIAL_ADJUSTMENT (₹500 adjustment input rendered) → CLOSED without any error, no visible claim-error-inline; final status chip CLOSED, resolution note shown, Decisions(1) APPROVED, transition panel hidden on terminal. CLM-2026-000001 still CLOSED with decisions panel + APPROVED row + resolution note '₹500 credit for quality mismatch'. (2) Temperature excursion full chain: POST /logistics/shipments/:id/temperature-exception CRITICAL 8.5°C returns {blocked:true, exceptionId}; shipment card shows 'ACCEPTANCE HOLD' + exception-note 'Notified driver'; POD recorded; buyer accept blocked with 409 DELIVERY_HOLD + order-error-inline text 'Delivery acceptance is on HOLD…' + scrollY=0 (scroll-to-top fix verified); /ops/tower openShipmentExceptions row rendered with blocks_buyer_acceptance/blocks_supplier_settlement chips; tower-resolve released hold with notice 'Exception resolved — hold released'; retry accept → order ACCEPTED. (3) Supplier slice on OrderDetailPage now hides payment-record-form (and settlement-record-form, order-transitions, order-lines-panel, order-accept-panel, order-claim-panel, shipment-create-form); only read-only order-payments-panel + order-settlements-panel + My allocation panel remain. Nav on supplier session also correctly hides Ops desk/QC/Tower/Finance/Admin. (4) ClaimDetailPage code has window.scrollTo(top) + claim-error-inline (verified in src). Also verified: settlement via UI on new order → STL-2026-000003 RECORDED and appears in tower.settlementPending; /ops/finance renders; /claims list renders both CLM-2026-000002 + CLM-2026-000001; mobile 390px /claims/:id no horizontal overflow (scrollW=clientW=390).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "OrderDetailPage",
+        "issues": [
+          "order-notice text is not cleared between actions — after recording a settlement it still shows 'Supplier settlement recorded.' even if a subsequent action (e.g. payment form) fails HTML5 validation and never fires. Minor UX inconsistency, not a functional bug.",
+          "Datetime-local inputs still use native browser picker (repeat from iter_8/9/10 — pre-existing, low priority)."
+        ]
+      }
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_11.json"],
+  "action_items": [
+    "None — all P0/P1 items from iter_10 are resolved. Optional polish: clear order-notice on new form submits and adopt shadcn calendar in place of native datetime-local (LOW, deferred from iter_8)."
+  ],
+  "critical_code_review_comments": [
+    "claims.service.ts terminal-decision gating verified: only APPROVED/REJECTED write claim_decisions; other transitions just UPDATE claims.claims.status. Chain of 6 transitions succeeded without any 500 or check-constraint violation.",
+    "shipments.service.ts durationSeconds ?? 0 aligns with the relaxed CHECK duration_seconds>=0 in migration 012; excursion→exception→hold→resolve chain now fully functional.",
+    "OrderDetailPage.tsx: payment-record-form + settlement-record-form both gated behind !supplierSlice; supplier view now correctly renders only lists (order-payments-panel, order-settlements-panel) + My allocation.",
+    "ClaimDetailPage.tsx has window.scrollTo({top:0}) on error and renders [data-testid=claim-error-inline] — parity with OrderDetailPage error UX confirmed."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "Curl-verified: claim.transition (6/6 steps 200), temperature-exception 200 with blocked=true, orders/:id/accept blocks with 409 DELIVERY_HOLD then 200 after resolve, tower queues populate correctly.",
+    "frontend": "100% of retest bullets green (7/7). Claim chain, temp hold chain, supplier slice, ClaimDetailPage scroll-error, settlement chain, /claims list + mobile 390px — all PASS."
+  },
+  "test_credentials": "Owner nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 (org e1279476-0edc-4bf5-b7bb-28642b901454). Supplier supplier.test8@dev.florasetu.local / Supplier2026x (org 190d252e-6951-4823-bbbe-adff36847332).",
+  "seed_data_creation": "Ran /app/scripts/seed-pilot-order.sh once → ORD-2026-000006 (id 127df0e1-0714-466b-aa5c-3385fd35c0a4). Created SHP-2026-000005 (REEFER_ROAD, delivered), temp excursion 86e3f74d..., exception 1bbc9cfe... (resolved), CLM-2026-000002 (walked full chain to CLOSED with ₹500 FA), STL-2026-000003 RECORDED.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Build 4 pilot fulfilment retest #2 is fully green. If more Build 4 UI polish work happens, only design_issues remain (order-notice stale-message, datetime picker). QC HOLD flow was NOT re-exercised in this pass (seed script auto-completes QC with accepted=50/held=0, so lot always lands AVAILABLE — a QC-hold variant seed is needed to visually retest, but backend/UI code paths were already covered in iterations 8/9). Existing IDs: ORD-2026-000006 id=127df0e1-0714-466b-aa5c-3385fd35c0a4 (ACCEPTED, claim-open cleared after CLM-2026-000002 CLOSED), SHP-2026-000005 (DELIVERED, exception resolved), CLM-2026-000002 id=4cd967bf-7552-4525-b0ad-eb205ffc5ebb (CLOSED), STL-2026-000003 (RECORDED, awaiting owner self-verify → will 403 by design).",
+  "rca of the issue": "All three iter_10 blockers resolved as designed: (a) claims.service.ts.transition() gates claim_decisions insert to terminal outcomes only — verified by successfully walking through 5 non-terminal states without check-constraint violation and one APPROVED insert visible in the CLOSED claim's Decisions panel; (b) migration 012 relaxed duration_seconds>=0 + service coalesces null→0 — CRITICAL excursion now creates exception with blocked=true and populates tower.openShipmentExceptions; (c) OrderDetailPage payment-record-form is gated behind !supplierSlice mirroring the settlement-record-form guard."
+}

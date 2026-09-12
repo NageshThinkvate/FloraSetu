@@ -12,7 +12,12 @@ export const TRANSACTIONAL_PERMISSIONS = new Set([
   'org.write', 'branch.write', 'contact.write', 'member.invite',
   'role.manage', 'kyb.submit', 'bank.write', 'config.write',
   'event.write', 'demand.write', 'demand.submit', 'rfq.publish',
-  'quote.submit', 'award.create'
+  'quote.submit', 'award.create',
+  // Build 4 pilot fulfilment writes
+  'order.manage', 'inventory.reserve', 'inventory.allocate', 'lot.write',
+  'qc.inspect', 'pack.manage', 'dispatch.manage', 'delivery.accept',
+  'payment.record', 'payment.verify', 'settlement.record', 'settlement.verify',
+  'claim.create', 'claim.manage'
 ]);
 
 @Injectable()

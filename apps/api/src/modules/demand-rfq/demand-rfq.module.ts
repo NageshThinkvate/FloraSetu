@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { DemandRfq_SERVICE } from './contracts';
 import { DemandRfqServiceImpl } from './internal/demand-rfq.service';
 import { EventsService } from './internal/events.service';
@@ -15,6 +15,9 @@ import { OpsController } from './internal/ops.controller';
 
 // Cross-context dependencies are injected via contract tokens only; the provider
 // modules are @Global, so no module imports appear here (docs/04 boundary rule).
+// Global contract provider: order-allocation, supply, quality, logistics, payments
+// and claims inject DemandRfq_SERVICE without importing this module (docs/04 boundary).
+@Global()
 @Module({
   controllers: [EventsController, RequirementsController, RfqsController, OpsController],
   providers: [

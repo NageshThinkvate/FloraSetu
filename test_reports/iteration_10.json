@@ -1,0 +1,87 @@
+{
+  "summary": "Build 4 (Pilot Fulfilment) FRONTEND retest. RETEST-HIGH supplier-slice tenant isolation → PASS (backend returns supplier slice with allocation/lines/lotAllocations/ref/status/delivery_destination only; no buyer_org_id/total_minor/award_id/requirement_id; UI hides order-transitions/order-lines-panel/order-accept-panel/order-claim-panel/shipment-create-form/settlement-record-form/order-history-panel; only payment-record-form still renders — LOW leak, backend still 403s recording, but form should be hidden). FULL PILOT CHAIN on ORD-2026-000004 → PASS through shipment CREATE (SHP-2026-000003)→ dispatch (IN_TRANSIT / order DISPATCHED)→ POD (order DELIVERED)→ Buyer accept qty 40 (ACCEPTED)→ Report issue QUALITY_MISMATCH disputed=5 (CLM-2026-000001 SUBMITTED, listed in /claims). PAYMENT: PAY-2026-000002 RECORDED, self-verify shows friendly 403 'Recorder cannot verify their own payment record' (§29). SETTLEMENT: STL-2026-000002 RECORDED. Control tower renders all queues, shows the RECORDED payment (paymentUnverified) and claim (claimOpen); openShipmentExceptions stayed 0 because temperature-exception 500'd. Mobile 390px on /orders/:id and /ops/tower: no horizontal overflow. Regression /demand /supply/inbox /catalog render. THREE backend blockers found (see below); one already fixed by testing agent.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST /api/claims/:id/transition",
+        "issue": "Claim ops transitions all return 500 because claims.service.ts:197 unconditionally inserts (claim_id, outcome=dto.to, adjustment_minor, decided_by) into claims.claim_decisions on EVERY status change. `claim_decisions.outcome` has CHECK (outcome IN ('APPROVED','PARTIAL','REJECTED')), so any intermediate transition (EVIDENCE_VALIDATION, UNDER_REVIEW, PROPOSED_RESOLUTION, FINANCIAL_ADJUSTMENT, CLOSED) violates the check constraint. Also there is a UNIQUE(claim_id) on claim_decisions so at most one row can ever be inserted. Fix: only insert a claim_decisions row on terminal decision statuses (APPROVED/REJECTED/PARTIAL); other transitions should just UPDATE claims.claims.status + write audit. Verified via curl: /api/claims/c2823360.../transition {\"to\":\"EVIDENCE_VALIDATION\"} → 500 INTERNAL_ERROR; log: `new row for relation \"claim_decisions\" violates check constraint \"claim_decisions_outcome_check\"`.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "POST /api/logistics/shipments/:id/temperature-exception",
+        "issue": "Reporting a temperature excursion returns 500 because logistics.temperature_excursion_events.duration_seconds is NOT NULL in migration 006/012, but the DTO/service (shipments.service.ts:262-268) passes `dto.durationSeconds ?? null`. Since the field is optional in TemperatureExceptionDto and UI doesn't collect it, every excursion POST fails. Consequence: shipment.acceptance_hold is never set, buyer acceptance is NOT blocked, control tower openShipmentExceptions queue never populates. Fix options: (a) drop NOT NULL on duration_seconds; (b) require durationSeconds in DTO and UI; (c) coalesce to 0 in insert. Log: `null value in column \"duration_seconds\" of relation \"temperature_excursion_events\" violates not-null constraint`.",
+        "priority": "HIGH"
+      },
+      {
+        "endpoint": "GET /api/claims/:id (fixed by testing agent)",
+        "issue": "Was returning 500 because claims.service.ts:264 ORDER BY created_at but claim_decisions has decided_at (no created_at). Testing agent changed ORDER BY to decided_at and restarted florasetu-api; endpoint now returns 200 with evidences/decisions arrays. ClaimDetailPage now loads.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "GET /api/orders/:id (supplier slice)",
+        "issue": "Supplier slice includes lines[].unit_price_minor (₹30). Review request 'Buyer total/prices must not appear' — this is the supplier's own allocation-line price (SAL) which arguably a supplier should see. Cross-check spec if this should be redacted."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "OrderDetailPage",
+        "issue": "For supplier viewers the External payments panel still renders the `payment-record-form` (record-payment inline form). Should be gated behind !supplierSlice like the settlement-record-form is (line 454). Backend likely 403s the POST but the form is visible.",
+        "selector": "[data-testid=\"payment-record-form\"]",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Claim ops transitions",
+        "issue": "All transitions from SUBMITTED forward fail 500 due to backend check-constraint (see backend HIGH #1). Frontend correctly surfaces console 500 but the inline claim-error selector was not populated with server message; UI just silently reloads with old status.",
+        "affected_selectors": ["[data-testid=\"claim-transition-btn\"]","[data-testid=\"claim-error\"]"]
+      },
+      {
+        "flow": "Temperature exception + delivery hold",
+        "issue": "Cannot verify the CRITICAL-excursion → shipment ACCEPTANCE HOLD → buyer-accept blocked → control-tower queue → resolve chain because backend 500 on POST. Buyer accept succeeded (order → ACCEPTED) since no hold was ever applied — user-visible confirmation the hold path is currently a no-op.",
+        "affected_selectors": ["[data-testid^=\"temp-btn-\"]"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Top nav (owner)",
+        "issues": ["Owner nav shows all links (Ops desk, Catalog admin, QC, Tower, Finance, New organization, Admin) — expected for owner. For supplier session Ops desk / QC / Tower / Finance / Catalog admin / New organization / Admin all still render (iteration 8/9 flagged) — supplier user (org 190d252e...) has only ORG_ADMIN role. Nav should hide privileged links; today clicking lands on 'Missing required permission'."]
+      },
+      {
+        "screen": "OrderDetailPage",
+        "issues": ["Datetime-local uses browser default (already flagged iteration 8/9).","Claim-transition error does not scroll into view — dispatch/other errors do (fix from iteration_9), but ClaimDetailPage transition doesn't show a visible error line when the API returns 500."]
+      }
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_10.json"],
+  "action_items": [
+    "HIGH: Fix POST /api/claims/:id/transition — do not insert into claim_decisions on every intermediate transition; only insert on terminal outcomes APPROVED/PARTIAL/REJECTED (respecting UNIQUE(claim_id)). Update claims.service.ts:197-201.",
+    "HIGH: Fix temperature excursion — either drop NOT NULL on temperature_excursion_events.duration_seconds (add migration) or coalesce to 0 in shipments.service.ts:266-268 or require it in TemperatureExceptionDto + UI input. This blocks the entire hold/delivery-block chain.",
+    "MEDIUM: Hide `payment-record-form` on OrderDetailPage when supplierSlice is true (mirror the settlement-record-form gate at line 454).",
+    "MEDIUM: On ClaimDetailPage surface transition/respond errors in a visible [data-testid=\"claim-error\"] element and scroll-to-top on failure (parity with OrderDetailPage fix from iter 9).",
+    "LOW: Nav gating for supplier (Ops desk / QC / Tower / Finance / Catalog admin / New organization / Admin) — repeat from iter 8/9.",
+    "WORKFLOW: florasetu-api is `yarn start` non-watch — restart with `sudo supervisorctl restart florasetu-api` after backend edits (repeat from iter 9)."
+  ],
+  "critical_code_review_comments": [
+    "Supplier-slice fix in order-policies isOps() is now correct and verified in UI + curl.",
+    "claims.service.ts.transition inserts a claim_decisions row on every state change — misaligned with schema (UNIQUE per claim, CHECK on outcome). Root cause: single method conflates workflow transition with terminal decision recording.",
+    "temperature_excursion_events schema and TemperatureExceptionDto disagree on duration_seconds nullability. This is a classic schema/DTO mismatch — needs schema+DTO alignment.",
+    "OrderDetailPage.tsx line 425-435 payment-record-form is not gated by !supplierSlice like settlement (line 454) — asymmetry.",
+    "Fixed by testing agent: claims.service.ts:264 ORDER BY created_at → decided_at (claim_decisions has no created_at column)."
+  ],
+  "updated_files": ["/app/apps/api/src/modules/claims-support/internal/claims.service.ts (ORDER BY fix in get())"],
+  "success_rate": {
+    "backend": "Not systematically covered; three blockers surfaced via UI (claim.transition 500, temperature-exception 500, claim.get 500 — last one fixed).",
+    "frontend": "~78% (7 of 9 review bullets green; 2 blocked by backend blockers — claim ops chain 500 all transitions; temp-exception 500 blocks hold/delivery-block/tower-openShipmentExceptions/exception-resolve path)."
+  },
+  "test_credentials": "Owner nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 (org e1279476-0edc-4bf5-b7bb-28642b901454). Supplier supplier.test8@dev.florasetu.local / Supplier2026x (org 190d252e-6951-4823-bbbe-adff36847332).",
+  "seed_data_creation": "Ran /app/scripts/seed-pilot-order.sh once → ORD-2026-000005 (id b6aa9675-c967-402f-b962-7c40c8303b6c, READY_FOR_DISPATCH, LOT-2026-000005). Created SHP-2026-000003 (owner UI), SHP-2026-000004 (owner UI on new order), PAY-2026-000002, STL-2026-000002, CLM-2026-000001 during test.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "1) After main agent fixes claim.transition and temperature-exception, re-run: (a) transitions EVIDENCE_VALIDATION→UNDER_REVIEW→PROPOSED_RESOLUTION→APPROVED→FINANCIAL_ADJUSTMENT (adj ₹500)→CLOSED on the SUBMITTED claim CLM-2026-000001 (id c2823360-2b66-4680-af16-2f31c62ec4f2), (b) run seed script for a fresh READY_FOR_DISPATCH order, create shipment, dispatch, POST temperature-exception CRITICAL, verify shipment.acceptance_hold=true, verify accept blocked with DELIVERY_HOLD, verify control-tower openShipmentExceptions queue populated, then POST /api/logistics/exceptions/:id/resolve and verify hold cleared. 2) Also verify the QC pack-with-hold flow (seed script currently auto-completes QC with accepted=50, held=0 so QC HOLD path unrunnable via seed — main agent should add a seed variant that leaves the lot on QC HOLD, or testing agent must curl /qc/complete with held qty). 3) florasetu-api is ts-node non-watch — restart on backend edits.",
+  "rca of the issue": "Two independent regressions in Build 4 pilot: (i) claims.service.ts transition() writes a claim_decisions row every call — the code was likely copy-pasted between 'record decision' and 'transition state', but claim_decisions is (per schema) an immutable terminal-decision ledger with CHECK on outcome and UNIQUE per claim; (ii) temperature_excursion_events schema requires duration_seconds NOT NULL but the manual-report DTO makes it optional and the UI never collects it, so every manual excursion 500s. Both bugs are pure code/schema issues, not env or infra."
+}

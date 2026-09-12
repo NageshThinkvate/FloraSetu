@@ -1,9 +1,2 @@
-import { Injectable } from '@nestjs/common';
-import { QualityTraceabilityService } from '../contracts';
-
-@Injectable()
-export class QualityTraceabilityServiceImpl implements QualityTraceabilityService {
-  contextKey(): 'quality-traceability' {
-    return 'quality-traceability';
-  }
-}
+// Re-export: the contract implementation lives in custody.service.ts.
+export { QualityTraceabilityServiceImpl } from './custody.service';

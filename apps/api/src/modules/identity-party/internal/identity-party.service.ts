@@ -33,4 +33,15 @@ export class IdentityPartyServiceImpl implements IdentityPartyService {
     );
     return r.rows.map((row) => row.id);
   }
+
+  // ADR-004: open bank change with payout_freeze blocks new settlement payouts.
+  async hasPayoutFreeze(orgId: string): Promise<boolean> {
+    const r = await this.db.query(
+      `SELECT 1 FROM identity.bank_change_requests
+       WHERE org_id = $1 AND payout_freeze = true
+         AND status IN ('PENDING_REVERIFICATION','APPROVED_FIRST') LIMIT 1`,
+      [orgId]
+    );
+    return (r.rowCount ?? 0) > 0;
+  }
 }

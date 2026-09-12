@@ -166,4 +166,34 @@ export class CatalogStandardsServiceImpl implements CatalogStandardsService {
     );
     return r.rows.map((row) => row.org_id);
   }
+
+  // QC: grade-profile snapshot including version — inspections must pin the version used.
+  async getGradeProfileSnapshot(gradeProfileId: string) {
+    const r = await this.db.query(
+      `SELECT id, version_no, rules, status, validation_status FROM catalog.grade_profiles WHERE id = $1`,
+      [gradeProfileId]
+    );
+    if (r.rowCount === 0) {
+      return null;
+    }
+    const row = r.rows[0];
+    return {
+      id: row.id, versionNo: row.version_no, rules: row.rules,
+      status: row.status, validationStatus: row.validation_status
+    };
+  }
+
+  async getActiveHandlingProfile(commodityId: string) {
+    const r = await this.db.query(
+      `SELECT id, version_no FROM catalog.handling_profiles
+       WHERE (commodity_id = $1 OR commodity_id IS NULL) AND status = 'ACTIVE'
+         AND effective_from <= now() AND (effective_to IS NULL OR effective_to > now())
+       ORDER BY version_no DESC LIMIT 1`,
+      [commodityId]
+    );
+    if (r.rowCount === 0) {
+      return null;
+    }
+    return { id: r.rows[0].id, versionNo: r.rows[0].version_no };
+  }
 }

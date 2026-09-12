@@ -11,9 +11,16 @@ const FEATURE_LINKS = [
   { to: '/demand/quick', label: 'Quick request', testid: 'home-link-quick', blurb: 'Mobile-first: product, qty, unit, date — done' },
   { to: '/demand/events', label: 'Events', testid: 'home-link-events', blurb: 'Ceremonies + bill of materials sourcing' },
   { to: '/demand/rfqs', label: 'My RFQs', testid: 'home-link-rfqs', blurb: 'Invitations, quote comparison, awards' },
+  { to: '/orders', label: 'My orders', testid: 'home-link-orders', blurb: 'Award-converted orders, delivery acceptance' },
   { to: '/supply/inbox', label: 'Supplier inbox', testid: 'home-link-inbox', blurb: 'Invitations awaiting your quote' },
   { to: '/supply/quotes', label: 'My quotations', testid: 'home-link-quotes', blurb: 'Submitted quotes and versions' },
+  { to: '/supply/orders', label: 'Supplier fulfilment', testid: 'home-link-fulfilment', blurb: 'Allocations to confirm, pack and ship' },
+  { to: '/supply/lots', label: 'My supply lots', testid: 'home-link-lots', blurb: 'Harvest/stock intake, QC submission, lot media' },
+  { to: '/claims', label: 'Claims', testid: 'home-link-claims', blurb: 'Post-delivery issues with evidence trail' },
   { to: '/ops/desk', label: 'Procurement desk', testid: 'home-link-ops', blurb: 'Managed sourcing queues (ops)' },
+  { to: '/ops/qc', label: 'QC queue', testid: 'home-link-qc', blurb: 'Lot inspections with pinned grade profiles (ops)' },
+  { to: '/ops/tower', label: 'Pilot control tower', testid: 'home-link-tower', blurb: 'Exception queues across the pilot (ops)' },
+  { to: '/ops/finance', label: 'Finance desk', testid: 'home-link-finance', blurb: 'External payments + supplier settlements (ops)' },
   { to: '/catalog', label: 'Catalog', testid: 'home-link-catalog', blurb: 'Canonical products, grades, packs, UoM' },
   { to: '/account', label: 'Account', testid: 'home-link-account', blurb: 'Profile, MFA, orgs, KYB, bank' }
 ];
@@ -36,7 +43,7 @@ export function AppShell(): JSX.Element {
     <main className="app-shell" data-testid="app-shell">
       <header className="shell-header">
         <h1>FloraSetu</h1>
-        <span className="badge" data-testid="build-badge">Build 3 — Demand · RFQ · Awards</span>
+        <span className="badge" data-testid="build-badge">Build 4 — Pilot Fulfilment</span>
       </header>
       <p className="health-line" data-testid="api-health">
         API:{' '}

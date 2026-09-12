@@ -94,3 +94,51 @@ All catalog writes are audited (core.audit_events, trace_id) and publish `catalo
 | POST | /demand/awards/:id/prepare-order | award.read | inert CreateOrderFromAward (PENDING_BUILD_5) |
 | GET | /demand/ops/desk | procurement.manage | cross-tenant queues + deadline risk |
 | POST/GET | /demand/ops/requirements/:id/sourcing-notes | procurement.manage | audited |
+
+## Pilot Fulfilment (Build 4) — DTO-validated; mutating writes require Idempotency-Key
+| Method | Path | Permission | Notes |
+|---|---|---|---|
+| POST | /orders/convert-award | order.manage | FINAL award → order PENDING_CONFIRMATION; one order per award; replay-safe |
+| GET | /orders | order.read | buyer's orders |
+| GET | /orders/allocations/mine | order.read | supplier's allocations + line fulfilment |
+| POST | /orders/allocations/:id/confirm | lot.write | supplier; order CONFIRMED when all confirm |
+| POST | /orders/allocations/:id/shortfall | order.manage | line → SHORT |
+| POST | /orders/allocate | inventory.allocate | buyer/ops only; row-locked ADR-001 balances; UoM must match |
+| GET | /orders/:id | order.read | buyer full view; supplier slice (own allocation only); outsider 404 |
+| POST | /orders/:id/transition | order.manage | manual: ALLOCATING/QC_PACK/READY_FOR_DISPATCH/CLOSED/CANCELLED (cancel releases lots) |
+| POST | /orders/:id/accept | delivery.accept | buyer; blocked by open CRITICAL exception (409 DELIVERY_HOLD) |
+| POST | /supply/lots/stock · /harvest | lot.write | idempotent; available=0 until QC; Guardrail B masters only |
+| GET | /supply/lots · /supply/lots/:id | lot.read | own org; cross-org = procurement.manage or buyer with allocation |
+| POST/GET | /supply/lots/:id/media | lot.write / lot.read | actual-lot photos; signed URLs (OD-03 dev store) |
+| POST | /supply/lots/:id/submit-qc | lot.write | → QC_PENDING |
+| POST | /supply/lots/:id/resolve-hold | lot.write | held qty must split exactly (400 otherwise) |
+| GET | /quality/queue | qc.inspect | QC_PENDING lots |
+| POST | /quality/inspections | qc.inspect | same-org conflict blocked (409 QC_CONFLICT) unless ops override with reason |
+| POST | /quality/inspections/:id/complete | qc.inspect | idempotent; pinned grade-profile version; accepted/rejected/held math |
+| GET | /quality/inspections/:id | qc.read | inspector org / lot supplier org / ops |
+| POST | /quality/custody | pack.manage | append-only custody event (DB rules block mutation) |
+| GET | /quality/custody/lot/:lotId | qc.read | lot owner or procurement.manage only |
+| POST | /logistics/pack | pack.manage | line must be ALLOCATED; packed ≤ allocated (409 EXCEEDS_ALLOCATED) |
+| GET | /logistics/pack/:orderId | pack.manage | order parties + ops |
+| POST | /logistics/shipments | dispatch.manage | order must be READY_FOR_DISPATCH; tempControlled explicit |
+| GET | /logistics/shipments/order/:orderId · /logistics/shipments/:id | order.read | buyer/supplier/ops; outsider 404 |
+| POST | /logistics/shipments/:id/dispatch | dispatch.manage | idempotent; atomic lot+line+custody+order |
+| POST | /logistics/shipments/:id/pod | dispatch.manage | one POD per shipment; order DELIVERED → ACCEPTANCE_PENDING |
+| POST | /logistics/shipments/:id/temperature-exception | dispatch.manage | WARNING logs; CRITICAL blocks acceptance+settlement (ADR-002) |
+| POST | /logistics/exceptions/:id/resolve | procurement.manage | releases both holds; audited |
+| POST | /finance/payments | payment.record | EXTERNAL_RECORDED only — no gateway (§22) |
+| POST | /finance/payments/:id/verify | payment.verify | recorder ≠ verifier (403 SELF_VERIFY, §29) |
+| GET | /finance/payments/order/:orderId | order.read | order parties + finance |
+| POST | /finance/settlements | settlement.record | net = gross − deductions − claim adj; supplier SELF_DEALING blocked |
+| POST | /finance/settlements/:id/verify · /complete | settlement.verify | verify≠recorder; complete blocked by payout freeze (ADR-004) + open CRITICAL exception; order → SETTLED |
+| POST | /finance/settlements/:id/adjustments | settlement.record | ADR-003: COMPLETED rows immutable — corrections via adjustments |
+| GET | /finance/settlements/mine · /order/:orderId | order.read | supplier sees own rows only |
+| POST | /claims | claim.create | idempotent; delivered orders only (409 otherwise) |
+| GET | /claims · /claims/:id | claim.create | parties + claim.manage; outsider 404 |
+| POST | /claims/:id/submit | claim.create | idempotent; order → CLAIM_OPEN |
+| POST | /claims/:id/respond | claim.create | supplier counterparty response |
+| POST | /claims/:id/evidence | claim.create | photo/PDF evidence via media objects |
+| POST | /claims/:id/transition | claim.manage | lifecycle map; terminal APPROVED/REJECTED recorded once in immutable decisions ledger |
+| GET | /tower/exceptions | procurement.manage | 15 aggregated exception queues (read-only via contracts) |
+| POST | /media | authenticated | base64 upload, buckets: media/pilot/claim (OD-03 dev store) |
+| GET | /media/raw/:key | signed URL | 5-min TTL HMAC signature |
