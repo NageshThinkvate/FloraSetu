@@ -66,7 +66,7 @@ BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. PRE-BUILD-3 CONTROL GATE: PASS. Dev
 - Git baseline: commit 6e1a8eb, tag florasetu-build3-accepted.
 
 ## Status
-BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. PRE-BUILD-3 GATE: PASS. BUILD 3: PASS (backend 146/146 green, frontend 11/11 testing-agent verified). NEXT: awaiting owner acceptance + Build 4 authorization (orders/lots/logistics remain NOT authorized).
+BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. PRE-BUILD-3 GATE: PASS. BUILD 3: PASS (backend 146/146 green, frontend 11/11 testing-agent verified). Home shell updated: Build 3 badge + live-screen links (/demand, /demand/quick, /demand/events, /demand/rfqs, /supply/inbox, /supply/quotes, /ops/desk, /catalog, /account) + sign-in CTA for logged-out users. NEXT: awaiting owner acceptance + Build 4 authorization (orders/lots/logistics remain NOT authorized).
 
 ## Prioritized backlog (next builds)
 - P0 (Build 2 candidates): Catalog & Standards activation; Supply & Inventory service flows (ADR-001 runtime); OIDC provider selection (OD-02) to replace dev HMAC tokens; S3 endpoint + real media signing (OD-03); class-validator DTOs + ValidationPipe hardening; secondary per-IP rate-limit counter.
