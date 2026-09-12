@@ -1,0 +1,14 @@
+{
+  "identity-party": ["identity"],
+  "catalog-standards": ["catalog"],
+  "supply-inventory": ["supply"],
+  "demand-rfq": ["demand"],
+  "auction-market": ["auction"],
+  "order-allocation": ["ordering"],
+  "quality-traceability": ["quality"],
+  "logistics-coldchain": ["logistics"],
+  "payments-settlement": ["payments"],
+  "claims-support": ["claims"],
+  "notifications": ["notifications"],
+  "analytics-controltower": ["analytics"]
+}

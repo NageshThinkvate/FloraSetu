@@ -1,0 +1,40 @@
+import { DynamicModule, Global, Module, Type } from '@nestjs/common';
+import { APP_GUARD, Reflector } from '@nestjs/core';
+import { AppConfig } from '../config/configuration';
+import { DatabaseModule } from './database/database.module';
+import { AuditService } from './audit/audit.service';
+import { OutboxService } from './outbox/outbox.service';
+import { FeatureFlagsService } from './flags/feature-flags.service';
+import { MediaService } from './media/media.service';
+import { ReferenceIdService } from './pagination/reference-id.service';
+import { RbacGuard } from './authz/rbac.guard';
+import { HealthController } from './health/health.controller';
+import { BaselineController } from './baseline/baseline.controller';
+
+@Global()
+@Module({})
+export class CommonModule {
+  static forRoot(config: AppConfig): DynamicModule {
+    const providers = [
+      AuditService,
+      OutboxService,
+      FeatureFlagsService,
+      MediaService,
+      ReferenceIdService,
+      Reflector
+    ];
+    const controllers: Type<unknown>[] = [HealthController];
+    if (config.nodeEnv === 'development' || config.nodeEnv === 'test') {
+      controllers.push(BaselineController);
+    }
+    return {
+      module: CommonModule,
+      imports: [DatabaseModule.forRoot(config)],
+      controllers,
+      providers,
+      exports: [AuditService, OutboxService, FeatureFlagsService, MediaService, ReferenceIdService]
+    };
+  }
+}
+
+export const rbacGuardProvider = { provide: APP_GUARD, useClass: RbacGuard };

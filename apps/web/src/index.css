@@ -1,0 +1,118 @@
+:root {
+  --bg: #101812;
+  --panel: #182219;
+  --line: #26352a;
+  --ink: #e9f0e6;
+  --ink-dim: #93a892;
+  --leaf: #7fd069;
+  --amber: #e8b64c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.app-shell {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 20px 96px;
+}
+
+.shell-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 40px;
+}
+
+.shell-header h1 {
+  font-size: clamp(2rem, 6vw, 3rem);
+}
+
+.badge {
+  font-size: 0.75rem;
+  color: var(--bg);
+  background: var(--amber);
+  padding: 4px 12px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.health-line {
+  margin: 24px 0 48px;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+}
+
+.health-line .ok { color: var(--leaf); }
+.health-line .down { color: #e06c5c; }
+
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.module-tile {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+
+.module-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--leaf);
+}
+
+.module-tile h2 {
+  font-size: 1.05rem;
+  margin-bottom: 6px;
+}
+
+.module-tile p {
+  margin: 0 0 12px;
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  line-height: 1.5;
+}
+
+.state-chip {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.state-chip.frozen { color: var(--amber); border-color: var(--amber); }
+
+.shell-foot {
+  margin-top: 64px;
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}

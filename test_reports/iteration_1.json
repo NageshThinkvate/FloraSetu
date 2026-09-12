@@ -1,0 +1,33 @@
+{
+  "summary": "FloraSetu BUILD-0 acceptance gate testing. All 6 gates pass end-to-end. GATE-1 health/trace-id, GATE-2 RBAC (401/403 with envelope), GATE-3 idempotency replay + 409 conflict, GATE-4 tenant isolation, GATE-5 full local suite (15 suites/33 tests + typecheck/lint/build for api & web) and GATE-6 web PWA shell (header, badge, API: connected, 12 tiles with SCHEMA FROZEN · UI INACTIVE chips) all verified. One blocking bug found and fixed: BaselineController had @UseGuards(RbacGuard) at class-level, which made the public dev-token endpoint return 401 UNAUTHENTICATED over HTTP (chicken-and-egg). Moved guard to method-level on entries endpoints; dev-token now mints correctly and downstream gates 2-4 pass.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fixed: BaselineController class-level @UseGuards(RbacGuard) blocked the /dev-token bootstrap endpoint (401 for anonymous callers). Guard now applied per-method on entries endpoints. Local jest e2e never caught this because helpers.ts mints tokens in-process via DevTokenVerifier and never exercises the HTTP dev-token route. Recommend adding a jest e2e that POSTs /api/_baseline/dev-token over HTTP so this regression is caught in-repo.",
+    "config.jwtDevSecret is loaded from env; verify prod deployment sets a strong secret and that NODE_ENV != development/test in prod so dev-token endpoint 403s as intended.",
+    "RBAC required perms in BaselineController use 'config.read'/'config.write' while the review spec examples use 'baseline.entries.read/write'. Naming inconsistency — consider aligning docs or code."
+  ],
+  "updated_files": [
+    "/app/apps/api/src/common/baseline/baseline.controller.ts",
+    "/app/backend/tests/backend_test.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Dev tokens minted via POST /api/_baseline/dev-token with any UUID sub/orgId (NODE_ENV=development).",
+  "seed_data_creation": "Test entries created per-run with fresh org UUIDs; no persistent seed data.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All 6 GATE checks pass on preview URL after fixing BaselineController guard scope. pytest at /app/backend/tests/backend_test.py runs all 4 HTTP gates in ~1.7s. yarn test (jest) in /app/apps/api runs 15 suites/33 tests in ~4s. Web is Vite dev server on port 3000, api NestJS on 8001. Legacy backend/frontend supervisor programs are stopped; use florasetu-api and florasetu-web.",
+  "rca of the issue": "GATE-2 dev-token endpoint returned 401 UNAUTHENTICATED over HTTP because BaselineController had @UseGuards(RbacGuard) at class level. RbacGuard rejects any request where RequestContext.actorType != 'user'. Anonymous callers to /dev-token had no token, so the guard fired before the handler. Local jest e2e bypassed this by minting tokens directly via DevTokenVerifier in helpers.ts, so the regression was invisible in-repo. Fix: moved @UseGuards(RbacGuard) from class to each entries route decorator; dev-token remains unguarded (still gated by NODE_ENV check). Verified via /app/backend/tests/backend_test.py — 5/5 pass."
+}

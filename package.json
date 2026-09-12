@@ -1,0 +1,13 @@
+{
+  "name": "florasetu",
+  "private": true,
+  "version": "0.0.0",
+  "description": "FloraSetu — B2B floriculture platform (Build 0: architecture freeze)",
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "build": "yarn --cwd apps/api build && yarn --cwd apps/web build",
+    "typecheck": "yarn --cwd apps/api typecheck && yarn --cwd apps/web typecheck",
+    "lint": "yarn --cwd apps/api lint && yarn --cwd apps/web lint",
+    "test": "yarn --cwd apps/api test"
+  }
+}

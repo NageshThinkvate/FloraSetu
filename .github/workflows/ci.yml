@@ -1,0 +1,56 @@
+name: ci-baseline
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_USER: florasetu
+          POSTGRES_PASSWORD: florasetu_dev
+          POSTGRES_DB: florasetu_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U florasetu"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install
+        run: |
+          yarn --cwd apps/api install --frozen-lockfile || yarn --cwd apps/api install
+          yarn --cwd apps/web install --frozen-lockfile || yarn --cwd apps/web install
+      - name: Lint
+        run: yarn lint
+      - name: Typecheck
+        run: yarn typecheck
+      - name: Architecture tests (anti-coupling)
+        run: yarn --cwd apps/api test:arch
+      - name: Unit tests
+        run: SKIP_MIGRATE=1 yarn --cwd apps/api test:unit
+      - name: Migrations up
+        run: NODE_ENV=test yarn --cwd apps/api migrate:up
+        env:
+          DATABASE_URL: postgresql://florasetu:florasetu_dev@localhost:5432/florasetu_test
+      - name: Baseline e2e (tenant isolation, audit, idempotency, outbox)
+        run: yarn --cwd apps/api test:e2e
+        env:
+          DATABASE_URL: postgresql://florasetu:florasetu_dev@localhost:5432/florasetu_test
+      - name: Migrations down
+        run: NODE_ENV=test node scripts/migrate.js down
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://florasetu:florasetu_dev@localhost:5432/florasetu_test
+      - name: Build api + web
+        run: yarn build

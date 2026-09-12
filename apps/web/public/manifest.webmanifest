@@ -1,0 +1,17 @@
+{
+  "name": "FloraSetu",
+  "short_name": "FloraSetu",
+  "description": "FloraSetu — B2B floriculture platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101812",
+  "theme_color": "#101812",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
