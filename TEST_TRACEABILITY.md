@@ -3,9 +3,9 @@
 | Test | Requirement(s) | Type | Gate? | Status |
 |---|---|---|---|---|
 | test/architecture/boundary.spec.ts | REQ-ARCH-01 (12 contexts, contracts-only) | architecture | yes | PASS (2 tests) |
-| test/architecture/no-cross-table.spec.ts | REQ-ARCH-02 | architecture | yes | PASS |
+| test/architecture/no-cross-table.spec.ts | REQ-ARCH-02 (corrected scan: distinguishes contract property access from raw cross-schema SQL; custody.service fixed via SupplyInventory contract) | architecture | yes | PASS |
 | test/architecture/common-purity.spec.ts | REQ-ARCH-03 | architecture | yes | PASS (2 tests) |
-| test/architecture/no-cycles.spec.ts | REQ-ARCH-04 | architecture | yes | PASS |
+| test/architecture/no-cycles.spec.ts | REQ-ARCH-04 + ADR-010 allowlist (order-allocation↔supply-inventory, order-allocation↔logistics-coldchain; contracts-only evidence enforced; all other cycles FAIL) | architecture | yes | PASS |
 | test/unit/error-envelope.spec.ts | REQ-XCUT-01 | unit | — | PASS (3 tests) |
 | test/unit/trace.middleware.spec.ts | REQ-XCUT-02 | unit | — | PASS (2 tests) |
 | test/unit/feature-flags.spec.ts | REQ-XCUT-03 / REQ-DB-06 | unit | — | PASS (2 tests) |

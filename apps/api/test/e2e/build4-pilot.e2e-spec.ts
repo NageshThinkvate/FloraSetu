@@ -669,7 +669,7 @@ describe('GATE Build 4: pilot fulfilment core', () => {
     it('(G1) WARNING excursion is recorded without blocking', async () => {
       const fx = await shippedChain('g1', 10);
       const res = await t.http.post(`/api/logistics/shipments/${fx.shipmentId}/temperature-exception`).set(asBuyer())
-        .send({ severity: 'WARNING', celsius: 6.5, occurredAt: PAST });
+        .send({ severity: 'WARNING', celsius: 7, occurredAt: PAST });
       expectOk(res.status);
       expect(res.body.blocked).toBe(false);
     });

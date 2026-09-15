@@ -38,3 +38,15 @@ normalized metadata + conversion version alongside — OD-07/08), `Award` + `Awa
 (Σ awarded ≤ requirement qty; buyer_consent for deviations), `SourcingNote` (ops desk).
 QUICK/EVENT/FORMAL are modes of one Requirement — no parallel lightweight model.
 See docs/STATE_MACHINES.md and docs/SECURITY_MODEL.md.
+
+## Authoritative synchronous contract interactions (ADR-010)
+Two cross-context interactions are authoritative and synchronous by design (owner-approved ADR-010):
+- **Order/Allocation ↔ Supply/Inventory**: reservation/allocation ownership is confirmed
+  synchronously through each context's exported contract (`buyerHasLotAllocation`,
+  `reserveAndAllocate`, `releaseForOrder`). Physical stock ownership is never derived from a
+  stale projection.
+- **Order/Allocation ↔ Logistics/Cold-chain**: `hasBlockingException` is read synchronously by
+  the buyer-acceptance transition guard (ADR-002/§21) so an open severe temperature excursion
+  holds acceptance/settlement based on current state.
+Both interactions cross contexts only via exported contracts/ports. All other cross-context
+reads compose through one-directional contracts or the transactional outbox.

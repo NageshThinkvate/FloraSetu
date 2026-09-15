@@ -65,3 +65,14 @@ None for Build 0 acceptance.
   supplier inbox + quote builder, ops desk.
 - Tests: 20 suites / 146 tests green (build3-demand gate: 48 tests, groups A–I).
 - Docs added: docs/STATE_MACHINES.md, docs/SECURITY_MODEL.md.
+
+## Build 4 follow-up — architecture gate remediation (RESOLVED BY APPROVED ADR-010)
+- `no-cross-table` regression: scan regex false-flagged contract property access
+  (`this.supply.getLotSnapshot()`); regex tightened with a lookbehind so only raw
+  `schema.table` SQL literals are caught. One genuine violation (custody.service.ts raw
+  `supply.supply_lots` read) rerouted through the SupplyInventory contract. PASS.
+- `no-cycles` regression: two contracts-level 2-cycles in Build 4 modules
+  (order-allocation↔supply-inventory, order-allocation↔logistics-coldchain) confirmed as
+  legitimate synchronous commercial guards → **RESOLVED BY APPROVED ADR-010** (explicit
+  allowlist, contracts-only evidence check, all other cycles still FAIL). PASS.
+- Full gate after remediation: architecture + unit + e2e suites, typecheck, lint, build — all green.
