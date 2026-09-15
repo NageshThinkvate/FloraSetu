@@ -28,8 +28,17 @@ export class CreateHarvestLotDto extends LotCoreDto {
 
 export class AddLotMediaDto {
   @IsUUID() mediaObjectId: string;
-  @IsOptional() @IsIn(['LOT_PHOTO', 'INSPECTION', 'PACKING', 'POD', 'CLAIM_EVIDENCE', 'OTHER']) purpose?: string;
+  @IsOptional() @IsIn(['LOT_PHOTO', 'LOT_ACTUAL', 'LOT_VIDEO', 'INSPECTION', 'PACKING', 'PACKED_LOT', 'POD', 'DISPATCH_EVIDENCE', 'RECEIPT_EVIDENCE', 'PICKUP_EVIDENCE', 'CLAIM_EVIDENCE', 'EXCEPTION_EVIDENCE', 'OTHER']) purpose?: string;
   @IsOptional() @IsUUID() inspectionId?: string;
+}
+
+// ADR-011: supplier-declaration submission (pilot quality basis — no fake QC).
+export class SubmitDeclarationDto {
+  @IsOptional() @IsUUID() declaredGradeProfileId?: string;
+  @IsOptional() @IsNumber() @IsPositive() declaredStemLengthCm?: number;
+  @IsOptional() @IsString() @MaxLength(60) bloomStage?: string;
+  @IsOptional() @IsString() @MaxLength(120) batchRef?: string;
+  @IsOptional() @IsString() @MaxLength(500) notes?: string;
 }
 
 export class ResolveHoldDto {

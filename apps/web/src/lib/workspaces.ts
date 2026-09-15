@@ -39,7 +39,7 @@ export const WORKSPACE_LABEL: Record<WorkspaceId, string> = {
 export const WORKSPACE_HOME: Record<WorkspaceId, string> = {
   buyer: '/buyer/home',
   supplier: '/supplier/home',
-  partner: '/partner/qc',
+  partner: '/partner/logistics',
   ops: '/ops/exceptions',
   admin: '/admin/organizations'
 };
@@ -116,7 +116,7 @@ export function resolveWorkspaces(me: Me | null): WorkspaceEntry[] {
     if (caps.includes('SUPPLIER')) {
       out.push({ ...base, workspace: 'supplier' });
     }
-    if (caps.includes('PARTNER_QC')) {
+    if (caps.includes('PARTNER_QC') || caps.includes('PARTNER_LOGISTICS')) {
       out.push({ ...base, workspace: 'partner' });
     }
   }

@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Headers, Param, Post, UseGuards } from '@nestjs/common';
 import { RbacGuard, RequirePermission } from '../../../common/authz/rbac.guard';
 import { LotsService } from './lots.service';
-import { AddLotMediaDto, CreateHarvestLotDto, CreateStockLotDto, ResolveHoldDto } from './dto';
+import { AddLotMediaDto, CreateHarvestLotDto, CreateStockLotDto, ResolveHoldDto, SubmitDeclarationDto } from './dto';
 
 @Controller('supply/lots')
 @UseGuards(RbacGuard)
@@ -48,6 +48,13 @@ export class SupplyController {
   @RequirePermission('lot.write')
   submitQc(@Param('id') id: string) {
     return this.lots.submitForQc(id);
+  }
+
+  // ADR-011: pilot supplier-declaration path (replaces QC submission for declared lots).
+  @Post(':id/declaration')
+  @RequirePermission('lot.write')
+  submitDeclaration(@Param('id') id: string, @Body() dto: SubmitDeclarationDto) {
+    return this.lots.submitDeclaration(id, dto);
   }
 
   @Post(':id/resolve-hold')

@@ -17,7 +17,9 @@ const PERSONAS: { ref: string; email: string; password: string; name: string }[]
   { ref: 'USR-2026-000106', email: 'demo.finance@florasetu.dev', password: 'Demo-Finance-2026', name: 'Demo Finance Ops' },
   { ref: 'USR-2026-000107', email: 'demo.admin@florasetu.dev', password: 'Demo-Admin-2026', name: 'Demo Platform Admin' },
   { ref: 'USR-2026-000108', email: 'demo.opsadmin@florasetu.dev', password: 'Demo-OpsAdmin-2026', name: 'Demo Ops + Admin' },
-  { ref: 'USR-2026-000109', email: 'demo.multi@florasetu.dev', password: 'Demo-Multi-2026', name: 'Demo Multi Org' }
+  { ref: 'USR-2026-000109', email: 'demo.multi@florasetu.dev', password: 'Demo-Multi-2026', name: 'Demo Multi Org' },
+  { ref: 'USR-2026-000110', email: 'demo.logistics@florasetu.dev', password: 'Demo-Logistics-2026', name: 'Demo Logistics Admin' },
+  { ref: 'USR-2026-000111', email: 'demo.driver@florasetu.dev', password: 'Demo-Driver-2026', name: 'Demo Driver' }
 ];
 
 async function main(): Promise<void> {
@@ -30,7 +32,8 @@ async function main(): Promise<void> {
     await client.query(`
       INSERT INTO identity.organizations (ref, name, type, capabilities) VALUES
         ('ORG-2026-000101', 'Ooty Floral Trading', 'WHOLESALER', ARRAY['BUYER','SUPPLIER']),
-        ('ORG-2026-000102', 'Hill Station QC Services', 'QC_PARTNER', ARRAY['PARTNER_QC'])
+        ('ORG-2026-000102', 'Hill Station QC Services', 'QC_PARTNER', ARRAY['PARTNER_QC']),
+        ('ORG-2026-000103', 'Nilgiri Fresh Logistics', 'LOGISTICS_PROVIDER', ARRAY['PARTNER_LOGISTICS'])
       ON CONFLICT (ref) DO UPDATE SET capabilities = EXCLUDED.capabilities;
 
       UPDATE identity.organizations SET capabilities = ARRAY['BUYER'] WHERE ref = 'ORG-2026-000001';
@@ -87,6 +90,12 @@ async function main(): Promise<void> {
     await role('USR-2026-000104', 'ORG-2026-000102', 'ORG_ADMIN');
     await role('USR-2026-000104', 'ORG-2026-000102', 'QC_AGENT');
 
+    // J/K. logistics partner admin + driver (ADR-011 partner = logistics)
+    await member('USR-2026-000110', 'ORG-2026-000103');
+    await role('USR-2026-000110', 'ORG-2026-000103', 'ORG_ADMIN');
+    await member('USR-2026-000111', 'ORG-2026-000103');
+    await role('USR-2026-000111', 'ORG-2026-000103', 'MEMBER');
+
     // E/F/G/H on the platform org
     await member('USR-2026-000105', 'ORG-2026-000000');
     await role('USR-2026-000105', 'ORG-2026-000000', 'PROCUREMENT_OPS');
@@ -108,7 +117,7 @@ async function main(): Promise<void> {
 
     await client.query(`
       INSERT INTO core.reference_counters (entity, year, next_value) VALUES
-        ('USR', 2026, 110), ('ORG', 2026, 103)
+        ('USR', 2026, 112), ('ORG', 2026, 104)
       ON CONFLICT (entity, year) DO UPDATE
         SET next_value = GREATEST(core.reference_counters.next_value, EXCLUDED.next_value);
     `);

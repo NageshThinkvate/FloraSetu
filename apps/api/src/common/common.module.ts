@@ -13,6 +13,7 @@ import { RateLimitService } from './rate-limit/rate-limit.service';
 import { HealthController } from './health/health.controller';
 import { BaselineController } from './baseline/baseline.controller';
 import { MediaController } from './media/media.controller';
+import { PilotConfigController } from './flags/pilot-config.controller';
 
 @Global()
 @Module({})
@@ -28,7 +29,7 @@ export class CommonModule {
       RateLimitService,
       Reflector
     ];
-    const controllers: Type<unknown>[] = [HealthController, MediaController];
+    const controllers: Type<unknown>[] = [HealthController, MediaController, PilotConfigController];
     if (config.nodeEnv === 'development' || config.nodeEnv === 'test') {
       controllers.push(BaselineController);
     }

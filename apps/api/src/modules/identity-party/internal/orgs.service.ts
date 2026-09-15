@@ -42,6 +42,7 @@ export class OrgsService {
            WHEN $3 IN ('BUYER','FLORIST','DECORATOR','EVENT_PLANNER','HOTEL','CORPORATE_BUYER') THEN ARRAY['BUYER']
            WHEN $3 IN ('GROWER','GROWER_GROUP','IMPORTER','AGGREGATION_HUB','WHOLESALER') THEN ARRAY['SUPPLIER']
            WHEN $3 = 'QC_PARTNER' THEN ARRAY['PARTNER_QC']
+           WHEN $3 IN ('LOGISTICS_PROVIDER','COLD_CHAIN_PARTNER') THEN ARRAY['PARTNER_LOGISTICS']
            ELSE '{}'::text[] END) RETURNING id`,
         [ref, input.name.trim(), input.category]
       );

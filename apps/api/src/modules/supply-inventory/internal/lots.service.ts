@@ -9,7 +9,7 @@ import { RequestContext, RequestContextData } from '../../../common/request-cont
 import { claimIdempotencyKey, completeIdempotencyKey, hashRequest } from '../../../common/idempotency/idempotency.service';
 import { CatalogStandards_SERVICE, CatalogStandardsService } from '../../catalog-standards/contracts';
 import { OrderAllocation_SERVICE, OrderAllocationService } from '../../order-allocation/contracts';
-import { AddLotMediaDto, CreateHarvestLotDto, CreateStockLotDto, LotCoreDto, ResolveHoldDto } from './dto';
+import { AddLotMediaDto, CreateHarvestLotDto, CreateStockLotDto, LotCoreDto, ResolveHoldDto, SubmitDeclarationDto } from './dto';
 
 @Injectable()
 export class LotsService {
@@ -176,6 +176,13 @@ export class LotsService {
     if (!isOwner && !isInspector) {
       throw new ApiException(404, 'NOT_FOUND', 'Lot not found');
     }
+    if (dto.purpose === 'LOT_VIDEO') {
+      const obj = await this.db.query<{ content_type: string }>(
+        `SELECT content_type FROM core.media_objects WHERE id = $1`, [dto.mediaObjectId]);
+      if (obj.rowCount === 0 || !obj.rows[0].content_type.startsWith('video/')) {
+        throw new ApiException(400, 'VALIDATION_FAILED', 'LOT_VIDEO evidence must be a video file');
+      }
+    }
     const row = await this.db.query<{ id: string }>(
       `INSERT INTO supply.lot_media (lot_id, media_object_id, purpose, inspection_id, uploaded_by)
        VALUES ($1,$2,$3,$4,$5) RETURNING id`,
@@ -201,6 +208,63 @@ export class LotsService {
       url: (await this.media.signRead(m.media_object_id, 300)).url
     })));
     return { items };
+  }
+
+  // ADR-011: supplier-declaration path — the pilot quality basis. No inspector, no fake
+  // APPROVED inspection: complete declaration + minimum actual-lot photo evidence makes the
+  // lot physically available (orthogonal quality_basis stays SUPPLIER_DECLARATION).
+  async submitDeclaration(id: string, dto: SubmitDeclarationDto): Promise<unknown> {
+    const ctx = RequestContext.get();
+    const minPhotosSetting = await this.db.query<{ value: string }>(
+      `SELECT value::text AS value FROM core.pilot_settings WHERE key = 'LOT_EVIDENCE_MIN_PHOTOS'`);
+    const minPhotos = Number(minPhotosSetting.rows[0]?.value ?? 2);
+    return this.db.withTransaction(async (client) => {
+      const locked = await client.query<{
+        org_id: string; status: string; declared_qty: string; quality_basis: string;
+      }>(
+        `SELECT org_id, status, declared_qty, quality_basis FROM supply.supply_lots WHERE id = $1 FOR UPDATE`, [id]);
+      const lot = locked.rows[0];
+      if (!lot || ctx.orgId !== lot.org_id) {
+        throw new ApiException(404, 'NOT_FOUND', 'Lot not found');
+      }
+      if (lot.quality_basis !== 'SUPPLIER_DECLARATION') {
+        throw new ApiException(409, 'CONFLICT', 'This lot requires independent inspection', {
+          code_detail: 'ILLEGAL_TRANSITION'
+        });
+      }
+      if (!['STOCK_RECEIVED', 'HARVESTED'].includes(lot.status)) {
+        throw new ApiException(409, 'CONFLICT', `Lot is ${lot.status}; declaration not allowed`, {
+          code_detail: 'ILLEGAL_TRANSITION'
+        });
+      }
+      const evidence = await client.query<{ n: string }>(
+        `SELECT count(*)::text AS n FROM supply.lot_media
+         WHERE lot_id = $1 AND purpose IN ('LOT_ACTUAL','LOT_PHOTO')`, [id]);
+      if (Number(evidence.rows[0].n) < minPhotos) {
+        throw new ApiException(400, 'VALIDATION_FAILED',
+          `Upload at least ${minPhotos} current photos of the actual flowers before submitting`, {
+            code_detail: 'EVIDENCE_REQUIRED'
+          });
+      }
+      await client.query(
+        `UPDATE supply.supply_lots SET
+           grade_profile_id = COALESCE($2, grade_profile_id),
+           declared_stem_length_cm = $3, bloom_stage = $4, batch_ref = $5, declaration_notes = $6,
+           declared_at = now(), available_qty = declared_qty, status = 'AVAILABLE', updated_at = now()
+         WHERE id = $1`,
+        [id, dto.declaredGradeProfileId ?? null, dto.declaredStemLengthCm ?? null,
+         dto.bloomStage ?? null, dto.batchRef ?? null, dto.notes ?? null]
+      );
+      await this.audit.record(client, {
+        action: 'lot.declare', objectType: 'supply_lot', objectId: id,
+        after: { basis: 'SUPPLIER_DECLARATION', declaredQty: lot.declared_qty, evidencePhotos: Number(evidence.rows[0].n) }
+      });
+      await this.outbox.emit(client, {
+        aggregateType: 'supply_lot', aggregateId: id, type: 'lot.declared',
+        payload: { lotId: id, orgId: ctx.orgId }
+      });
+      return { id, status: 'AVAILABLE', basis: 'SUPPLIER_DECLARATION', declaredQty: Number(lot.declared_qty) };
+    });
   }
 
   async submitForQc(id: string): Promise<unknown> {

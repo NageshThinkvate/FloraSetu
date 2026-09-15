@@ -2,7 +2,7 @@ import { Body, Controller, Get, Headers, Param, Post, UseGuards } from '@nestjs/
 import { RbacGuard, RequirePermission } from '../../../common/authz/rbac.guard';
 import { PackingService } from './packing.service';
 import { ShipmentsService } from './shipments.service';
-import { CreatePackDto, CreateShipmentDto, PodDto, ResolveExceptionDto, TemperatureExceptionDto } from './dto';
+import { AssignJobDto, ConfirmPickupDto, CreatePackDto, CreateShipmentDto, PodDto, ReportLogisticsExceptionDto, ResolveExceptionDto, TemperatureExceptionDto } from './dto';
 
 @Controller('logistics')
 @UseGuards(RbacGuard)
@@ -52,6 +52,53 @@ export class LogisticsController {
   @RequirePermission('procurement.manage')
   resolveException(@Param('id') id: string, @Body() dto: ResolveExceptionDto) {
     return this.shipments.resolveException(id, dto);
+  }
+
+  // ---------- B4: logistics partner jobs (ADR-011) ----------
+  @Post('shipments/:id/assign')
+  @RequirePermission('procurement.manage')
+  assignJob(@Param('id') id: string, @Body() dto: AssignJobDto) {
+    return this.shipments.assignJob(id, dto);
+  }
+
+  @Get('jobs')
+  listPartnerJobs() {
+    return this.shipments.listPartnerJobs();
+  }
+
+  @Get('jobs/mine')
+  listDriverJobs() {
+    return this.shipments.listDriverJobs();
+  }
+
+  @Get('jobs/:id')
+  getJob(@Param('id') id: string) {
+    return this.shipments.getJob(id);
+  }
+
+  @Post('jobs/:id/accept')
+  acceptJob(@Param('id') id: string) {
+    return this.shipments.acceptJob(id);
+  }
+
+  @Post('jobs/:id/pickup')
+  confirmPickup(@Param('id') id: string, @Body() dto: ConfirmPickupDto) {
+    return this.shipments.confirmPickup(id, dto);
+  }
+
+  @Post('jobs/:id/transit')
+  markInTransit(@Param('id') id: string) {
+    return this.shipments.markInTransit(id);
+  }
+
+  @Post('jobs/:id/deliver')
+  deliverAsPartner(@Param('id') id: string, @Body() dto: PodDto) {
+    return this.shipments.deliverAsPartner(id, dto);
+  }
+
+  @Post('jobs/:id/exception')
+  reportJobException(@Param('id') id: string, @Body() dto: ReportLogisticsExceptionDto) {
+    return this.shipments.reportException(id, dto);
   }
 
   @Get('shipments/order/:orderId')

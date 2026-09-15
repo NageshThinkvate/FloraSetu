@@ -31,6 +31,8 @@ import { SupplierOrdersPage } from './pages/SupplierOrdersPage';
 import { LotsPage } from './pages/LotsPage';
 import { LotDetailPage } from './pages/LotDetailPage';
 import { QcQueuePage } from './pages/QcQueuePage';
+import { PartnerJobsPage } from './pages/PartnerJobsPage';
+import { PartnerJobDetailPage } from './pages/PartnerJobDetailPage';
 import { ControlTowerPage } from './pages/ControlTowerPage';
 import { FinancePage } from './pages/FinancePage';
 import { ClaimsPage } from './pages/ClaimsPage';
@@ -129,21 +131,12 @@ export default function App(): JSX.Element {
               </Route>
 
               <Route path="/partner" element={<Suspense fallback={<ShellLoading />}><PartnerShell /></Suspense>}>
-                <Route index element={<Navigate to="qc" replace />} />
-                <Route path="qc" element={<QcQueuePage />} />
-                <Route
-                  path="completed"
-                  element={
-                    <PlaceholderPage
-                      overline="Partner workspace"
-                      title="Completed inspections"
-                      description="Your finished quality checks will appear here."
-                      actionLabel="Open queue"
-                      actionTo="/partner/qc"
-                      testId="partner-completed"
-                    />
-                  }
-                />
+                <Route index element={<Navigate to="logistics" replace />} />
+                <Route path="logistics" element={<PartnerJobsPage />} />
+                <Route path="logistics/delivered" element={<PartnerJobsPage deliveredOnly />} />
+                <Route path="logistics/jobs/:id" element={<PartnerJobDetailPage />} />
+                <Route path="qc" element={<Navigate to="/partner/logistics" replace />} />
+                <Route path="completed" element={<Navigate to="/partner/logistics/delivered" replace />} />
               </Route>
 
               <Route path="/ops" element={<Suspense fallback={<ShellLoading />}><OpsShell /></Suspense>}>

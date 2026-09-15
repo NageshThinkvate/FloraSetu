@@ -2,7 +2,7 @@ import { Body, Controller, Get, Headers, Param, Post, UseGuards } from '@nestjs/
 import { RbacGuard, RequirePermission } from '../../../common/authz/rbac.guard';
 import { OrdersService } from './orders.service';
 import {
-  AcceptDeliveryDto, AllocateLotDto, ConvertAwardDto, ShortfallDto, TransitionOrderDto
+  AcceptDeliveryDto, AllocateLotDto, ConvertAwardDto, ReceiptEvidenceDto, ShortfallDto, TransitionOrderDto
 } from './dto';
 
 @Controller('orders')
@@ -62,5 +62,18 @@ export class OrdersController {
   @RequirePermission('delivery.accept')
   accept(@Param('id') id: string, @Body() dto: AcceptDeliveryDto) {
     return this.orders.acceptDelivery(id, dto);
+  }
+
+  // ADR-011: buyer receipt/claim evidence.
+  @Post(':id/receipt-evidence')
+  @RequirePermission('delivery.accept')
+  attachReceiptEvidence(@Param('id') id: string, @Body() dto: ReceiptEvidenceDto) {
+    return this.orders.attachReceiptEvidence(id, dto);
+  }
+
+  @Get(':id/receipt-evidence')
+  @RequirePermission('order.read')
+  listReceiptEvidence(@Param('id') id: string) {
+    return this.orders.listReceiptEvidence(id);
   }
 }

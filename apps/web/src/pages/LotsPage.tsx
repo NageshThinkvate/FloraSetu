@@ -2,11 +2,11 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listUnits, ProductSummary, searchProducts, UnitOfMeasure } from '../lib/api/demand';
 import {
-  createHarvestLot, createStockLot, fmtDate, listMyLots, LotSummary, ORIGIN_TYPES, submitLotForQc
+  createHarvestLot, createStockLot, fmtDate, listMyLots, LotSummary, ORIGIN_TYPES
 } from '../lib/api/fulfilment';
 
-// Supplier supply desk: physical lot intake (harvest / stock receipt), QC submission,
-// and live quantity balances (never-oversell invariants enforced server-side).
+// Supplier supply desk: physical lot intake (harvest / stock receipt), supplier-declared
+// quality with actual-lot evidence (ADR-011), and live quantity balances.
 export function LotsPage(): JSX.Element {
   const [lots, setLots] = useState<LotSummary[] | null>(null);
   const [units, setUnits] = useState<UnitOfMeasure[]>([]);
@@ -76,16 +76,6 @@ export function LotsPage(): JSX.Element {
     }
   };
 
-  const submitQc = async (lotId: string): Promise<void> => {
-    setError(''); setNotice('');
-    try {
-      await submitLotForQc(lotId);
-      setNotice('Lot submitted for QC.');
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'QC submission failed');
-    }
-  };
 
   if (error && !lots) {
     return (
@@ -185,11 +175,11 @@ export function LotsPage(): JSX.Element {
               <span>{l.source_flow === 'HARVEST_FLOW' ? 'Harvest' : 'Stock'} · declared {l.declared_qty}</span>
               <span className="hint">
                 avail {l.available_qty} · alloc {l.allocated_qty} · packed {l.packed_qty} · delivered {l.delivered_qty}
-                {Number(l.qc_held_qty ?? 0) > 0 ? ` · QC hold ${l.qc_held_qty}` : ''}
+                {Number(l.qc_held_qty ?? 0) > 0 ? ` · on hold ${l.qc_held_qty}` : ''}
               </span>
               <span className="hint">{fmtDate(l.created_at)}</span>
               {['STOCK_RECEIVED', 'HARVESTED'].includes(l.status) && (
-                <button className="ghost-btn" data-testid={`lot-submit-qc-${l.id}`} onClick={() => void submitQc(l.id)}>Submit QC</button>
+                <Link to={`/supply/lots/${l.id}`} data-testid={`lot-declare-${l.id}`}><button className="ghost-btn">Add photos &amp; declare</button></Link>
               )}
               <Link to={`/supply/lots/${l.id}`} data-testid={`lot-open-${l.id}`}><button className="ghost-btn">Open</button></Link>
             </li>

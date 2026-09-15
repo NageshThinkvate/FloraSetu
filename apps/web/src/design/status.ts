@@ -48,7 +48,7 @@ export const STATUS_MAP: Record<string, StatusSpec> = {
   SUPPLY_CONFIRMED: { label: 'Supplier confirmed', variant: 'info', icon: 'check' },
   ALLOCATING: { label: 'Sourcing supply', variant: 'info', icon: 'package' },
   ALLOCATED: { label: 'Supply reserved', variant: 'info', icon: 'package' },
-  QC_PACK: { label: 'Packing after quality check', variant: 'info', icon: 'package' },
+  QC_PACK: { label: 'Packing', variant: 'info', icon: 'package' },
   PACKED: { label: 'Packed', variant: 'info', icon: 'package' },
   READY_FOR_DISPATCH: { label: 'Ready to ship', variant: 'info', icon: 'package' },
   DISPATCHED: { label: 'Dispatched', variant: 'info', icon: 'truck' },

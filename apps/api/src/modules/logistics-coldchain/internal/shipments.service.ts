@@ -10,7 +10,7 @@ import { OrderAllocation_SERVICE, OrderAllocationService } from '../../order-all
 import { SupplyInventory_SERVICE, SupplyInventoryService } from '../../supply-inventory/contracts';
 import { QualityTraceability_SERVICE, QualityTraceabilityService } from '../../quality-traceability/contracts';
 import { Notifications_SERVICE, NotificationsService } from '../../notifications/contracts';
-import { CreateShipmentDto, PodDto, ResolveExceptionDto, TemperatureExceptionDto } from './dto';
+import { AssignJobDto, ConfirmPickupDto, CreateShipmentDto, PodDto, ReportLogisticsExceptionDto, ResolveExceptionDto, TemperatureExceptionDto } from './dto';
 
 @Injectable()
 export class ShipmentsService {
@@ -364,5 +364,179 @@ export class ShipmentsService {
       this.db.query(`SELECT * FROM logistics.shipment_exceptions WHERE shipment_id = $1`, [id])
     ]);
     return { ...s, pods: pods.rows, exceptions: exceptions.rows };
+  }
+
+  // ---------- B4: logistics partner jobs (ADR-011 pilot) ----------
+
+  private async assertJobAccess(id: string): Promise<Record<string, unknown>> {
+    const ctx = RequestContext.get();
+    const rows = await this.db.query<Record<string, unknown>>(
+      `SELECT * FROM logistics.shipments WHERE id = $1`, [id]);
+    const s = rows.rows[0];
+    if (!s || (s.logistics_org_id !== ctx.orgId && s.driver_user_id !== ctx.userId && !this.isOps(ctx))) {
+      throw new ApiException(404, 'NOT_FOUND', 'Job not found');
+    }
+    return s;
+  }
+
+  // Ops assigns a logistics partner org and (optionally) a driver user. Driver assignment
+  // stays optional — bus/rail/air parcel jobs have no platform driver (§16).
+  async assignJob(id: string, dto: AssignJobDto): Promise<unknown> {
+    const ctx = RequestContext.get();
+    if (!ctx.permissions.includes('procurement.manage')) {
+      throw new ApiException(404, 'NOT_FOUND', 'Shipment not found');
+    }
+    return this.db.withTransaction(async (client) => {
+      const locked = await client.query<{ id: string }>(
+        `SELECT id FROM logistics.shipments WHERE id = $1 FOR UPDATE`, [id]);
+      if (locked.rowCount === 0) {
+        throw new ApiException(404, 'NOT_FOUND', 'Shipment not found');
+      }
+      await client.query(
+        `UPDATE logistics.shipments SET logistics_org_id = $2, driver_user_id = $3, assigned_at = now(), updated_at = now()
+         WHERE id = $1`,
+        [id, dto.logisticsOrgId, dto.driverUserId ?? null]);
+      await this.audit.record(client, {
+        action: 'shipment.assign', objectType: 'shipment', objectId: id,
+        after: { logisticsOrgId: dto.logisticsOrgId, driverUserId: dto.driverUserId ?? null }
+      });
+      return { id, logisticsOrgId: dto.logisticsOrgId, driverUserId: dto.driverUserId ?? null };
+    });
+  }
+
+  async listPartnerJobs(): Promise<{ items: unknown[] }> {
+    const orgId = RequestContext.requireOrgId();
+    const rows = await this.db.query(
+      `SELECT * FROM logistics.shipments WHERE logistics_org_id = $1 ORDER BY created_at DESC LIMIT 100`,
+      [orgId]);
+    return { items: rows.rows };
+  }
+
+  async listDriverJobs(): Promise<{ items: unknown[] }> {
+    const ctx = RequestContext.get();
+    const rows = await this.db.query(
+      `SELECT * FROM logistics.shipments WHERE driver_user_id = $1 ORDER BY created_at DESC LIMIT 100`,
+      [ctx.userId]);
+    return { items: rows.rows };
+  }
+
+  async getJob(id: string): Promise<unknown> {
+    const s = await this.assertJobAccess(id);
+    const [media, exceptions, pods] = await Promise.all([
+      this.db.query(`SELECT * FROM logistics.shipment_media WHERE shipment_id = $1 ORDER BY captured_at`, [id]),
+      this.db.query(`SELECT * FROM logistics.shipment_exceptions WHERE shipment_id = $1 ORDER BY created_at`, [id]),
+      this.db.query(`SELECT * FROM logistics.pod_records WHERE shipment_id = $1`, [id])
+    ]);
+    return { ...s, media: media.rows, exceptions: exceptions.rows, pods: pods.rows };
+  }
+
+  async acceptJob(id: string): Promise<unknown> {
+    await this.assertJobAccess(id);
+    await this.db.query(
+      `UPDATE logistics.shipments SET job_accepted_at = COALESCE(job_accepted_at, now()), updated_at = now() WHERE id = $1`,
+      [id]);
+    return { id, accepted: true };
+  }
+
+  async confirmPickup(id: string, dto: ConfirmPickupDto): Promise<unknown> {
+    const ctx = RequestContext.get();
+    await this.assertJobAccess(id);
+    return this.db.withTransaction(async (client) => {
+      await client.query(
+        `UPDATE logistics.shipments SET pickup_at = COALESCE(pickup_at, now()),
+           parcel_awb_ref = COALESCE($2, parcel_awb_ref), transport_ref = COALESCE($3, transport_ref),
+           updated_at = now() WHERE id = $1`,
+        [id, dto.awbRef ?? null, dto.transportRef ?? null]);
+      if (dto.mediaObjectId) {
+        await client.query(
+          `INSERT INTO logistics.shipment_media (shipment_id, media_object_id, purpose, uploaded_by)
+           VALUES ($1, $2, 'PICKUP_EVIDENCE', $3)`,
+          [id, dto.mediaObjectId, ctx.userId]);
+      }
+      await this.audit.record(client, {
+        action: 'shipment.pickup', objectType: 'shipment', objectId: id,
+        after: { awbRef: dto.awbRef ?? null }
+      });
+      return { id, pickedUp: true };
+    });
+  }
+
+  async markInTransit(id: string): Promise<unknown> {
+    const ctx = RequestContext.get();
+    const s = await this.assertJobAccess(id);
+    if (s.status === 'PLANNED') {
+      await this.db.query(
+        `UPDATE logistics.shipments SET status = 'IN_TRANSIT',
+           dispatched_at = COALESCE(dispatched_at, now()), updated_at = now() WHERE id = $1`, [id]);
+      await this.orders.markDispatched(s.order_id as string, ctx.userId ?? undefined);
+    }
+    return { id, status: 'IN_TRANSIT' };
+  }
+
+  // Partner-side delivery + POD: same pod_records/POD invariants as the ops endpoint.
+  async deliverAsPartner(id: string, dto: PodDto): Promise<unknown> {
+    const ctx = RequestContext.get();
+    const s = await this.assertJobAccess(id);
+    const outcome = await this.db.withTransaction(async (client) => {
+      const existing = await client.query<{ id: string }>(
+        `SELECT id FROM logistics.pod_records WHERE shipment_id = $1`, [id]);
+      if ((existing.rowCount ?? 0) > 0) {
+        return { replayed: true };
+      }
+      await client.query(
+        `INSERT INTO logistics.pod_records
+           (shipment_id, order_id, delivered_qty, uom_id, receiver_name, media_object_id,
+            signature_ref, notes, shortage_flag, damage_flag, exception_note, recorded_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+        [id, s.order_id, dto.deliveredQty, dto.uomId ?? null, dto.receiverName ?? null,
+         dto.mediaObjectId ?? null, dto.signatureRef ?? null, dto.notes ?? null,
+         dto.shortageFlag ?? false, dto.damageFlag ?? false, dto.exceptionNote ?? null, ctx.userId]);
+      await client.query(
+        `UPDATE logistics.shipments SET status = 'DELIVERED', actual_arrival_at = now(), updated_at = now() WHERE id = $1`,
+        [id]);
+      await this.orders.markDelivered(s.order_id as string, ctx.userId ?? undefined, client);
+      await this.audit.record(client, {
+        action: 'shipment.pod', objectType: 'shipment', objectId: id,
+        after: { deliveredQty: dto.deliveredQty, channel: 'PARTNER' }
+      });
+      return { replayed: false };
+    });
+    if (!outcome.replayed) {
+      const snap = await this.orders.getOrderSnapshot(s.order_id as string).catch(() => null);
+      if (snap?.buyerOrgId) {
+        await this.notifications
+          .queue(snap.buyerOrgId, null, 'shipment.delivered', { orderId: s.order_id, shipmentId: id })
+          .catch(() => undefined);
+      }
+    }
+    return { id, status: 'DELIVERED', replayed: outcome.replayed };
+  }
+
+  // Partner/driver exception report: feeds Operations (blocks_* stay false — never
+  // auto-decides buyer claims or holds, §21).
+  async reportException(id: string, dto: ReportLogisticsExceptionDto): Promise<unknown> {
+    const ctx = RequestContext.get();
+    await this.assertJobAccess(id);
+    return this.db.withTransaction(async (client) => {
+      const row = await client.query<{ id: string }>(
+        `INSERT INTO logistics.shipment_exceptions (shipment_id, org_id, type, note, media_object_id, reported_by)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+        [id, ctx.orgId, dto.type, dto.note ?? null, dto.mediaObjectId ?? null, ctx.userId]);
+      if (dto.mediaObjectId) {
+        await client.query(
+          `INSERT INTO logistics.shipment_media (shipment_id, media_object_id, purpose, uploaded_by)
+           VALUES ($1,$2,'EXCEPTION_EVIDENCE',$3)`,
+          [id, dto.mediaObjectId, ctx.userId]);
+      }
+      await this.audit.record(client, {
+        action: 'shipment.exception_reported', objectType: 'shipment_exception', objectId: row.rows[0].id,
+        after: { type: dto.type }
+      });
+      await this.outbox.emit(client, {
+        aggregateType: 'shipment', aggregateId: id, type: 'logistics.exception',
+        payload: { shipmentId: id, exceptionId: row.rows[0].id, exceptionType: dto.type }
+      });
+      return { id: row.rows[0].id, status: 'OPEN' };
+    });
   }
 }

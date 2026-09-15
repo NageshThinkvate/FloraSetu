@@ -64,3 +64,23 @@ export class TemperatureExceptionDto {
 export class ResolveExceptionDto {
   @IsString() @IsNotEmpty() @MaxLength(500) resolution: string;
 }
+
+// B4 (ADR-011): logistics partner job DTOs.
+export class AssignJobDto {
+  @IsUUID() logisticsOrgId: string;
+  @IsOptional() @IsUUID() driverUserId?: string;
+}
+
+export class ConfirmPickupDto {
+  @IsOptional() @IsString() @MaxLength(120) awbRef?: string;
+  @IsOptional() @IsString() @MaxLength(120) transportRef?: string;
+  @IsOptional() @IsUUID() mediaObjectId?: string;
+}
+
+export class ReportLogisticsExceptionDto {
+  @IsIn(['PICKUP_DELAY', 'VEHICLE_BREAKDOWN', 'MISSED_DEPARTURE', 'PARCEL_REJECTED',
+    'DAMAGE_OBSERVED', 'TEMPERATURE_CONCERN', 'ADDRESS_ISSUE', 'RECIPIENT_UNAVAILABLE', 'OTHER'])
+  type: string;
+  @IsOptional() @IsString() @MaxLength(500) note?: string;
+  @IsOptional() @IsUUID() mediaObjectId?: string;
+}

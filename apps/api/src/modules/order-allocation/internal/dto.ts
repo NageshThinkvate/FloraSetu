@@ -37,3 +37,9 @@ export class IdemListDto {
   @IsOptional() @IsInt() @Min(1) limit?: number;
   @IsOptional() @IsIn(['ASC', 'DESC']) order?: 'ASC' | 'DESC';
 }
+
+// ADR-011: buyer receipt/claim evidence.
+export class ReceiptEvidenceDto {
+  @IsUUID() mediaObjectId: string;
+  @IsOptional() @IsIn(['RECEIPT_EVIDENCE', 'CLAIM_EVIDENCE']) purpose?: string;
+}

@@ -54,6 +54,8 @@ export interface ReservationRow { id: string; order_id: string; qty: string; sta
 export type LotDetail = LotSummary & {
   ref: string; org_id: string; uom_id: string; grade_profile_id: string | null;
   colour_code: string | null; origin_detail: string | null;
+  quality_basis: string; declared_stem_length_cm: string | null; bloom_stage: string | null;
+  batch_ref: string | null; declaration_notes: string | null; declared_at: string | null;
   media: LotMediaRow[]; reservations: ReservationRow[];
 };
 
@@ -156,7 +158,7 @@ export const CLAIM_NEXT: Record<string, string[]> = {
   REJECTED: []
 };
 export const MANUAL_ORDER_TRANSITIONS = ['ALLOCATING', 'QC_PACK', 'READY_FOR_DISPATCH', 'CLOSED', 'CANCELLED'];
-export const MEDIA_PURPOSES = ['LOT_PHOTO', 'INSPECTION', 'PACKING', 'POD', 'CLAIM_EVIDENCE', 'OTHER'];
+export const MEDIA_PURPOSES = ['LOT_PHOTO', 'LOT_ACTUAL', 'LOT_VIDEO', 'INSPECTION', 'PACKING', 'POD', 'CLAIM_EVIDENCE', 'OTHER'];
 
 // Orders
 export const listMyOrders = () => apiGet<{ items: OrderSummary[] }>('/orders');
@@ -182,6 +184,10 @@ export const createHarvestLot = (body: unknown) =>
 export const listMyLots = () => apiGet<{ items: LotSummary[] }>('/supply/lots');
 export const getLot = (id: string) => apiGet<LotDetail>(`/supply/lots/${id}`);
 export const submitLotForQc = (id: string) => apiPost<{ id: string; status: string }>(`/supply/lots/${id}/submit-qc`);
+// ADR-011: supplier-declaration quality basis — evidence-first, no FloraSetu inspection.
+export const submitLotDeclaration = (id: string, body: {
+  declaredStemLengthCm?: number; bloomStage?: string; batchRef?: string; notes?: string; declaredGradeProfileId?: string;
+}) => apiPost<{ id: string; status: string; basis: string }>(`/supply/lots/${id}/declaration`, body);
 export const resolveLotHold = (id: string, body: { toAvailableQty: number; toRejectedQty: number; reason?: string }) =>
   apiPost<{ id: string; status: string }>(`/supply/lots/${id}/resolve-hold`, body);
 export const addLotMedia = (id: string, body: { mediaObjectId: string; purpose?: string }) =>

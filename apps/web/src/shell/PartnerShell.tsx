@@ -6,8 +6,8 @@ import { NotificationBell } from './NotificationBell';
 import { NavList, BottomNav, NavItem } from './ShellNav';
 
 const NAV: NavItem[] = [
-  { to: '/partner/qc', label: 'To inspect', testId: 'partner-nav-queue' },
-  { to: '/partner/completed', label: 'Completed', testId: 'partner-nav-completed' }
+  { to: '/partner/logistics', label: 'Jobs', testId: 'partner-nav-jobs' },
+  { to: '/partner/logistics/delivered', label: 'Delivered', testId: 'partner-nav-delivered' }
 ];
 
 export default function PartnerShell(): JSX.Element {

@@ -12,7 +12,7 @@ import { SupplyInventory_SERVICE, SupplyInventoryService } from '../../supply-in
 import { LogisticsColdchain_SERVICE, LogisticsColdchainService } from '../../logistics-coldchain/contracts';
 import { Notifications_SERVICE, NotificationsService } from '../../notifications/contracts';
 import { assertOrderTransition, isOps } from './order-policies';
-import { AcceptDeliveryDto, AllocateLotDto, ShortfallDto, TransitionOrderDto } from './dto';
+import { AcceptDeliveryDto, AllocateLotDto, ReceiptEvidenceDto, ShortfallDto, TransitionOrderDto } from './dto';
 
 const MANUAL_TRANSITIONS = ['ALLOCATING', 'QC_PACK', 'READY_FOR_DISPATCH', 'CLOSED', 'CANCELLED'];
 
@@ -328,6 +328,32 @@ export class OrdersService {
       await this.transitionLocked(client, orderId, dto.to, ctx.userId, dto.reason);
       return { id: orderId, status: dto.to, from: order.status };
     });
+  }
+
+  // ADR-011: buyer receipt/claim evidence at order level (commercial acceptance, not QC).
+  async attachReceiptEvidence(orderId: string, dto: ReceiptEvidenceDto): Promise<unknown> {
+    const ctx = RequestContext.get();
+    return this.db.withTransaction(async (client) => {
+      await this.lockOwn(client, orderId, ctx, true);
+      const row = await client.query<{ id: string }>(
+        `INSERT INTO ordering.order_media (order_id, org_id, media_object_id, purpose, uploaded_by)
+         VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+        [orderId, ctx.orgId, dto.mediaObjectId, dto.purpose ?? 'RECEIPT_EVIDENCE', ctx.userId]);
+      await this.audit.record(client, {
+        action: 'order.receipt_evidence', objectType: 'order', objectId: orderId,
+        after: { purpose: dto.purpose ?? 'RECEIPT_EVIDENCE' }
+      });
+      return { id: row.rows[0].id, orderId };
+    });
+  }
+
+  async listReceiptEvidence(orderId: string): Promise<{ items: unknown[] }> {
+    await this.get(orderId);
+    const rows = await this.db.query(
+      `SELECT id, media_object_id, purpose, uploaded_by, captured_at FROM ordering.order_media
+       WHERE order_id = $1 ORDER BY captured_at`,
+      [orderId]);
+    return { items: rows.rows };
   }
 
   // Buyer acceptance (§19): accepted and disputed quantities stay separate.
