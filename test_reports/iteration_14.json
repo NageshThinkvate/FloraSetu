@@ -1,0 +1,42 @@
+{
+  "summary": "Pre-Phase-3 correction gate (ADR-011) frontend verification. Verified partner shell pivot (QC → Logistics), supplier evidence-first declaration flow, QC persona redirect, terminology cleanup (no 'FloraSetu QC/QC Approved/Submit QC' anywhere in supplier/buyer/partner UI), and regressions for dual & admin personas. Full driver job flow (assigned jobs → accept → pickup → transit → deliver, plus exception flow) was NOT end-to-end exercised because the seed-pilot-order.sh helper requires a legacy testing-agent user (supplier.test8@dev.florasetu.local / Supplier2026x) that is not present in the current preview DB and rebuilding the full requirement→RFQ→quote→award→order chain is out of scope of pure frontend testing. Partner logistics shell, empty states, nav testids, and route redirects all confirmed working.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Post-login redirect for multi-workspace user", "issue": "Login as demo.dual@florasetu.dev redirects straight to /buyer/org instead of the workspace chooser at /. The chooser only shows when the user manually navigates to /. Because a fresh login has no restored context, WorkspaceRouter should render (it does — verified at /), but the login flow’s final navigation lands on a specific workspace home before the router can pick. Minor UX regression; workspace chooser itself is fully functional (testid workspace-chooser with both Buyer + Supplier options for Ooty Floral Trading).", "affected_selectors": ["workspace-chooser","chooser-option-buyer-*","chooser-option-supplier-*"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Minor) Ensure login redirect for users with multiple permitted workspaces lands on / (WorkspaceRouter) rather than a specific workspace home, so the chooser is shown by default on first login."
+  ],
+  "critical_code_review_comments": [
+    "Supplier declaration UX is well-instrumented with data-testids (lot-quality-basis, lot-media-input, lot-video-input, lot-declare-panel, lot-declare-btn, lot-declaration-panel).",
+    "lot-media-input is a single-file input (no `multiple` attr) but the UX text implies multiple photos; users must upload them one at a time. Consider adding `multiple` to accept multi-file selection in one dialog for smoother onboarding.",
+    "PartnerJobsPage empty states + nav testids (partner-nav-jobs, partner-nav-delivered, partner-jobs-empty) are all present and behave correctly on desktop and mobile (390px)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "11/13 verified PASS, 2 driver-flow scenarios skipped due to seed dependency"},
+  "test_credentials": "Used demo.logistics, demo.qc, demo.supplier, demo.dual, demo.admin from /app/memory/test_credentials.md — all valid.",
+  "seed_data_creation": "Created one supplier harvest lot (Premium/Dutch Rose, 100 BOX, LOT-2026-000001) under Dev Supplier Co via demo.supplier UI. Declared with 2 photos and Batch B-TEST-1 → status AVAILABLE.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Driver logistics flow (accept → pickup → transit → deliver) and exception-reporting flow were not executed end-to-end because the seed-pilot-order.sh script depends on supplier.test8@dev.florasetu.local (not present in preview DB after re-seed). To exercise those flows: (1) either recreate that supplier user + password (register via API + attach to a GROWER org), or refactor seed-pilot-order.sh to use demo.supplier@florasetu.dev / Demo-Supplier-2026 (already seeded) as the supplier side. Once a shipment can be assigned to demo.driver, the UI flow at /partner/logistics with partner-jobs-toggle + partner-job-card-* + partner-job-detail + job-accept-btn / job-pickup-nophoto-btn / job-transit-btn / job-deliver-nophoto-btn / job-exception-btn testids is ready to be exercised. Main agent already reported 213/213 backend e2e green including 13 new gate tests, so the backend side of that flow is trusted.",
+  "verified_test_matrix": {
+    "PARTNER_PIVOT": "PASS — /partner/logistics lands correctly for demo.logistics; nav shows Jobs + Delivered only; partner-jobs-empty shows 'No jobs right now'; no forbidden QC strings.",
+    "QC_PERSONA_REDIRECT": "PASS — demo.qc lands on /partner/logistics; /partner/qc → /partner/logistics; /partner/completed → /partner/logistics/delivered.",
+    "SUPPLIER_DECLARATION_UI": "PASS — lot-declare-<id> link present (no 'Submit QC'); lot detail shows lot-quality-basis 'Supplier-declared quality · harvested …'; lot-media-input + lot-video-input (accept='video/*') + lot-declare-panel + lot-declare-btn all present; evidence text 'Actual-lot photos attached: 0 (minimum 2 required)' shown.",
+    "DECLARATION_GUARD": "PASS — submitting with 0 photos surfaces inline error 'Upload at least 2 current photos of the actual flowers before submitting'; lot remains HARVESTED (not AVAILABLE).",
+    "DECLARATION_SUCCESS": "PASS — uploaded 2 photos via set_input_files (one at a time; input is single-file); evidence count updated to 2; filled Stem 55, Bloom 'Half open', Batch 'B-TEST-1'; success notice 'Lot declared and listed as available.' displayed; lot-declaration-panel now shows 'Supplier-declared quality Batch B-TEST-1 · Bloom half open · Stem 55.0 cm · declared …'; body includes 'AVAILABLE'.",
+    "VIDEO_EVIDENCE": "PASS — lot-video-input exists with accept='video/*' (skipped actual upload per test instruction).",
+    "TERMINOLOGY_AUDIT": "PASS — no occurrences of 'FloraSetu QC', 'QC Approved', or 'Submit QC' on /supplier/supply, /supplier/home, lot detail, /buyer/orders, /partner/logistics, /partner/logistics/delivered.",
+    "DELIVERED_TAB": "PASS — /partner/logistics/delivered shows 'Nothing delivered yet'.",
+    "FULL_LOGISTICS_JOB_FLOW": "SKIPPED — seed dependency (supplier.test8) not present in preview DB; not executed end-to-end. UI is instrumented and ready.",
+    "EXCEPTION_FLOW": "SKIPPED — same reason as above.",
+    "REGRESSION_DUAL": "PASS — workspace chooser at / offers both 'Buyer workspace' + 'Supplier workspace' for Ooty Floral Trading; choosing Supplier navigates to /supplier/home. (Note: login lands on /buyer/org rather than /; chooser reached via /.)",
+    "REGRESSION_ADMIN": "PASS — demo.admin lands on /admin/organizations; 'Operations workspace' string not present.",
+    "MOBILE": "PASS — 390px viewport: no horizontal scroll (scrollWidth == clientWidth); partner-nav-jobs + partner-nav-delivered both rendered."
+  }
+}

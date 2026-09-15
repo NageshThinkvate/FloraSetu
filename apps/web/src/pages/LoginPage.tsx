@@ -17,7 +17,7 @@ export function LoginPage(): JSX.Element {
     setError('');
     try {
       await login(email, password, mfaCode || undefined);
-      navigate('/account');
+      navigate('/');
     } catch (err) {
       if (err instanceof ApiError && err.code === 'MFA_REQUIRED') {
         setMfaRequired(true);

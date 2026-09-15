@@ -7,10 +7,9 @@ API="${1:-http://localhost:8001/api}"
 # IDs are resolved dynamically so the script survives pod restarts / DB re-seeds.
 PSQL="psql postgresql://florasetu:florasetu_dev@localhost:5432/florasetu -t -A -c"
 BUYER_ORG=$($PSQL "SELECT id FROM identity.organizations WHERE ref='ORG-2026-000000';")
-SUPPLIER_ORG=$($PSQL "SELECT m.org_id FROM identity.org_memberships m JOIN identity.users u ON u.id=m.user_id WHERE u.email='supplier.test8@dev.florasetu.local' AND m.status='ACTIVE' ORDER BY m.created_at DESC LIMIT 1;")
+SUPPLIER_ORG=$($PSQL "SELECT m.org_id FROM identity.org_memberships m JOIN identity.users u ON u.id=m.user_id WHERE u.email='demo.supplier@florasetu.dev' AND m.status='ACTIVE' ORDER BY m.created_at DESC LIMIT 1;")
 ROSE=$($PSQL "SELECT id FROM catalog.commodities WHERE ref='PRD-SEED-ROSE_PREMIUM';")
 STEM=$($PSQL "SELECT id FROM catalog.units_of_measure WHERE code='STEM';")
-GRADE_A=$($PSQL "SELECT gp.id FROM catalog.grade_profiles gp JOIN catalog.commodities c ON c.id=gp.commodity_id WHERE c.ref='PRD-SEED-ROSE_PREMIUM' AND gp.status='ACTIVE' ORDER BY gp.created_at DESC LIMIT 1;")
 QTY=40
 STAMP="$(date +%s)"
 
@@ -25,7 +24,7 @@ print(json.dumps(d))"; }
 OWNER_TOKEN=$(curl -s -X POST "$API/auth/login" -H "Content-Type: application/json" \
   -d '{"email":"nagesh.kgpl@gmail.com","password":"FloraSetu-Owner-2026"}' | jqget "['accessToken']")
 SUP_TOKEN=$(curl -s -X POST "$API/auth/login" -H "Content-Type: application/json" \
-  -d '{"email":"supplier.test8@dev.florasetu.local","password":"Supplier2026x"}' | jqget "['accessToken']")
+  -d '{"email":"demo.supplier@florasetu.dev","password":"Demo-Supplier-2026"}' | jqget "['accessToken']")
 
 OWNER=(-H "Authorization: Bearer $OWNER_TOKEN" -H "X-Org-Id: $BUYER_ORG" -H "Content-Type: application/json")
 SUP=(-H "Authorization: Bearer $SUP_TOKEN" -H "X-Org-Id: $SUPPLIER_ORG" -H "Content-Type: application/json")
@@ -74,16 +73,15 @@ LOT_RESP=$(curl -s -X POST "$API/supply/lots/harvest" "${SUP[@]}" -H "Idempotenc
   \"harvestedAt\":\"$(date -u -d '-6 hours' +%Y-%m-%dT%H:%M:%SZ)\",\"farmName\":\"Pilot Farm\"}")
 LOT=$(echo "$LOT_RESP" | jqget "['id']")
 echo "lot: $LOT ($(echo "$LOT_RESP" | jqget "['ref']"))"
-curl -s -X POST "$API/supply/lots/$LOT/submit-qc" "${SUP[@]}" | failcheck
-echo "lot submitted for QC"
-
-# QC the supplier's lot (owner org inspects — no conflict of interest)
-INS=$(curl -s -X POST "$API/quality/inspections" "${OWNER[@]}" -d "{\"lotId\":\"$LOT\",\"scope\":\"SAMPLE\",\"notes\":\"pilot seed\"}")
-INS_ID=$(echo "$INS" | jqget "['id']")
-curl -s -X POST "$API/quality/inspections/$INS_ID/complete" "${OWNER[@]}" -H "Idempotency-Key: seed-$STAMP-qc" -d "{
-  \"acceptedQty\":50,\"rejectedQty\":0,\"heldQty\":0,
-  \"gradeResults\":[{\"gradeProfileId\":\"$GRADE_A\",\"measurements\":{\"stem_length_cm\":55}}]}" | failcheck
-echo "qc completed: $INS_ID"
+# ADR-011: supplier-declaration path — 2 actual-lot photos + declaration makes the lot AVAILABLE (no QC).
+PNG_B64='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+for i in 1 2; do
+  M=$(curl -s -X POST "$API/media" "${SUP[@]}" -d "{\"contentType\":\"image/png\",\"dataBase64\":\"$PNG_B64\",\"bucket\":\"pilot\"}" | jqget "['id']")
+  curl -s -X POST "$API/supply/lots/$LOT/media" "${SUP[@]}" -d "{\"mediaObjectId\":\"$M\",\"purpose\":\"LOT_ACTUAL\"}" | failcheck > /dev/null
+done
+curl -s -X POST "$API/supply/lots/$LOT/declaration" "${SUP[@]}" -d "{
+  \"declaredStemLengthCm\":55,\"bloomStage\":\"HALF_OPEN\",\"batchRef\":\"PILOT-$STAMP\"}" | failcheck
+echo "lot declared (supplier declaration, no QC)"
 
 curl -s -X POST "$API/orders/allocate" "${OWNER[@]}" -H "Idempotency-Key: seed-$STAMP-al" \
   -d "{\"supplierAllocationLineId\":\"$SAL_LINE\",\"lotId\":\"$LOT\",\"qty\":$QTY}" | failcheck
