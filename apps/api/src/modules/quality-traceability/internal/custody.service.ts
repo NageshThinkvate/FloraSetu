@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PoolClient } from 'pg';
 import { DatabaseService } from '../../../common/database/database.service';
 import { AuditService } from '../../../common/audit/audit.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { RequestContext } from '../../../common/request-context';
 import { ApiException } from '../../../common/errors/error-envelope';
+import { SupplyInventory_SERVICE, SupplyInventoryService } from '../../supply-inventory/contracts';
 import { CustodyInput, QualityTraceabilityService } from '../contracts';
 import { CustodyEventDto } from './dto';
 
@@ -13,7 +14,8 @@ export class CustodyService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
-    private readonly outbox: OutboxService
+    private readonly outbox: OutboxService,
+    @Inject(SupplyInventory_SERVICE) private readonly supply: SupplyInventoryService
   ) {}
 
   // §16: append-only custody events (DB rules block UPDATE/DELETE).
@@ -55,8 +57,9 @@ export class CustodyService {
   async listForLot(lotId: string): Promise<{ items: unknown[] }> {
     // Tenant isolation (§4): lot owner or platform operations only.
     const ctx = RequestContext.get();
-    const lot = await this.db.query<{ org_id: string }>(`SELECT org_id FROM supply.supply_lots WHERE id = $1`, [lotId]);
-    if (lot.rowCount === 0 || (lot.rows[0].org_id !== ctx.orgId && !ctx.permissions.includes('procurement.manage'))) {
+    // Lot ownership via the supply-inventory contract (docs/04: no cross-schema SQL).
+    const lot = await this.supply.getLotSnapshot(lotId);
+    if (!lot || (lot.orgId !== ctx.orgId && !ctx.permissions.includes('procurement.manage'))) {
       throw new ApiException(404, 'NOT_FOUND', 'Lot not found');
     }
     const rows = await this.db.query(

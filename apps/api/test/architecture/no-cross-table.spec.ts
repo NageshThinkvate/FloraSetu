@@ -5,7 +5,11 @@ import * as path from 'path';
 import { listContexts, walk, MODULES_DIR } from './helpers';
 import ownership from './table-ownership.json';
 
-const SCHEMA_RE = /\b(identity|catalog|supply|demand|auction|ordering|quality|logistics|payments|claims|notifications|analytics)\.[a-z_]+/g;
+// Matches raw SQL `schema.table` literals only. The (?<![.\w]) lookbehind excludes
+// property access on injected contract services (e.g. `this.supply.getLotSnapshot()`),
+// which is the ALLOWED cross-context path (docs/04 rule: modules/X ──> modules/Y/contracts).
+// Real raw SQL such as `FROM supply.lots` or `'claims.claims'` is still caught.
+const SCHEMA_RE = /(?<![.\w])(identity|catalog|supply|demand|auction|ordering|quality|logistics|payments|claims|notifications|analytics)\.[a-z_]+/g;
 
 describe('architecture: no cross-boundary table access', () => {
   it('context code touches only owned schemas (or core)', () => {

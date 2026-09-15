@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { Logo } from '../components/Logo';
 
 interface ShellFrameProps {
   header?: ReactNode;
@@ -19,7 +20,12 @@ export function ShellFrame({
 }: ShellFrameProps): JSX.Element {
   return (
     <div className="fs-shell" data-testid={testId}>
-      {header && <header className="fs-shell__header">{header}</header>}
+      {header && (
+        <header className="fs-shell__header">
+          <Logo variant="horizontal" testId={`${testId}-logo`} />
+          {header}
+        </header>
+      )}
       <div className="fs-shell__body">
         {sidebar && (
           <aside className="fs-shell__sidebar" aria-label="Section navigation">

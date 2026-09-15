@@ -1,4 +1,5 @@
 export { StatusPill } from './StatusPill';
+export { Logo } from './Logo';
 export { TaskCard } from './TaskCard';
 export { PrimaryActionCard } from './PrimaryActionCard';
 export { MetricCard } from './MetricCard';

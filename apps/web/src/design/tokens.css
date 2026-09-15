@@ -37,6 +37,9 @@
   /* typography — Inter with Indic-script fallbacks */
   --fs-font: 'Inter Variable', 'Inter', 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Tamil',
     'Noto Sans Telugu', system-ui, -apple-system, sans-serif;
+  /* brand/editorial serif — wordmark, public marketing headlines, selected empty-state
+     display use ONLY. Never operational UI (navigation, forms, tables, status). */
+  --fs-font-brand: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --fs-fs-display: 2.25rem;
   --fs-lh-display: 2.75rem;
   --fs-fs-h1: 1.875rem;

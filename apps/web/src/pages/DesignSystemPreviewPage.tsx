@@ -7,6 +7,7 @@ import {
   EmptyState,
   ExceptionBanner,
   InlineAlert,
+  Logo,
   MetricCard,
   OrganizationHeader,
   PageHeader,
@@ -101,17 +102,14 @@ export function DesignSystemPreviewPage(): JSX.Element {
     <ShellFrame
       testId="design-preview-shell"
       header={
-        <>
-          <span className="fs-shell__brand">FloraSetu</span>
-          <OrganizationHeader
-            orgName="Vedant Events"
-            orgCategory="Event organiser"
-            workspaceLabel="Buyer workspace"
-            userName="Nagesh Kumar"
-            userRole="Organization Admin"
-            onSwitch={() => undefined}
-          />
-        </>
+        <OrganizationHeader
+          orgName="Vedant Events"
+          orgCategory="Event organiser"
+          workspaceLabel="Buyer workspace"
+          userName="Nagesh Kumar"
+          userRole="Organization Admin"
+          onSwitch={() => undefined}
+        />
       }
       sidebar={
         <div className="fs-md-stack">
@@ -144,6 +142,26 @@ export function DesignSystemPreviewPage(): JSX.Element {
             This page renders only in development builds and exists for owner visual review of the
             Phase 1 design tokens and component foundation.
           </InlineAlert>
+
+          <Section id="preview-brand" title="Brand — logo system (vector SVG, token palette)">
+            <div className="fs-preview__row">
+              <Logo variant="horizontal" testId="preview-logo-horizontal" />
+              <Logo variant="wordmark" testId="preview-logo-wordmark" />
+              <Logo variant="mark" size={40} testId="preview-logo-mark" />
+            </div>
+            <div
+              className="fs-preview__row"
+              style={{ background: 'var(--fs-primary)', padding: '16px', borderRadius: 'var(--fs-radius-lg)' }}
+            >
+              <Logo variant="horizontal" light testId="preview-logo-light" />
+              <Logo variant="mark" light size={40} testId="preview-logo-mark-light" />
+            </div>
+            <p className="fs-caption fs-text-secondary" style={{ margin: 0 }}>
+              Static assets: /brand/logo-horizontal.svg · logo-horizontal-light.svg · logo-mark.svg ·
+              logo-mark-light.svg · logo-monochrome.svg · logo-wordmark.svg · favicon.svg. Wordmark uses the
+              bundled Cormorant Garamond (shipped with the app — no external font dependency).
+            </p>
+          </Section>
 
           <Section id="preview-colors" title="Color tokens">
             <div className="fs-preview__grid">
