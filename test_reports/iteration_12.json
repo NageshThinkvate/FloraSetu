@@ -1,0 +1,25 @@
+{
+  "summary": "Post-infra-recovery login-blocker verification. All 5 requested scenarios PASS. Owner + supplier login works (201 on /api/auth/login), /orders lists ORD-2026-000001 in READY_FOR_DISPATCH, owner order detail renders all panels (Lifecycle, Lines qty 40, Supplier allocations SAL-2026-000001 CONFIRMED PACKED lots de03824e…×40.000, Pack records PCK-2026-000001, Shipments create form with mode + temp-controlled), supplier /supply/orders shows the confirmed allocation, /supply/lots shows the seeded lot (avail 50, alloc 40, packed 40), supplier order detail correctly renders ONLY the supplier slice ('supplier view (own allocation only)' — no Lifecycle, no Lines, no ₹1,200 total; supplier's own ₹30/unit still shown as expected). Wrong password shows friendly 'Invalid email or password' error (no crash, no infinite spinner). /demand, /catalog, /ops/tower all render logged-in with 0 error elements. Rogue FastAPI backend is NOT holding :8001 — /api/health returns florasetu-api JSON (status ok, db up).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Global", "issues": ["React Router v6 future-flag warnings (v7_startTransition, v7_relativeSplatPath) — non-blocking console noise."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Consider opting into React Router v7 future flags to silence startTransition + relativeSplatPath warnings.",
+    "Login form has a working [role=alert]-style error surface for 401; consider adding data-testid attributes on login-email, login-password, login-submit, and login-error to harden future automation (currently automation relied on input[type=email/password] fallbacks)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "Owner: nagesh.kgpl@gmail.com / FloraSetu-Owner-2026 — verified 201. Supplier: supplier.test8@dev.florasetu.local / Supplier2026x — verified 201.",
+  "seed_data_creation": "None created by tester. Existing seeded ORD-2026-000001 (c8ae3a85-9b38-4aae-b940-27666dcb32f8), SAL-2026-000001, PCK-2026-000001, lot de03824e… all visible end-to-end.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Infra recovery from pod restart is verified working. florasetu-api owns :8001 (health endpoint returns {status:ok, db:up}); no FastAPI 'Not Found' bleed-through. If a future run sees {\"detail\":\"Not Found\"} on /api/auth/login, run bash /app/scripts/bootstrap-infra.sh then yarn seed && yarn seed:catalog && bash /app/scripts/seed-pilot-order.sh. Public URL used for testing: https://flora-modular-core.preview.emergentagent.com. Home for signed-in users redirects to /account (not a landing page with 'Build 4 — Pilot Fulfilment' badge tiles); if that landing page is expected, main agent should confirm intended post-login route.",
+  "rca of the issue": "Original login blocker RCA (already fixed by main agent): pod restart wiped ephemeral PG/Redis (outside /app), and the legacy Emergent template FastAPI+CRA supervisor programs grabbed :8001/:3000 so florasetu-api hit EADDRINUSE and requests were served by FastAPI, returning {\"detail\":\"Not Found\"} on /api/auth/login. Mitigation: /app/scripts/bootstrap-infra.sh stops the rogue programs, restarts Postgres+Redis, runs migrations, and re-registers florasetu-api. Verified today by curl (owner+supplier login 201) and by end-to-end UI walkthrough."
+}
