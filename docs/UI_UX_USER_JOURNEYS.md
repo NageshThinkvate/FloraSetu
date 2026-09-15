@@ -6,17 +6,23 @@ translates it). Wireframes for the 13 key screens: `/app/design_guidelines.json`
 
 ## 1. Buyer
 
-1. **Join** — Register → create org (category explained in one line each) → land in KYB wizard
-   ("3 of 5 steps to start ordering"; browsing works, ordering unlocks as policy allows).
+1. **Join** — Register → create org (category explained in one line each) → land in a
+   capability-aware Business Verification wizard (UX-ADR-003): required items derive from org
+   type/capabilities + policy, progress shows dynamic counts ("3 of 4 required items"), and
+   buyer-only orgs are never asked for supplier payout bank details. Browsing works, ordering
+   unlocks as policy allows.
 2. **Get flowers** — Home [GET FLOWERS] → pick flower (search + photo grid, recents first) →
-   quantity + unit (smart default) → needed by (quick chips: Tomorrow morning / Date+time) →
+   quantity + unit (visible smart preselection — buyer always sees and confirms the unit;
+   the request submits an explicit `uom_id`; UX-ADR-005) → needed by (quick chips: Tomorrow morning / Date+time) →
    delivery place (saved org addresses + one-off) → Review → **Get offers**.
    Confirmation: "Request sent — we're sourcing offers. We'll notify you." (~60 seconds.)
    Advanced specs (grade, stem length, bloom stage, pack, substitution, notes, photos) live
    under **More specifications** — same Requirement payload as today.
 3. **Compare & select** — Notification + ActionCenter card "3 offers received" → offer cards
    (supplier, Verified ✓, est. total, full/partial quantity, spec match ✓/!, delivery promise,
-   freight included?, deviation flag) → compare (cards on mobile, table on desktop) →
+   freight included?, deviation flag) → compare (cards on mobile, table on desktop) with neutral,
+   deterministic default ordering and user-controlled sorting (price, delivery, quantity coverage,
+   specification compliance, validity) — no automatic "best value"/"recommended" labels (UX-ADR-004) →
    **Select offer** → plain-language confirmation ("Ooty Farms will supply 500 Red Naomi,
    ₹21,000, delivery tomorrow by 6 AM") → deviation consent step only when flagged.
 4. **Track** — Order page = timeline (Offer selected → Supplier confirmed → Quality check →

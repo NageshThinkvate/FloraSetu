@@ -1,0 +1,134 @@
+/* FloraSetu design tokens — "Premium Botanical B2B".
+   Human contract: /app/docs/UI_UX_DESIGN_SYSTEM.md · machine source: /app/design_guidelines.json.
+   All visual values live here; page/component code must reference tokens, never hex literals. */
+
+:root {
+  /* brand */
+  --fs-primary: #183d33;
+  --fs-primary-hover: #123028;
+  --fs-primary-active: #0d221c;
+  --fs-primary-tint: #e8efeb;
+  --fs-accent: #76518f;
+  --fs-accent-hover: #624177;
+  --fs-accent-tint: #f3eef6;
+
+  /* surfaces & borders */
+  --fs-bg: #f8f8f5;
+  --fs-surface: #ffffff;
+  --fs-surface-muted: #f0f0ea;
+  --fs-border: #e2e2d8;
+  --fs-border-strong: #c5c5b8;
+
+  /* text */
+  --fs-text: #18201d;
+  --fs-text-secondary: #4f5854;
+  --fs-text-tertiary: #808a85;
+
+  /* semantic */
+  --fs-success: #135436;
+  --fs-success-bg: #e6f4ed;
+  --fs-warning: #7a4d05;
+  --fs-warning-bg: #fef7e6;
+  --fs-error: #821b1b;
+  --fs-error-bg: #fdf2f2;
+  --fs-info: #1a4971;
+  --fs-info-bg: #eff6fc;
+
+  /* typography — Inter with Indic-script fallbacks */
+  --fs-font: 'Inter Variable', 'Inter', 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Tamil',
+    'Noto Sans Telugu', system-ui, -apple-system, sans-serif;
+  --fs-fs-display: 2.25rem;
+  --fs-lh-display: 2.75rem;
+  --fs-fs-h1: 1.875rem;
+  --fs-lh-h1: 2.375rem;
+  --fs-fs-h2: 1.5rem;
+  --fs-lh-h2: 2rem;
+  --fs-fs-h3: 1.25rem;
+  --fs-lh-h3: 1.75rem;
+  --fs-fs-h4: 1rem;
+  --fs-lh-h4: 1.5rem;
+  --fs-fs-body-l: 1rem;
+  --fs-lh-body-l: 1.25rem;
+  --fs-fs-body: 0.875rem;
+  --fs-lh-body: 1.25rem;
+  --fs-fs-caption: 0.75rem;
+  --fs-lh-caption: 1rem;
+  --fs-fs-overline: 0.6875rem;
+  --fs-lh-overline: 0.875rem;
+
+  /* spacing scale — nothing off-scale */
+  --fs-space-1: 4px;
+  --fs-space-2: 8px;
+  --fs-space-3: 12px;
+  --fs-space-4: 16px;
+  --fs-space-5: 20px;
+  --fs-space-6: 24px;
+  --fs-space-8: 32px;
+  --fs-space-10: 40px;
+  --fs-space-12: 48px;
+  --fs-space-16: 64px;
+
+  /* radius */
+  --fs-radius-sm: 6px;
+  --fs-radius-md: 10px;
+  --fs-radius-lg: 14px;
+  --fs-radius-pill: 999px;
+
+  /* elevation — floating layers only (drawers, popovers, sticky bars) */
+  --fs-shadow-float: 0 8px 24px rgba(24, 32, 29, 0.12);
+
+  /* motion */
+  --fs-motion-micro: 150ms ease-out;
+  --fs-motion-sheet: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --fs-motion-step: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* layout */
+  --fs-form-max: 768px;
+  --fs-content-max: 1280px;
+  --fs-sidebar-w: 280px;
+  --fs-touch-min: 44px;
+  --fs-touch-field: 48px;
+}
+
+/* ---- typography utility classes ---- */
+/* Legacy index.css still sets IBM Plex Mono (body) and Fraunces (h1/h2) for unmigrated
+   pages; every fs-* element must explicitly use the design-system font. */
+:is(.fs-shell, .fs-preview, [class^='fs-'], [class*=' fs-']) {
+  font-family: var(--fs-font);
+}
+.fs-display { font-size: var(--fs-fs-display); line-height: var(--fs-lh-display); font-weight: 600; letter-spacing: -0.01em; }
+.fs-h1 { font-size: var(--fs-fs-h1); line-height: var(--fs-lh-h1); font-weight: 600; letter-spacing: -0.01em; }
+.fs-h2 { font-size: var(--fs-fs-h2); line-height: var(--fs-lh-h2); font-weight: 600; }
+.fs-h3 { font-size: var(--fs-fs-h3); line-height: var(--fs-lh-h3); font-weight: 600; }
+.fs-h4 { font-size: var(--fs-fs-h4); line-height: var(--fs-lh-h4); font-weight: 600; }
+.fs-body-l { font-size: var(--fs-fs-body-l); line-height: var(--fs-lh-body-l); }
+.fs-body { font-size: var(--fs-fs-body); line-height: var(--fs-lh-body); }
+.fs-caption { font-size: var(--fs-fs-caption); line-height: var(--fs-lh-caption); }
+.fs-overline {
+  font-size: var(--fs-fs-overline);
+  line-height: var(--fs-lh-overline);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--fs-text-tertiary);
+}
+.fs-num { font-variant-numeric: tabular-nums; }
+.fs-text-secondary { color: var(--fs-text-secondary); }
+.fs-text-tertiary { color: var(--fs-text-tertiary); }
+
+/* ---- focus foundation (WCAG 2.2 AA) ---- */
+:is(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--fs-primary);
+  outline-offset: 2px;
+  border-radius: var(--fs-radius-sm);
+}
+
+/* ---- motion foundation ---- */
+@media (prefers-reduced-motion: reduce) {
+  [class^='fs-'],
+  [class*=' fs-'] {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

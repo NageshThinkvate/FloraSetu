@@ -24,11 +24,14 @@ Wireframe: guidelines #2.
 
 ### B3. Offers inbox + comparison — `/buyer/offers`, `/buyer/requests/:id/offers` (redesign of `RfqsPage` + `RfqDetailPage` comparison)
 Purpose: pick a supplier with confidence. Primary: Select offer.
-Hierarchy: per request → OfferCards sorted by recommended (spec match → price → delivery); desktop table with progressive SideSheet detail (UoM normalization, packing, handling, freight, terms, version history).
-Mobile: stacked cards, best-value badge. Desktop: comparison table + SideSheet.
+Hierarchy: per request → OfferCards in a neutral, deterministic default order; sorting/filtering
+is strictly user-controlled (price, delivery, quantity coverage, specification compliance,
+validity). No automatic "Best value / Recommended / Best offer" labels and no invented ranking
+formula (UX-ADR-004); desktop table with progressive SideSheet detail (UoM normalization, packing, handling, freight, terms, version history).
+Mobile: stacked cards (no ranking badges). Desktop: comparison table + SideSheet.
 Empty: "No offers yet — we're sourcing suppliers for your request." Permissions: quote.evaluate, award.create.
 API: `GET /demand/rfqs/:id/comparison`, `POST /demand/rfqs/:id/awards` — unchanged; **[NEW B3]** supplier display name + verified flag in payload.
-Wireframe: guidelines #4 (mobile best-value card; desktop feature-row table).
+Wireframe: guidelines #4 (mobile offer cards; desktop feature-row table — neutral default order per UX-ADR-004).
 
 ### B4. Order tracking — `/buyer/orders`, `/buyer/orders/:id` (redesign of `OrdersPage` + `OrderDetailPage`)
 Purpose: answer what happened / what's next / who owns it / when. Primary (state-dependent): Confirm delivery / Report an issue.
@@ -50,8 +53,9 @@ Purpose: report + track problems. Photo-first create from order; detail = status
 API: claims endpoints unchanged. Permissions: claim.create.
 
 ### B7. Organization & KYB — `/buyer/org/*` (redesign of AccountPage)
-Purpose: company profile, **Business Verification wizard** (5 steps, progress, per-step status,
-correction loop, real uploads), members/invites, security (MFA), documents.
+Purpose: company profile, **Business Verification wizard** (capability-aware required items per
+UX-ADR-003 — dynamic step count with progress, per-step status, correction loop, real uploads;
+payout bank steps only for supplier/payout-capable orgs), members/invites, security (MFA), documents.
 API: existing org/member/MFA endpoints + **[NEW B1]** KYB structured endpoints.
 Wireframe: guidelines KYB external wizard (ProgressStepper "Step 3 of 5").
 
@@ -117,7 +121,8 @@ Wireframe: guidelines #10.
 
 ### Phase 2 (deferred): `/partner/hub` receiving/batching, `/partner/logistics` driver trips
 (Today's trips → pickup → load confirm → transport → delivery → POD). Requires **[NEW B4]**
-trip-assignment endpoint — explicitly post-pilot.
+trip-assignment endpoint — explicitly post-pilot. Shareable/WhatsApp request-approval links are
+also post-pilot only (UX-ADR-008): no public/share tokens or external sign-off links in this redesign.
 
 ## 4. OPERATIONS shell (`/ops/*`)
 
@@ -157,8 +162,9 @@ Wireframe: guidelines #12.
 
 ### A4–A8. Catalog standards (re-home CatalogAdminPage), Grade/Handling profiles, Users & access
 (member/role matrices, invites), Configuration + Feature flags, Security (MFA/session policy),
-Audit logs (search by trace_id/org/actor/object; **[NEW B2-adjacent]** audit read endpoint if not
-sufficient — audit events table exists from Build 0).
+Audit logs (search by trace_id/org/actor/object). Per UX-ADR-007: inspect existing audit-read
+APIs first and reuse if adequate; if none suffices, record **UX-B4-PENDING** and request owner
+approval during Phase 7 — never silently add the endpoint (audit events table exists from Build 0).
 
 ## 6. Screens to remove / merge
 

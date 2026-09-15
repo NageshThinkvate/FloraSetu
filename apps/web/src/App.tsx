@@ -30,6 +30,7 @@ import { ControlTowerPage } from './pages/ControlTowerPage';
 import { FinancePage } from './pages/FinancePage';
 import { ClaimsPage } from './pages/ClaimsPage';
 import { ClaimDetailPage } from './pages/ClaimDetailPage';
+import { DesignSystemPreviewPage } from './pages/DesignSystemPreviewPage';
 
 function Protected({ children }: { children: JSX.Element }): JSX.Element {
   const { me, loading } = useAuth();
@@ -81,6 +82,9 @@ export default function App(): JSX.Element {
         <Nav />
         <Routes>
           <Route path="/" element={<AppShell />} />
+          {import.meta.env.DEV && (
+            <Route path="/dev/design-system" element={<DesignSystemPreviewPage />} />
+          )}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/onboarding" element={<Protected><OnboardingPage /></Protected>} />

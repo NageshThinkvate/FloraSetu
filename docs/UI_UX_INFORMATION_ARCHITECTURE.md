@@ -5,8 +5,12 @@ of truth). This document defines WHERE things live and WHO sees them.
 
 ## 1. Five shells, one codebase
 
-Role router at `/` after login: resolves the active org's category + membership role →
-redirects to the user's shell home. Shells share components/backend; they never share screens.
+Role router at `/` after login (UX-ADR-001): workspace availability is derived from
+organization capabilities + user membership + assigned roles + permissions + feature/
+jurisdiction gates — never from organization category alone (an org may hold BOTH buyer and
+supplier capability). The router lands the user in their primary workspace; further workspaces
+are reached only via explicit WorkspaceSwitcher. Shells share components/backend; they never
+share screens.
 
 | Shell | Route root | Who | Primary device |
 |---|---|---|---|
@@ -16,8 +20,10 @@ redirects to the user's shell home. Shells share components/backend; they never 
 | Operations | `/ops/*` | FloraSetu staff org: PROCUREMENT_OPS, QC_AGENT, FINANCE_OPS, SUPPORT roles | desktop-first |
 | Admin | `/admin/*` | FloraSetu staff org: PLATFORM_ADMIN | desktop-first |
 
-Users holding roles in several shells (e.g. platform owner testing) get a **WorkspaceSwitcher**
-in the header. A user with a role in shell X never sees shell Y's navigation.
+Workspace availability is computed per UX-ADR-001 (capabilities + membership + roles +
+permissions + gates). Users with access to several workspaces get a **WorkspaceSwitcher**
+in the header and switch explicitly. A user with a role in shell X never sees shell Y's
+navigation; the navigation of multiple workspaces is never silently mixed.
 
 Existing routes map into shells 1:1 (no page is deleted, only re-homed):
 `/demand/quick` → `/buyer/requests/new`; `/demand/rfqs*` → `/buyer/offers*`; `/orders*` →
@@ -65,8 +71,10 @@ Every shell header shows, always:
   QC hold · Packing delay · Delivery at risk · Open claims · Payment exceptions · Settlement exceptions ·
   KYB reviews pending.
 - Role filtering: PROCUREMENT_OPS sees sourcing/RFQ/supply/delivery; QC_AGENT sees QC queues;
-  FINANCE_OPS sees payment/settlement; PLATFORM_ADMIN sees all. Same `/ops` URL space — the queue
-  list is filtered, not hidden behind different routes.
+  FINANCE_OPS sees payment/settlement. Per UX-ADR-002, PLATFORM_ADMIN alone does NOT expose
+  Operations queues as a working environment — only staff holding operational roles see them;
+  an internal user holding both admin and operational roles switches workspaces explicitly.
+  Same `/ops` URL space — the queue list is filtered, not hidden behind different routes.
 - Row click → SideSheet with entity context + primary action (convert award, resolve hold, verify
   payment, …) — no full-page navigation for routine clears.
 

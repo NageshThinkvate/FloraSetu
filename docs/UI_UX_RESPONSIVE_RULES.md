@@ -26,15 +26,19 @@ Desktop and mobile are deliberate designs, not scaled copies. Tokens: design_gui
 - No hover-only affordances (hover = progressive enhancement only).
 - Camera-first capture uses `<input type="file" accept="image/*" capture>` + thumbnail queue.
 - Clear back navigation on every pushed screen (top-left chevron + screen title).
-- Form drafts survive navigation (sessionStorage keyed by form id) and offline submit queues
-  with visible "will retry" state.
+- Form drafts survive navigation (sessionStorage keyed by form id) — allowed for quick request,
+  event, quote and form drafts (UX-ADR-006). Offline queued mutation is limited to resilient field
+  workflows (QC draft/evidence, safely-idempotent lot/media capture) with a visible "will retry"
+  state. NEVER queued offline: award selection, payment verification, settlement completion,
+  bank-change approval, KYB reviewer approval, other high-risk financial/security actions —
+  these require authoritative online confirmation (UX-ADR-006).
 - Fixed headers only on list/queue screens; content screens scroll naturally.
 
 ## 3. Component behavior by breakpoint
 
 | Component | Mobile (<768) | Desktop (≥1024) |
 |---|---|---|
-| OfferComparison | stacked OfferCards, "best value" first, expand for freight/specs | 4–6 column table: supplier · spec match · qty · price · landed status · delivery · deviation · validity · action; row → SideSheet for UoM normalization, packing, handling, freight components, version history |
+| OfferComparison | stacked OfferCards in neutral deterministic default order, expand for freight/specs; sorting strictly user-controlled (UX-ADR-004) | 4–6 column table: supplier · spec match · qty · price · landed status · delivery · deviation · validity · action; row → SideSheet for UoM normalization, packing, handling, freight components, version history |
 | OrderTimeline | vertical stepper, current step card w/ owner + ETA | horizontal stepper + right detail panel |
 | DataTable | MobileDataCard (primary metric + 2 fields + action) | full table, sticky header + sticky right action column |
 | Forms | single column, sticky submit bar | 2-col grid inside 768px max-width; advanced sections collapsed |

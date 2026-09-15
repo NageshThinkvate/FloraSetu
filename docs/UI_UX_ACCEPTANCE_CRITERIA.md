@@ -10,6 +10,11 @@ testable; the testing agent runs them with the standard accounts in `/app/memory
 - [ ] Every screen shows active organization name + category + user name + role; switching org
   re-scopes data and confirms via toast.
 - [ ] `/` renders the role router, never the module-architecture page.
+- [ ] Workspace availability derives from capabilities + membership + roles + permissions
+  (UX-ADR-001); a dual-capability user switches workspaces explicitly via WorkspaceSwitcher and
+  never sees mixed navigation.
+- [ ] PLATFORM_ADMIN alone sees no Operations queues/actions (UX-ADR-002); a user holding both
+  admin and operational roles gets two separate workspaces.
 
 ## 2. Design system conformance
 - [ ] Computed styles match tokens in `/app/design_guidelines.json` (colors, Inter type scale,
@@ -23,7 +28,10 @@ testable; the testing agent runs them with the standard accounts in `/app/memory
 - [ ] Buyer completes Get Flowers in ≤ 60 seconds with only flower/qty/date/delivery visible
   (advanced specs behind disclosure); confirmation sets expectation, no RFQ jargon.
 - [ ] Buyer compares ≥2 offers as cards at 390px and as a table at 1440px; selects an offer;
-  sees plain-language confirmation.
+  sees plain-language confirmation. Default offer ordering is neutral/deterministic and sorting
+  is user-controlled; no "best value"/"recommended" labels render anywhere (UX-ADR-004).
+- [ ] Quick Request always shows the selected unit before submit and sends an explicit `uom_id`
+  (UX-ADR-005).
 - [ ] Buyer order page shows timeline + next-action owner + ETA; confirm-delivery and
   report-issue (photo-first) complete successfully against the real API.
 - [ ] Supplier: home shows the 5 attention cards with live counts; quote builder submits and
@@ -35,8 +43,10 @@ testable; the testing agent runs them with the standard accounts in `/app/memory
   payment works from a SideSheet without page navigation.
 - [ ] Admin: KYB reviewer approves / requests-correction (reason required) / rejects with the
   split document view; the org's wizard reflects the correction with the reason shown.
-- [ ] KYB wizard: 5 steps with progress, per-step status, real document upload, and the
+- [ ] KYB wizard: capability-aware required items (UX-ADR-003) with dynamic progress
+  ("N of M required items"), per-step status, real document upload, and the
   correction round-trip (reviewer correction → org sees reason → re-submit → approve).
+  Buyer-only orgs are never asked for payout bank details.
 
 ## 4. Responsive matrix
 - [ ] Every shell screen renders without horizontal scroll at 360/390/412/768/1024/1440/1920.
