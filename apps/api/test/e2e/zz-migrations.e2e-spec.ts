@@ -24,7 +24,7 @@ describe('GATE: migrations up/down', () => {
       );
       expect(Number(tables.rows[0].n)).toBeGreaterThanOrEqual(60);
       const migrations = await pool.query<{ n: string }>('SELECT count(*)::text AS n FROM public.schema_migrations');
-      expect(Number(migrations.rows[0].n)).toBe(12);
+      expect(Number(migrations.rows[0].n)).toBe(13);
     } finally {
       await pool.end();
     }

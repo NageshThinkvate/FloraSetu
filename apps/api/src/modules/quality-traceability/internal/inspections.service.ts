@@ -8,6 +8,7 @@ import { RequestContext } from '../../../common/request-context';
 import { claimIdempotencyKey, completeIdempotencyKey, hashRequest } from '../../../common/idempotency/idempotency.service';
 import { SupplyInventory_SERVICE, SupplyInventoryService } from '../../supply-inventory/contracts';
 import { CatalogStandards_SERVICE, CatalogStandardsService } from '../../catalog-standards/contracts';
+import { Notifications_SERVICE, NotificationsService } from '../../notifications/contracts';
 import { CompleteInspectionDto, CreateInspectionDto } from './dto';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class InspectionsService {
     private readonly outbox: OutboxService,
     private readonly refIds: ReferenceIdService,
     @Inject(SupplyInventory_SERVICE) private readonly supply: SupplyInventoryService,
+    @Inject(Notifications_SERVICE) private readonly notifications: NotificationsService,
     @Inject(CatalogStandards_SERVICE) private readonly catalog: CatalogStandardsService
   ) {}
 
@@ -159,6 +161,13 @@ export class InspectionsService {
     }, ctx.userId);
     for (const mediaId of dto.mediaObjectIds ?? []) {
       await this.supply.attachLotMedia(inspection.rows[0].lot_id, mediaId, 'INSPECTION', inspectionId, ctx.userId);
+    }
+    // B2: notify the lot owner that the quality check completed (best-effort, post-commit).
+    const lotOwner = await this.supply.getLotSnapshot(inspection.rows[0].lot_id).catch(() => null);
+    if (lotOwner) {
+      await this.notifications
+        .queue(lotOwner.orgId, null, 'inspection.completed', { lotId: lotOwner.id, inspectionId })
+        .catch(() => undefined);
     }
     return { ...(outcome.responseBody as object), lotStatus: lotStatus.status };
   }

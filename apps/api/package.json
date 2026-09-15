@@ -11,6 +11,7 @@
     "migrate:down": "node scripts/migrate.js down",
     "seed": "ts-node -r dotenv/config seed/seed.ts dotenv_config_path=.env.development",
     "seed:catalog": "ts-node -r dotenv/config seed/catalog-seed.ts dotenv_config_path=.env.development",
+    "seed:phase2": "ts-node -r dotenv/config seed/seed-phase2-personas.ts dotenv_config_path=.env.development",
     "test": "jest --runInBand",
     "test:arch": "jest test/architecture --runInBand",
     "test:unit": "jest test/unit --runInBand",

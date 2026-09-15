@@ -37,7 +37,12 @@ export class OrgsService {
     return this.db.withTransaction(async (client) => {
       const ref = await this.refIds.next(client, 'ORG');
       const org = await client.query<{ id: string }>(
-        `INSERT INTO identity.organizations (ref, name, type) VALUES ($1, $2, $3) RETURNING id`,
+        `INSERT INTO identity.organizations (ref, name, type, capabilities)
+         VALUES ($1, $2, $3, CASE
+           WHEN $3 IN ('BUYER','FLORIST','DECORATOR','EVENT_PLANNER','HOTEL','CORPORATE_BUYER') THEN ARRAY['BUYER']
+           WHEN $3 IN ('GROWER','GROWER_GROUP','IMPORTER','AGGREGATION_HUB','WHOLESALER') THEN ARRAY['SUPPLIER']
+           WHEN $3 = 'QC_PARTNER' THEN ARRAY['PARTNER_QC']
+           ELSE '{}'::text[] END) RETURNING id`,
         [ref, input.name.trim(), input.category]
       );
       const orgId = org.rows[0].id;

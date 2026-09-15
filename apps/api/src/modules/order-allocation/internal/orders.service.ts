@@ -10,6 +10,7 @@ import { claimIdempotencyKey, completeIdempotencyKey, hashRequest } from '../../
 import { DemandRfq_SERVICE, DemandRfqService } from '../../demand-rfq/contracts';
 import { SupplyInventory_SERVICE, SupplyInventoryService } from '../../supply-inventory/contracts';
 import { LogisticsColdchain_SERVICE, LogisticsColdchainService } from '../../logistics-coldchain/contracts';
+import { Notifications_SERVICE, NotificationsService } from '../../notifications/contracts';
 import { assertOrderTransition, isOps } from './order-policies';
 import { AcceptDeliveryDto, AllocateLotDto, ShortfallDto, TransitionOrderDto } from './dto';
 
@@ -24,7 +25,8 @@ export class OrdersService {
     private readonly refIds: ReferenceIdService,
     @Inject(DemandRfq_SERVICE) private readonly demand: DemandRfqService,
     @Inject(SupplyInventory_SERVICE) private readonly supply: SupplyInventoryService,
-    @Inject(LogisticsColdchain_SERVICE) private readonly logistics: LogisticsColdchainService
+    @Inject(LogisticsColdchain_SERVICE) private readonly logistics: LogisticsColdchainService,
+    @Inject(Notifications_SERVICE) private readonly notifications: NotificationsService
   ) {}
 
   // §2/§30: award -> order conversion. Idempotent (key + one-order-per-award unique index).
@@ -145,6 +147,13 @@ export class OrdersService {
     const { orderId, requirementId } = outcome as unknown as { orderId?: string; requirementId?: string };
     if (orderId && requirementId) {
       await this.demand.markRequirementConverted(requirementId, orderId).catch(() => undefined);
+    }
+    if (orderId) {
+      // B2: notify each supplier org of its new order allocation (best-effort, post-commit).
+      const supplierOrgs = [...new Set(snapshot.lines.map((l) => l.supplierOrgId))];
+      for (const sOrg of supplierOrgs) {
+        await this.notifications.queue(sOrg, null, 'order.allocated', { orderId }).catch(() => undefined);
+      }
     }
     return outcome.responseBody;
   }

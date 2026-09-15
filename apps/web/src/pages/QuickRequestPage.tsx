@@ -4,6 +4,9 @@ import {
   createRequirement, listUnits, ProductSummary,
   searchProducts, submitRequirement, UnitOfMeasure
 } from '../lib/api/demand';
+import { useAuth } from '../lib/api/auth';
+import { useWorkspace } from '../lib/workspace-context';
+import { clearDraft, DirtyForms, loadDraft, saveDraft } from '../lib/drafts';
 
 // Progressive procurement: the mobile-first QUICK flow writes the same canonical
 // Requirement model as a Formal RFQ — the backend auto-publishes a managed RFQ.
@@ -20,9 +23,36 @@ export function QuickRequestPage(): JSX.Element {
   const [error, setError] = useState('');
   const [done, setDone] = useState<{ id: string; ref: string } | null>(null);
 
+  const { activeOrgId } = useAuth();
+  const { activeWorkspace } = useWorkspace();
+  const draftOrg = activeOrgId ?? 'none';
+  const draftWs = activeWorkspace ?? 'buyer';
+
   useEffect(() => {
     listUnits().then((r) => setUnits(r.items)).catch(() => undefined);
+    // Restore this organization+workspace's draft only (§14 draft isolation).
+    const d = loadDraft<{ quantity: string; uomId: string; neededAt: string; destination: string }>(
+      draftOrg, draftWs, 'quick-request'
+    );
+    if (d) {
+      setQuantity(d.quantity ?? '');
+      setUomId(d.uomId ?? '');
+      setNeededAt(d.neededAt ?? '');
+      setDestination(d.destination ?? '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Persist draft + register dirty state (warns before workspace/org switches).
+  useEffect(() => {
+    const dirty = Boolean(product || quantity || uomId || neededAt || destination);
+    if (dirty) {
+      DirtyForms.register('quick-request');
+      saveDraft(draftOrg, draftWs, 'quick-request', { quantity, uomId, neededAt, destination });
+    } else {
+      DirtyForms.unregister('quick-request');
+    }
+  }, [product, quantity, uomId, neededAt, destination, draftOrg, draftWs]);
 
   const search = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
@@ -55,6 +85,8 @@ export function QuickRequestPage(): JSX.Element {
         }]
       });
       await submitRequirement(req.id, crypto.randomUUID());
+      clearDraft(draftOrg, draftWs, 'quick-request');
+      DirtyForms.unregister('quick-request');
       setDone(req);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed');

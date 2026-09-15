@@ -169,14 +169,14 @@ export class AuthService {
       throw new ApiException(404, 'NOT_FOUND', 'User not found');
     }
     const memberships = await this.db.query(
-      `SELECT m.org_id, o.name, o.type, o.status AS org_status, m.status AS membership_status,
+      `SELECT m.org_id, o.name, o.type, o.status AS org_status, m.status AS membership_status, o.capabilities,
               COALESCE(array_agg(DISTINCT ro.name) FILTER (WHERE ro.name IS NOT NULL), '{}') AS roles
        FROM identity.org_memberships m
        JOIN identity.organizations o ON o.id = m.org_id
        LEFT JOIN identity.user_roles ur ON ur.user_id = m.user_id AND ur.org_id = m.org_id
        LEFT JOIN identity.roles ro ON ro.id = ur.role_id
        WHERE m.user_id = $1
-       GROUP BY m.org_id, o.name, o.type, o.status, m.status`,
+       GROUP BY m.org_id, o.name, o.type, o.status, m.status, o.capabilities`,
       [userId]
     );
     const mfa = await this.db.query(

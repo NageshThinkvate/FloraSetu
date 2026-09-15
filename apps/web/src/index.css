@@ -1,11 +1,13 @@
 :root {
-  --bg: #101812;
-  --panel: #182219;
-  --line: #26352a;
-  --ink: #e9f0e6;
-  --ink-dim: #93a892;
-  --leaf: #7fd069;
-  --amber: #e8b64c;
+  /* Legacy adapter palette (Phase 2): legacy pages render in the approved light theme
+     until each is redesigned in Phases 3–8. New work uses tokens.css (--fs-*). */
+  --bg: #f8f8f5;
+  --panel: #ffffff;
+  --line: #e2e2d8;
+  --ink: #18201d;
+  --ink-dim: #4f5854;
+  --leaf: #183d33;
+  --amber: #7a4d05;
 }
 
 * { box-sizing: border-box; }
@@ -14,12 +16,12 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--fs-font);
   -webkit-font-smoothing: antialiased;
 }
 
 h1, h2 {
-  font-family: 'Fraunces', serif;
+  font-family: var(--fs-font);
   font-weight: 600;
   letter-spacing: -0.01em;
   margin: 0;
@@ -137,7 +139,7 @@ h1, h2 {
   white-space: nowrap;
 }
 .top-nav a:hover { color: var(--leaf); }
-.top-nav a:first-child { color: var(--ink); font-family: 'Fraunces', serif; font-size: 1rem; }
+.top-nav a:first-child { color: var(--ink); font-family: var(--fs-font); font-size: 1rem; }
 
 .auth-shell {
   min-height: 70vh;
@@ -233,7 +235,7 @@ button:hover { opacity: 0.88; transform: translateY(-1px); }
 .data-table th { text-align: left; color: var(--ink-dim); font-weight: 500; padding: 8px; border-bottom: 1px solid var(--line); }
 .data-table td { padding: 8px; border-bottom: 1px solid var(--line); }
 
-.sub-h { font-family: 'Fraunces', serif; font-size: 0.95rem; margin: 16px 0 6px; }
+.sub-h { font-family: var(--fs-font); font-size: 0.95rem; margin: 16px 0 6px; }
 
 code {
   background: var(--bg);

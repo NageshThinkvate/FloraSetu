@@ -9,6 +9,7 @@ import { claimIdempotencyKey, completeIdempotencyKey, hashRequest } from '../../
 import { OrderAllocation_SERVICE, OrderAllocationService } from '../../order-allocation/contracts';
 import { SupplyInventory_SERVICE, SupplyInventoryService } from '../../supply-inventory/contracts';
 import { QualityTraceability_SERVICE, QualityTraceabilityService } from '../../quality-traceability/contracts';
+import { Notifications_SERVICE, NotificationsService } from '../../notifications/contracts';
 import { CreateShipmentDto, PodDto, ResolveExceptionDto, TemperatureExceptionDto } from './dto';
 
 @Injectable()
@@ -20,7 +21,8 @@ export class ShipmentsService {
     private readonly refIds: ReferenceIdService,
     @Inject(OrderAllocation_SERVICE) private readonly orders: OrderAllocationService,
     @Inject(SupplyInventory_SERVICE) private readonly supply: SupplyInventoryService,
-    @Inject(QualityTraceability_SERVICE) private readonly quality: QualityTraceabilityService
+    @Inject(QualityTraceability_SERVICE) private readonly quality: QualityTraceabilityService,
+    @Inject(Notifications_SERVICE) private readonly notifications: NotificationsService
   ) {}
 
   private isOps(ctx: { permissions: string[] }): boolean {
@@ -244,6 +246,16 @@ export class ShipmentsService {
     });
     if (outcome.state === 'replay') {
       return { ...outcome.responseBody as object, replayed: true };
+    }
+    // B2: notify the buyer org that delivery awaits their confirmation (best-effort, post-commit).
+    const delivered = outcome.responseBody as { orderId?: string; shipmentId?: string };
+    if (delivered.orderId) {
+      const snap = await this.orders.getOrderSnapshot(delivered.orderId).catch(() => null);
+      if (snap?.buyerOrgId) {
+        await this.notifications
+          .queue(snap.buyerOrgId, null, 'shipment.delivered', { orderId: delivered.orderId, shipmentId: delivered.shipmentId })
+          .catch(() => undefined);
+      }
     }
     return outcome.responseBody;
   }

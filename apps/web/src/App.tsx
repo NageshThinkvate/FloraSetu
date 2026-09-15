@@ -1,6 +1,12 @@
-import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/api/auth';
-import { AppShell } from './shell/AppShell';
+import { ToastProvider } from './lib/toast';
+import { WorkspaceProvider, useWorkspace } from './lib/workspace-context';
+import { WorkspaceRouter } from './shell/WorkspaceRouter';
+import { ShellLoading } from './shell/states';
+import { BuyerHome, SupplierHome } from './shell/homes';
+import { PlaceholderPage } from './shell/placeholders';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { OnboardingPage } from './pages/OnboardingPage';
@@ -9,7 +15,6 @@ import { AdminPage } from './pages/AdminPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { CatalogAdminPage } from './pages/CatalogAdminPage';
 import { CapabilitiesPage } from './pages/CapabilitiesPage';
-import { DemandHomePage } from './pages/DemandHomePage';
 import { QuickRequestPage } from './pages/QuickRequestPage';
 import { RequirementDetailPage } from './pages/RequirementDetailPage';
 import { EventsPage } from './pages/EventsPage';
@@ -32,89 +37,241 @@ import { ClaimsPage } from './pages/ClaimsPage';
 import { ClaimDetailPage } from './pages/ClaimDetailPage';
 import { DesignSystemPreviewPage } from './pages/DesignSystemPreviewPage';
 
+const BuyerShell = lazy(() => import('./shell/BuyerShell'));
+const SupplierShell = lazy(() => import('./shell/SupplierShell'));
+const PartnerShell = lazy(() => import('./shell/PartnerShell'));
+const OpsShell = lazy(() => import('./shell/OpsShell'));
+const AdminShell = lazy(() => import('./shell/AdminShell'));
+
 function Protected({ children }: { children: JSX.Element }): JSX.Element {
   const { me, loading } = useAuth();
   if (loading) {
-    return <main className="app-shell">Loading…</main>;
+    return <ShellLoading />;
   }
   return me ? children : <Navigate to="/login" replace />;
 }
 
-function Nav(): JSX.Element {
-  const { me } = useAuth();
-  if (!me) {
-    return <></>;
-  }
-  const platform = me.memberships.some((m) => m.type === 'PLATFORM_OPS' && m.roles.includes('PLATFORM_ADMIN'));
-  const ops = me.memberships.some((m) =>
-    m.roles.includes('PROCUREMENT_OPS') || m.roles.includes('PLATFORM_ADMIN'));
-  const catalogManager = me.memberships.some((m) =>
-    m.roles.includes('CATALOG_MANAGER') || m.roles.includes('PLATFORM_ADMIN') || m.roles.includes('ORG_ADMIN'));
-  const finance = me.memberships.some((m) =>
-    m.roles.includes('FINANCE_OPS') || m.roles.includes('PLATFORM_ADMIN'));
-  return (
-    <nav className="top-nav" data-testid="top-nav">
-      <Link to="/" data-testid="nav-home">FloraSetu</Link>
-      <Link to="/demand" data-testid="nav-demand">Procurement</Link>
-      <Link to="/orders" data-testid="nav-orders">Orders</Link>
-      <Link to="/supply/inbox" data-testid="nav-inbox">Inbox</Link>
-      <Link to="/supply/orders" data-testid="nav-fulfilment">Fulfilment</Link>
-      <Link to="/supply/lots" data-testid="nav-lots">Lots</Link>
-      <Link to="/claims" data-testid="nav-claims">Claims</Link>
-      <Link to="/catalog" data-testid="nav-catalog">Catalog</Link>
-      <Link to="/catalog/capabilities" data-testid="nav-capabilities">Capabilities</Link>
-      {catalogManager && <Link to="/catalog/admin" data-testid="nav-catalog-admin">Catalog admin</Link>}
-      {ops && <Link to="/ops/desk" data-testid="nav-ops-desk">Ops desk</Link>}
-      {ops && <Link to="/ops/qc" data-testid="nav-ops-qc">QC</Link>}
-      {ops && <Link to="/ops/tower" data-testid="nav-ops-tower">Tower</Link>}
-      {(ops || finance) && <Link to="/ops/finance" data-testid="nav-ops-finance">Finance</Link>}
-      <Link to="/account" data-testid="nav-account">Account</Link>
-      <Link to="/onboarding" data-testid="nav-onboarding">New organization</Link>
-      {platform && <Link to="/admin" data-testid="nav-admin">Admin</Link>}
-    </nav>
-  );
+// Controlled legacy → workspace redirect map (§5): legacy paths never become a
+// second source of UX truth; working pages live on under the new shell roots.
+function LegacyRedirect({ to }: { to: string }): JSX.Element {
+  const params = useParams();
+  return <Navigate to={to.replace(':id', params.id ?? '')} replace />;
+}
+
+function AccountRedirect(): JSX.Element {
+  const { activeWorkspace } = useWorkspace();
+  const target =
+    activeWorkspace === 'supplier' ? '/supplier/org' : activeWorkspace === 'buyer' ? '/buyer/org' : '/';
+  return <Navigate to={target} replace />;
+}
+
+function CatalogRedirect(): JSX.Element {
+  const { activeWorkspace } = useWorkspace();
+  return <Navigate to={activeWorkspace === 'supplier' ? '/supplier/catalog' : '/buyer/catalog'} replace />;
 }
 
 export default function App(): JSX.Element {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Nav />
-        <Routes>
-          <Route path="/" element={<AppShell />} />
-          {import.meta.env.DEV && (
-            <Route path="/dev/design-system" element={<DesignSystemPreviewPage />} />
-          )}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/onboarding" element={<Protected><OnboardingPage /></Protected>} />
-          <Route path="/account" element={<Protected><AccountPage /></Protected>} />
-          <Route path="/admin" element={<Protected><AdminPage /></Protected>} />
-          <Route path="/catalog" element={<Protected><CatalogPage /></Protected>} />
-          <Route path="/catalog/admin" element={<Protected><CatalogAdminPage /></Protected>} />
-          <Route path="/catalog/capabilities" element={<Protected><CapabilitiesPage /></Protected>} />
-          <Route path="/demand" element={<Protected><DemandHomePage /></Protected>} />
-          <Route path="/demand/quick" element={<Protected><QuickRequestPage /></Protected>} />
-          <Route path="/demand/requirements/:id" element={<Protected><RequirementDetailPage /></Protected>} />
-          <Route path="/demand/events" element={<Protected><EventsPage /></Protected>} />
-          <Route path="/demand/events/:id" element={<Protected><EventDetailPage /></Protected>} />
-          <Route path="/demand/rfqs" element={<Protected><RfqsPage /></Protected>} />
-          <Route path="/demand/rfqs/:id" element={<Protected><RfqDetailPage /></Protected>} />
-          <Route path="/supply/inbox" element={<Protected><SupplierInboxPage /></Protected>} />
-          <Route path="/supply/rfqs/:id" element={<Protected><SupplierRfqPage /></Protected>} />
-          <Route path="/supply/quotes" element={<Protected><MyQuotesPage /></Protected>} />
-          <Route path="/ops/desk" element={<Protected><OpsDeskPage /></Protected>} />
-          <Route path="/orders" element={<Protected><OrdersPage /></Protected>} />
-          <Route path="/orders/:id" element={<Protected><OrderDetailPage /></Protected>} />
-          <Route path="/supply/orders" element={<Protected><SupplierOrdersPage /></Protected>} />
-          <Route path="/supply/lots" element={<Protected><LotsPage /></Protected>} />
-          <Route path="/supply/lots/:id" element={<Protected><LotDetailPage /></Protected>} />
-          <Route path="/claims" element={<Protected><ClaimsPage /></Protected>} />
-          <Route path="/claims/:id" element={<Protected><ClaimDetailPage /></Protected>} />
-          <Route path="/ops/qc" element={<Protected><QcQueuePage /></Protected>} />
-          <Route path="/ops/tower" element={<Protected><ControlTowerPage /></Protected>} />
-          <Route path="/ops/finance" element={<Protected><FinancePage /></Protected>} />
-        </Routes>
+        <ToastProvider>
+          <WorkspaceProvider>
+            <Routes>
+              <Route path="/" element={<WorkspaceRouter />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/onboarding" element={<Protected><OnboardingPage /></Protected>} />
+              {import.meta.env.DEV && (
+                <Route path="/dev/design-system" element={<DesignSystemPreviewPage />} />
+              )}
+
+              <Route path="/buyer" element={<Suspense fallback={<ShellLoading />}><BuyerShell /></Suspense>}>
+                <Route index element={<Navigate to="home" replace />} />
+                <Route path="home" element={<BuyerHome />} />
+                <Route path="requests/new" element={<QuickRequestPage />} />
+                <Route path="requests/:id" element={<RequirementDetailPage />} />
+                <Route path="offers" element={<RfqsPage />} />
+                <Route path="offers/:id" element={<RfqDetailPage />} />
+                <Route path="orders" element={<OrdersPage />} />
+                <Route path="orders/:id" element={<OrderDetailPage />} />
+                <Route path="deliveries" element={<OrdersPage />} />
+                <Route path="events" element={<EventsPage />} />
+                <Route path="events/:id" element={<EventDetailPage />} />
+                <Route path="issues" element={<ClaimsPage />} />
+                <Route path="issues/:id" element={<ClaimDetailPage />} />
+                <Route path="catalog" element={<CatalogPage />} />
+                <Route path="org" element={<AccountPage />} />
+              </Route>
+
+              <Route path="/supplier" element={<Suspense fallback={<ShellLoading />}><SupplierShell /></Suspense>}>
+                <Route index element={<Navigate to="home" replace />} />
+                <Route path="home" element={<SupplierHome />} />
+                <Route path="requests" element={<SupplierInboxPage />} />
+                <Route path="requests/:id" element={<SupplierRfqPage />} />
+                <Route path="offers" element={<MyQuotesPage />} />
+                <Route path="orders" element={<SupplierOrdersPage />} />
+                <Route path="supply" element={<LotsPage />} />
+                <Route path="supply/:id" element={<LotDetailPage />} />
+                <Route
+                  path="payments"
+                  element={
+                    <PlaceholderPage
+                      overline="Supplier workspace"
+                      title="Payouts"
+                      description="Gross, deductions, adjustments, net and payout status with references will appear here."
+                      testId="supplier-payments"
+                    />
+                  }
+                />
+                <Route path="catalog" element={<CatalogPage />} />
+                <Route path="capabilities" element={<CapabilitiesPage />} />
+                <Route path="org" element={<AccountPage />} />
+              </Route>
+
+              <Route path="/partner" element={<Suspense fallback={<ShellLoading />}><PartnerShell /></Suspense>}>
+                <Route index element={<Navigate to="qc" replace />} />
+                <Route path="qc" element={<QcQueuePage />} />
+                <Route
+                  path="completed"
+                  element={
+                    <PlaceholderPage
+                      overline="Partner workspace"
+                      title="Completed inspections"
+                      description="Your finished quality checks will appear here."
+                      actionLabel="Open queue"
+                      actionTo="/partner/qc"
+                      testId="partner-completed"
+                    />
+                  }
+                />
+              </Route>
+
+              <Route path="/ops" element={<Suspense fallback={<ShellLoading />}><OpsShell /></Suspense>}>
+                <Route index element={<Navigate to="exceptions" replace />} />
+                <Route path="exceptions" element={<ControlTowerPage />} />
+                <Route path="sourcing" element={<OpsDeskPage />} />
+                <Route path="quality" element={<QcQueuePage />} />
+                <Route
+                  path="logistics"
+                  element={
+                    <PlaceholderPage
+                      overline="Operations"
+                      title="Logistics"
+                      description="Shipment and excursion workspaces arrive with the Operations console phase."
+                      actionLabel="Open exceptions"
+                      actionTo="/ops/exceptions"
+                      testId="ops-logistics"
+                    />
+                  }
+                />
+                <Route path="claims" element={<ClaimsPage />} />
+                <Route path="claims/:id" element={<ClaimDetailPage />} />
+                <Route path="finance" element={<FinancePage />} />
+              </Route>
+
+              <Route path="/admin" element={<Suspense fallback={<ShellLoading />}><AdminShell /></Suspense>}>
+                <Route index element={<Navigate to="organizations" replace />} />
+                <Route path="organizations" element={<AdminPage />} />
+                <Route path="kyb" element={<AdminPage />} />
+                <Route
+                  path="users"
+                  element={
+                    <PlaceholderPage
+                      overline="Platform Admin"
+                      title="Users & access"
+                      description="Member and role management across organizations arrives with the Platform Admin phase."
+                      testId="admin-users"
+                    />
+                  }
+                />
+                <Route
+                  path="roles"
+                  element={
+                    <PlaceholderPage
+                      overline="Platform Admin"
+                      title="Roles & permissions"
+                      description="Role and permission matrices arrive with the Platform Admin phase."
+                      testId="admin-roles"
+                    />
+                  }
+                />
+                <Route path="catalog" element={<CatalogAdminPage />} />
+                <Route
+                  path="config"
+                  element={
+                    <PlaceholderPage
+                      overline="Platform Admin"
+                      title="Configuration"
+                      description="Effective-dated platform configuration arrives with the Platform Admin phase."
+                      testId="admin-config"
+                    />
+                  }
+                />
+                <Route
+                  path="flags"
+                  element={
+                    <PlaceholderPage
+                      overline="Platform Admin"
+                      title="Feature flags"
+                      description="Feature flag management arrives with the Platform Admin phase."
+                      testId="admin-flags"
+                    />
+                  }
+                />
+                <Route
+                  path="security"
+                  element={
+                    <PlaceholderPage
+                      overline="Platform Admin"
+                      title="Security"
+                      description="MFA policy, sessions and security controls arrive with the Platform Admin phase."
+                      testId="admin-security"
+                    />
+                  }
+                />
+                <Route
+                  path="audit"
+                  element={
+                    <PlaceholderPage
+                      overline="Platform Admin"
+                      title="Audit"
+                      description="Audit log search (trace ID, organization, actor, object) arrives with the Platform Admin phase."
+                      testId="admin-audit"
+                    />
+                  }
+                />
+              </Route>
+
+              {/* Legacy redirect map — §5 controlled migration */}
+              <Route path="/demand" element={<Navigate to="/buyer/home" replace />} />
+              <Route path="/demand/quick" element={<Navigate to="/buyer/requests/new" replace />} />
+              <Route path="/demand/requirements/:id" element={<LegacyRedirect to="/buyer/requests/:id" />} />
+              <Route path="/demand/events" element={<Navigate to="/buyer/events" replace />} />
+              <Route path="/demand/events/:id" element={<LegacyRedirect to="/buyer/events/:id" />} />
+              <Route path="/demand/rfqs" element={<Navigate to="/buyer/offers" replace />} />
+              <Route path="/demand/rfqs/:id" element={<LegacyRedirect to="/buyer/offers/:id" />} />
+              <Route path="/orders" element={<Navigate to="/buyer/orders" replace />} />
+              <Route path="/orders/:id" element={<LegacyRedirect to="/buyer/orders/:id" />} />
+              <Route path="/claims" element={<Navigate to="/buyer/issues" replace />} />
+              <Route path="/claims/:id" element={<LegacyRedirect to="/buyer/issues/:id" />} />
+              <Route path="/supply/inbox" element={<Navigate to="/supplier/requests" replace />} />
+              <Route path="/supply/rfqs/:id" element={<LegacyRedirect to="/supplier/requests/:id" />} />
+              <Route path="/supply/quotes" element={<Navigate to="/supplier/offers" replace />} />
+              <Route path="/supply/orders" element={<Navigate to="/supplier/orders" replace />} />
+              <Route path="/supply/lots" element={<Navigate to="/supplier/supply" replace />} />
+              <Route path="/supply/lots/:id" element={<LegacyRedirect to="/supplier/supply/:id" />} />
+              <Route path="/ops/desk" element={<Navigate to="/ops/sourcing" replace />} />
+              <Route path="/ops/qc" element={<Navigate to="/ops/quality" replace />} />
+              <Route path="/ops/tower" element={<Navigate to="/ops/exceptions" replace />} />
+              <Route path="/ops/finance" element={<Navigate to="/ops/finance" replace />} />
+              <Route path="/account" element={<AccountRedirect />} />
+              <Route path="/catalog" element={<CatalogRedirect />} />
+              <Route path="/catalog/admin" element={<Navigate to="/admin/catalog" replace />} />
+              <Route path="/catalog/capabilities" element={<Navigate to="/supplier/capabilities" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </WorkspaceProvider>
+        </ToastProvider>
       </BrowserRouter>
     </AuthProvider>
   );
