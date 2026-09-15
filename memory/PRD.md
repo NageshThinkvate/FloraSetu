@@ -50,33 +50,43 @@ Org admin, buyer, supplier, QC agent, logistics ops, finance ops, support agent,
 - Git baseline: commit `689543e`, tag `florasetu-build2-accepted`, `.env*` gitignored (no secrets committed; no remote push — awaiting owner authorization).
 - Tests: 19 suites / 84 tests green (new prebuild3-gate suite: F1–F7 + rejection flow).
 
-## Status
-BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. PRE-BUILD-3 CONTROL GATE: PASS. Deviations: NestJS+Postgres+Redis vs env default — owner-approved (Build 0). Tech debt: stub media signer, dev HMAC token format (pending OD-02), KMS for TOTP secrets, audit partitioning, /auth/login returns 201 (semantic 200 — cosmetic). Open blockers: none. NEXT BUILD STARTED: NO — waiting for owner acceptance.
-
 ## Implemented — 2026-06 (Build 3, after Pre-Build-3 gate)
 - Canonical demand model: events/ceremonies/BOM (user-defined), versioned requirements (QUICK/EVENT/FORMAL modes converge — no parallel model), RFQs + invitations, clarifications (visibility rules), immutable versioned quotations with OD-07 explicit UOM + OD-08 normalization metadata, awards with quantity invariants + deviation consent, ops procurement desk (procurement.manage).
 - Migrations 010–011 (reversible; down-migration purge of Build-3 RFQ rows). Permissions + PROCUREMENT_OPS role seeded. Suspended orgs lose Build 3 transactional permissions.
 - Guardrail A verified fail-closed (DEMO masters rejected; CATALOG_ALLOW_DEMO_MASTERS hard startup error in production; dev-only escape enabled in .env.development). Guardrail B: server-side master eligibility on every requirement line.
 - Concurrency: one open RFQ per requirement (unique partial index), one quote per supplier per RFQ (23505→409), FOR UPDATE lifecycle transitions, award race invariants, idempotency on submit/publish/quote/revise/award.
 - Cross-context DI via @Global contract modules (catalog/identity/notifications) — architecture boundary suites pass.
-- Award→order conversion is an inert interface (PENDING_BUILD_5) — Build 4/5 not authorized.
-- Frontend: Quick Request (mobile-first), demand home, requirement workspace (submit/publish/evaluate/revise/consent/cancel), events + BOM→requirement, RFQ comparison + award (consent checkbox), supplier inbox + quote builder + clarifications, my quotes, ops desk. Permission-gated nav; stale-org login fix.
+- Frontend: Quick Request (mobile-first), demand home, requirement workspace, events + BOM→requirement, RFQ comparison + award, supplier inbox + quote builder + clarifications, my quotes, ops desk. Permission-gated nav; stale-org login fix.
 - Docs: docs/STATE_MACHINES.md, docs/SECURITY_MODEL.md created; RTM/DOMAIN_MODEL/API_INVENTORY/IMPLEMENTATION_STATUS updated.
-- Tests: 20 suites / 146 tests green (new build3-demand gate: 48 tests, groups A–I). Testing agent iteration_8: 11/11 frontend E2E flows PASS (desktop + 360/390/412 mobile), no functional bugs.
+- Tests: 20 suites / 146 tests green (build3-demand gate: 48 tests, groups A–I). Testing agent iteration_8: 11/11 frontend E2E flows PASS (desktop + 360/390/412 mobile).
 - Git baseline: commit 6e1a8eb, tag florasetu-build3-accepted.
 
-## Status
-BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. PRE-BUILD-3 GATE: PASS. BUILD 3: PASS (backend 146/146 green, frontend 11/11 testing-agent verified). Home shell updated: Build 3 badge + live-screen links (/demand, /demand/quick, /demand/events, /demand/rfqs, /supply/inbox, /supply/quotes, /ops/desk, /catalog, /account) + sign-in CTA for logged-out users. NEXT: awaiting owner acceptance + Build 4 authorization (orders/lots/logistics remain NOT authorized).
+## Implemented — 2026-09-12 (Build 4, Pilot Fulfilment Core)
+- 7 bounded-context modules: orders/allocations, supply lots, QC/custody, logistics/cold-chain, payments/settlements, claims, control tower.
+- 11 React PWA screens; 74-test Build 4 gate incl. mandatory K1 end-to-end pilot simulation; full regression 196/196 across 11 suites; migrations reversible with pilot data; frontend verified (iterations 9–11).
+- Hardened during Build 4: cross-org read isolation (procurement.manage-only ops), custody authz, media id==object_key contract, QC replay ordering, claims terminal-decision ledger, RBAC suspension coverage, lifecycle-aware settlement immutability (ADR-003 + Build-1 invariant merged).
+- Fixed tenant-isolation bug where suppliers could see the buyer's order slice.
+- Docs: docs/PILOT_OPERATING_FLOW.md, docs/BUILD4_ACCEPTANCE.md, API_INVENTORY.md Build 4 section.
+- Incident 2026-09-15 (RESOLVED): pod restart wiped PG/Redis (data outside /app) and legacy template programs grabbed :8001/:3000 breaking login — recovery runbook in test_credentials.md (bootstrap-infra.sh → yarn seed → yarn seed:catalog → seed-pilot-order.sh, now dynamic-ID); login re-verified by testing agent iteration_12 (owner+supplier, wrong-password UX, 100%).
 
-## Prioritized backlog (next builds)
-- P0 (Build 2 candidates): Catalog & Standards activation; Supply & Inventory service flows (ADR-001 runtime); OIDC provider selection (OD-02) to replace dev HMAC tokens; S3 endpoint + real media signing (OD-03); class-validator DTOs + ValidationPipe hardening; secondary per-IP rate-limit counter.
-- P1: RFQ lifecycle (multi-supplier award), order allocation, payments provider (OD-01), shipments + excursion workers, claims, notification delivery (OD-04/05).
-- P2: live auctions, analytics pipeline, Capacitor wrap, audit partitioning.
+## Implemented — 2026-09-15 (UI/UX Forensic Audit & Redesign Specification — DOCS ONLY, NO UI CODE)
+- Complete code-level audit of the Builds 0–4 React frontend (all 28 routes, shells, tokens, KYB/bank flows) against Master Spec v2.0.
+- Deliverables (all in `/app/docs/`): UI_UX_FORENSIC_AUDIT.md, UI_UX_INFORMATION_ARCHITECTURE.md, UI_UX_DESIGN_SYSTEM.md, UI_UX_USER_JOURNEYS.md, UI_UX_RESPONSIVE_RULES.md, UI_UX_COMPONENT_INVENTORY.md, UI_UX_SCREEN_REDESIGN_PLAN.md, UI_UX_ACCEPTANCE_CRITERIA.md + machine-readable `/app/design_guidelines.json` (tokens, status vocabulary, 13 screen wireframes).
+- Key findings: no role shells (one 18-link nav for all), home = internal architecture page, KYB flow functionally broken (hardcoded fake doc + hardcoded reject reason), org identity invisible at work time, raw backend status codes + UUID inputs as UI vocabulary, off-direction dark dev-console theme, no buyer decision surfaces/notifications, ops mechanics exposed to buyers, non-camera-first supply intake, non-field QC workbench (JSON textarea), role-mixed demand surfaces, minimal state coverage (loading/empty/403), mobile nav overflow.
+- Redesign spec: 5 role shells (/buyer, /supplier, /partner, /ops, /admin) with role router at `/`; organization-first header + WorkspaceSwitcher; warm ivory light theme (#F8F8F5) + deep botanical green (#183D33) + Inter; StatusPill human labels; SearchableSelect kills UUID inputs; camera-first lot intake; full-screen QC field tool; exception-first ops board with SideSheet actions; KYB 5-step wizard + reviewer split view; responsive matrix 360→1920 with DataTable→MobileDataCard below 768px; WCAG 2.2 AA floor.
+- Backend deltas identified (additive only, no behavior change): B1 structured KYB endpoints, B2 notifications feed, B3 supplier display name + verified flag in comparison payload. Zero modifications to accepted endpoint behavior; business logic/state machines/authorization/audit untouched.
+- 8-phase build sequence defined (tokens/components → shells → buyer → supplier → partner QC → ops → admin → responsive/AA hardening). Acceptance criteria testable per phase with standard test accounts.
+- OWNER DECISION (2026-09): audit summary delivered; WAITING for explicit owner approval before ANY React redesign coding. Build order on approval: follow REDESIGN_PLAN §7 doc order (phases 1–8).
+
+## Status
+BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. PRE-BUILD-3 GATE: PASS. BUILD 3: PASS. BUILD 4 (Pilot Fulfilment Core): PASS — 2026-09-12 (196/196 e2e green). UI/UX FORENSIC AUDIT: COMPLETE — 2026-09-15 (docs only, no code). Tech debt: stub media signer, dev HMAC token format (pending OD-02 OIDC), KMS for TOTP secrets, audit partitioning, /auth/login 201-vs-200 semantic nit. PILOT PRODUCTION BLOCKERS: OD-02 (production auth/TOTP) and OD-03 (durable media storage) — external pilot blocked on both; internal/dev pilot accepted. NEXT: owner approval of UI/UX redesign spec → authorize redesign coding phases 1–8.
+
+## Prioritized backlog
+- P0: Owner approval of UI/UX redesign → execute phases 1–8 per UI_UX_SCREEN_REDESIGN_PLAN.md §7 (tokens/components, role router + 5 shells, buyer, supplier, partner QC, ops, admin, responsive/AA hardening) + backend deltas B1 (structured KYB), B2 (notifications feed), B3 (comparison supplier card).
+- P1: OIDC provider selection (OD-02) to replace dev HMAC tokens; S3 endpoint + real media signing (OD-03); payments provider (OD-01); notification delivery (OD-04/05); partner hub/logistics shells (phase 2, needs B4 trip-assignment endpoint).
+- P2: live auctions, analytics pipeline, Capacitor wrap, audit partitioning, dark mode for night-hub logistics.
 
 ## Next tasks
-1. Owner review of Build 1 acceptance report → authorize Build 2 scope.
-2. Resolve OD-01/OD-02/OD-03 provider decisions.
-3. Build 2: Catalog & Standards + Supply & Inventory against frozen schema.
-
-## Status
-BUILD 0: PASS. BUILD 1: PASS. BUILD 2: PASS. BUILD 3: PASS. BUILD 4 (Pilot Fulfilment Core): PASS — 2026-09-12. 7 bounded-context modules (orders/allocations, supply lots, QC/custody, logistics/cold-chain, payments/settlements, claims, control tower) + 11 React PWA screens; 74-test Build 4 gate incl. mandatory K1 end-to-end pilot simulation; full regression 196/196 across 11 suites; migrations reversible with pilot data; frontend verified (iterations 9–11). Hardened during Build 4: cross-org read isolation (procurement.manage-only ops), custody authz, media id==object_key contract, QC replay ordering, claims terminal-decision ledger, RBAC suspension coverage for Build 4 permissions, lifecycle-aware settlement immutability (ADR-003 + Build-1 invariant merged). Tech debt: stub media signer, dev HMAC token format (pending OIDC), TOTP secrets stored unencrypted (KMS pending), audit partitioning, /auth/login 201-vs-200 semantic nit. PILOT PRODUCTION BLOCKERS: OD-02 (production auth/TOTP) and OD-03 (durable media storage) — external pilot blocked on both; internal/dev pilot accepted. Docs: docs/PILOT_OPERATING_FLOW.md, docs/BUILD4_ACCEPTANCE.md, API_INVENTORY.md Build 4 section. Incident 2026-09-15 (RESOLVED): pod restart wiped PG/Redis (data outside /app) and legacy template programs grabbed :8001/:3000 breaking login — recovery runbook in test_credentials.md (bootstrap-infra.sh → yarn seed → yarn seed:catalog → seed-pilot-order.sh, now dynamic-ID); login re-verified by testing agent iteration_12 (owner+supplier, wrong-password UX, 100%).
+1. Owner reviews the 8 UI_UX docs + design_guidelines.json → approve or adjust the redesign spec.
+2. On approval: Phase 1 — design tokens + shared component library; run backend deltas B1–B3 in parallel.
+3. Validate per phase against UI_UX_ACCEPTANCE_CRITERIA.md; keep full backend gate (196 e2e) green throughout.
