@@ -4,11 +4,13 @@
 set -euo pipefail
 
 API="${1:-http://localhost:8001/api}"
-BUYER_ORG="e1279476-0edc-4bf5-b7bb-28642b901454"   # FloraSetu Platform (owner acts as pilot buyer)
-SUPPLIER_ORG="190d252e-6951-4823-bbbe-adff36847332" # Dev GROWER org (supplier.test8)
-ROSE="d24458e8-7d73-4a0f-b589-849a2b1b11e7"          # PRD-SEED-ROSE_PREMIUM
-STEM="54079cac-b051-4a15-bf7c-2611b4a56d10"          # STEM uom
-GRADE_A="ab21e423-bf32-4bff-beb7-8c0f8e00a468"       # ACTIVE grade profile (rose, grade A)
+# IDs are resolved dynamically so the script survives pod restarts / DB re-seeds.
+PSQL="psql postgresql://florasetu:florasetu_dev@localhost:5432/florasetu -t -A -c"
+BUYER_ORG=$($PSQL "SELECT id FROM identity.organizations WHERE ref='ORG-2026-000000';")
+SUPPLIER_ORG=$($PSQL "SELECT m.org_id FROM identity.org_memberships m JOIN identity.users u ON u.id=m.user_id WHERE u.email='supplier.test8@dev.florasetu.local' AND m.status='ACTIVE' ORDER BY m.created_at DESC LIMIT 1;")
+ROSE=$($PSQL "SELECT id FROM catalog.commodities WHERE ref='PRD-SEED-ROSE_PREMIUM';")
+STEM=$($PSQL "SELECT id FROM catalog.units_of_measure WHERE code='STEM';")
+GRADE_A=$($PSQL "SELECT gp.id FROM catalog.grade_profiles gp JOIN catalog.commodities c ON c.id=gp.commodity_id WHERE c.ref='PRD-SEED-ROSE_PREMIUM' AND gp.status='ACTIVE' ORDER BY gp.created_at DESC LIMIT 1;")
 QTY=40
 STAMP="$(date +%s)"
 
