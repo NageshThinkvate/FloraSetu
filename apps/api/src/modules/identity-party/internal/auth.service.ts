@@ -137,6 +137,66 @@ export class AuthService {
     ]);
   }
 
+  // Password recovery (owner directive): neutral anti-enumeration response, rate-limited
+  // per email, single-use 60-minute tokens stored only as SHA-256 hashes. The raw token
+  // is never logged; in non-production it is returned as devResetToken because the pilot
+  // has no outbound email provider (documented pilot limitation).
+  async forgotPassword(email: string): Promise<{ ok: true; devResetToken?: string }> {
+    const normalized = (email ?? '').trim().toLowerCase();
+    const lockedFor = await this.rateLimit.isLocked('password-reset', normalized);
+    if (lockedFor > 0) {
+      throw new ApiException(429, 'RATE_LIMITED', 'Too many attempts; temporarily locked', { retryAfterSeconds: lockedFor });
+    }
+    await this.rateLimit.recordFailure('password-reset', normalized);
+    const found = await this.db.query<{ id: string }>(
+      `SELECT id FROM identity.users WHERE email = $1 AND status = 'ACTIVE' AND deleted_at IS NULL`,
+      [normalized]
+    );
+    const user = found.rows[0];
+    if (!user) {
+      return { ok: true };
+    }
+    const token = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    await this.db.withTransaction(async (client) => {
+      await client.query(
+        `UPDATE identity.password_reset_tokens SET used_at = now() WHERE user_id = $1 AND used_at IS NULL`,
+        [user.id]
+      );
+      await client.query(
+        `INSERT INTO identity.password_reset_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, now() + interval '60 minutes')`,
+        [user.id, tokenHash]
+      );
+      await this.audit.record(client, { action: 'auth.password_reset.requested', objectType: 'user', objectId: user.id });
+    });
+    return this.config.nodeEnv === 'production' ? { ok: true } : { ok: true, devResetToken: token };
+  }
+
+  async resetPassword(token: string, password: string): Promise<void> {
+    if (!token || password.length < 10 || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
+      throw new ApiException(400, 'VALIDATION_FAILED', 'Password must be 10+ chars with letters and numbers');
+    }
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    await this.db.withTransaction(async (client) => {
+      const found = await client.query<{ id: string; user_id: string }>(
+        `UPDATE identity.password_reset_tokens SET used_at = now()
+         WHERE token_hash = $1 AND used_at IS NULL AND expires_at > now()
+         RETURNING id, user_id`,
+        [tokenHash]
+      );
+      if (found.rowCount === 0) {
+        throw new ApiException(400, 'VALIDATION_FAILED', 'This reset link is invalid, expired or already used. Request a new one.');
+      }
+      const userId = found.rows[0].user_id;
+      const passwordHash = await bcrypt.hash(password, 10);
+      await client.query('UPDATE identity.user_credentials SET password_hash = $2 WHERE user_id = $1', [userId, passwordHash]);
+      // Session security: every active session is revoked after a password change.
+      await client.query('UPDATE identity.refresh_tokens SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
+      await this.audit.record(client, { action: 'auth.password_reset.completed', objectType: 'user', objectId: userId });
+    });
+  }
+
   async mfaEnroll(userId: string): Promise<{ secret: string; otpauthUrl: string }> {
     const secret = authenticator.generateSecret();
     await this.db.query(`DELETE FROM identity.mfa_enrollments WHERE user_id = $1 AND status = 'PENDING'`, [userId]);

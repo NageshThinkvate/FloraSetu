@@ -1,23 +1,15 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
-import { Logo } from '../components/Logo';
+import { PublicHeader, PublicFooter, useDocumentTitle } from '../components/PublicChrome';
 import '../design/public.css';
 
-// Public logged-out homepage (Phase 3 Part B). Authenticated users never see this —
-// App routes them through the WorkspaceRouter instead.
-const HERO_IMG = 'https://images.unsplash.com/photo-1766682946500-adb9964777e8?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200';
-const EVENT_IMG = 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200';
-const SUPPLIER_IMG = 'https://images.pexels.com/photos/38552007/pexels-photo-38552007.jpeg?auto=compress&cs=tinysrgb&w=1200';
-const EVIDENCE_IMG = 'https://images.pexels.com/photos/17301401/pexels-photo-17301401.jpeg?auto=compress&cs=tinysrgb&w=1200';
-
-const NAV: [string, string][] = [
-  ['Buy Flowers', '#audiences'],
-  ['For Suppliers', '#suppliers'],
-  ['How It Works', '#how-it-works'],
-  ['Solutions', '#features'],
-  ['About', '#about']
-];
+// Public logged-out homepage (Phase 3 Part B; brand polish pass). Authenticated users
+// never see this — App routes them through the WorkspaceRouter instead.
+const HERO_IMG = 'https://images.unsplash.com/photo-1766682946500-adb9964777e8?crop=entropy&cs=srgb&fm=jpg&q=85';
+const EVENT_IMG = 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?crop=entropy&cs=srgb&fm=jpg&q=85';
+const SUPPLIER_IMG = 'https://images.pexels.com/photos/38552007/pexels-photo-38552007.jpeg?auto=compress&cs=tinysrgb';
+const EVIDENCE_IMG = 'https://images.pexels.com/photos/17301401/pexels-photo-17301401.jpeg?auto=compress&cs=tinysrgb';
+const srcset = (base: string): string =>
+  `${base}&w=640 640w, ${base}&w=1200 1200w, ${base}&w=1800 1800w`;
 
 const STEPS: [string, string][] = [
   ['Tell us what you need', 'Choose flowers, quantity, required date and delivery location.'],
@@ -37,37 +29,10 @@ const FEATURES: [string, string][] = [
 ];
 
 export function PublicHomePage(): JSX.Element {
-  const [menuOpen, setMenuOpen] = useState(false);
+  useDocumentTitle('FloraSetu | Premium Flower Procurement & Fulfilment Network');
   return (
     <div className="fs-pub" data-testid="public-home">
-      <header className="fs-pub__header">
-        <div className="fs-pub__wrap fs-pub__header-in">
-          <Logo variant="horizontal" testId="public-logo" />
-          <nav className="fs-pub__nav" aria-label="Primary">
-            {NAV.map(([label, href]) => <a key={href} href={href} data-testid={`public-nav-${label.toLowerCase().replace(/ /g, '-')}`}>{label}</a>)}
-          </nav>
-          <div className="fs-pub__actions">
-            <Link to="/login" className="pub-btn pub-btn--ghost" data-testid="public-signin">Sign in</Link>
-            <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-join">Join FloraSetu</Link>
-          </div>
-          <button
-            type="button"
-            className="fs-pub__menu-btn"
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={menuOpen}
-            data-testid="public-menu-btn"
-            onClick={() => setMenuOpen((v) => !v)}
-          >
-            {menuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
-        <nav className="fs-pub__mobile-nav" data-open={menuOpen} data-testid="public-mobile-nav" aria-label="Mobile">
-          {NAV.map(([label, href]) => (
-            <a key={href} href={href} onClick={() => setMenuOpen(false)}>{label}</a>
-          ))}
-          <Link to="/login" onClick={() => setMenuOpen(false)}>Sign in</Link>
-        </nav>
-      </header>
+      <PublicHeader />
 
       <main>
         <section className="fs-pub__wrap fs-pub__hero">
@@ -87,7 +52,16 @@ export function PublicHomePage(): JSX.Element {
             </p>
           </div>
           <div className="fs-pub__hero-img">
-            <img src={HERO_IMG} alt="Premium roses ready for the wholesale flower trade" loading="eager" />
+            <img
+              src={`${HERO_IMG}&w=1200`}
+              srcSet={srcset(HERO_IMG)}
+              sizes="(max-width: 900px) 100vw, 45vw"
+              width="1200"
+              height="1500"
+              alt="Premium roses ready for the wholesale flower trade"
+              loading="eager"
+              fetchPriority="high"
+            />
           </div>
         </section>
 
@@ -196,13 +170,29 @@ export function PublicHomePage(): JSX.Element {
               </p>
               <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-event-cta">Plan an event</Link>
             </div>
-            <img src={EVENT_IMG} alt="Elegant wedding ceremony flower arrangements" loading="lazy" />
+            <img
+              src={`${EVENT_IMG}&w=1200`}
+              srcSet={srcset(EVENT_IMG)}
+              sizes="(max-width: 900px) 100vw, 50vw"
+              width="1200"
+              height="900"
+              alt="Elegant wedding ceremony flower arrangements"
+              loading="lazy"
+            />
           </div>
         </section>
 
         <section className="fs-pub__section fs-pub__section--alt">
           <div className="fs-pub__wrap pub-split">
-            <img src={SUPPLIER_IMG} alt="Workers sorting fresh roses at a flower facility" loading="lazy" />
+            <img
+              src={`${SUPPLIER_IMG}&w=1200`}
+              srcSet={srcset(SUPPLIER_IMG)}
+              sizes="(max-width: 900px) 100vw, 50vw"
+              width="1200"
+              height="900"
+              alt="Workers sorting fresh roses at a flower facility"
+              loading="lazy"
+            />
             <div>
               <h2>More relevant demand. Less chasing.</h2>
               <p className="pub-sub" style={{ marginBottom: 'var(--fs-space-5)' }}>
@@ -224,7 +214,15 @@ export function PublicHomePage(): JSX.Element {
                 fulfilment.
               </p>
             </div>
-            <img src={EVIDENCE_IMG} alt="Fresh roses packed in containers ready for dispatch" loading="lazy" />
+            <img
+              src={`${EVIDENCE_IMG}&w=1200`}
+              srcSet={srcset(EVIDENCE_IMG)}
+              sizes="(max-width: 900px) 100vw, 50vw"
+              width="1200"
+              height="900"
+              alt="Fresh roses packed in containers ready for dispatch"
+              loading="lazy"
+            />
           </div>
         </section>
 
@@ -243,29 +241,7 @@ export function PublicHomePage(): JSX.Element {
         </section>
       </main>
 
-      <footer className="fs-pub__footer">
-        <div className="fs-pub__wrap">
-          <div className="fs-pub__footer-grid">
-            <div>
-              <Logo variant="horizontal" testId="public-footer-logo" />
-              <p className="fs-pub__tagline">Premium Flower Exchange &amp; Fulfilment Network</p>
-            </div>
-            <nav aria-label="Footer">
-              <Link to="/register">For Buyers</Link>
-              <Link to="/register">For Suppliers</Link>
-              <Link to="/register">Logistics Partners</Link>
-              <a href="#how-it-works">How It Works</a>
-              <a href="#about">About</a>
-              <a href="mailto:hello@florasetu.in">Contact</a>
-              <Link to="/login">Privacy</Link>
-              <Link to="/login">Terms</Link>
-            </nav>
-          </div>
-          <p className="fs-pub__copy" data-testid="public-copyright">
-            © 2026 FloraSetu / Thinkvate Solutions Private Limited. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

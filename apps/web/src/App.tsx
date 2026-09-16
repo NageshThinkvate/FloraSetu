@@ -9,6 +9,10 @@ import { BuyerHome, SupplierHome } from './shell/homes';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { PublicHomePage } from './pages/PublicHomePage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { AccountPage } from './pages/AccountPage';
 import { AdminOverviewPage } from './pages/AdminOverviewPage';
@@ -109,6 +113,10 @@ export default function App(): JSX.Element {
               <Route path="/" element={<RootRoute />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
               <Route path="/onboarding" element={<Protected><OnboardingPage /></Protected>} />
               {import.meta.env.DEV && (
                 <Route path="/dev/design-system" element={<DesignSystemPreviewPage />} />

@@ -27,6 +27,16 @@ export class AuthController {
     return this.auth.logout(body.refreshToken);
   }
 
+  @Post('forgot-password')
+  forgotPassword(@Body() body: { email: string }) {
+    return this.auth.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  resetPassword(@Body() body: { token: string; password: string }) {
+    return this.auth.resetPassword(body.token, body.password);
+  }
+
   @Get('me')
   @UseGuards(RbacGuard)
   me() {

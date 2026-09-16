@@ -235,8 +235,12 @@
 .fs-shell__header { position: sticky; top: 0; z-index: 20; background: var(--fs-surface); border-bottom: 1px solid var(--fs-border); padding: var(--fs-space-2) var(--fs-space-5); display: flex; align-items: center; gap: var(--fs-space-4); min-height: 56px; }
 .fs-shell__brand { font-weight: 700; font-size: var(--fs-fs-h4); color: var(--fs-primary); }
 .fs-logo { display: inline-flex; align-items: center; gap: var(--fs-space-2); }
-.fs-logo__wordmark { font-family: var(--fs-font-brand); font-weight: 600; font-size: 1.35rem; line-height: 1; color: var(--fs-primary); letter-spacing: 0.01em; }
-.fs-logo--light .fs-logo__wordmark { color: var(--fs-bg); }
+/* Wordmark (owner ruling): Fraunces 600, two-tone — Flora botanical green, Setu plum. */
+.fs-logo__wordmark { font-family: 'Fraunces', Georgia, 'Times New Roman', serif; font-weight: 600; font-size: 1.5rem; line-height: 1; letter-spacing: 0.005em; white-space: nowrap; }
+.fs-logo__flora { color: var(--fs-primary); }
+.fs-logo__setu { color: var(--fs-accent); }
+.fs-logo--light .fs-logo__flora { color: var(--fs-bg); }
+.fs-logo--light .fs-logo__setu { color: var(--fs-accent-tint); }
 .fs-shell__body { display: flex; flex: 1; width: 100%; max-width: var(--fs-content-max); margin: 0 auto; }
 .fs-shell__sidebar { width: var(--fs-sidebar-w); border-right: 1px solid var(--fs-border); padding: var(--fs-space-5) var(--fs-space-3); display: none; }
 .fs-shell__content { flex: 1; padding: var(--fs-space-6) var(--fs-space-4) var(--fs-space-16); min-width: 0; }
