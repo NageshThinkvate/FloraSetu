@@ -1,6 +1,7 @@
 /* Public marketing homepage (Phase 3 Part B) — self-contained brand scope.
    Warm ivory / deep botanical green / restrained plum; serif display = Cormorant Garamond. */
 .fs-pub {
+  overflow-x: hidden;
   --pub-ivory: #f8f8f5;
   --pub-green: #183d33;
   --pub-green-soft: #22483d;

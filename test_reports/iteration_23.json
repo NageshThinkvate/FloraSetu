@@ -1,0 +1,48 @@
+{
+  "summary": "FloraSetu public-website & brand polish RC verification — frontend/E2E UX only, backend NOT retested per request. All 24 acceptance items exercised on the preview URL and are GREEN, with one minor P3 responsive rounding issue on public pages at 390px. BRAND: header logo mark measures exactly 44x44px at 1440 and 390 (BRAND-B1/B2); SVG geometry confirmed via getBBox — arc path bottom y=50, arc apex y=30, and all three flower paths (both petals + bloom) have bottom<=30 → petals never cross or protrude below the arc, flower rises from the bridge apex (BRAND-B3); Flora computed color = rgb(24,61,51) = #183D33, Setu = rgb(118,81,143) = #76518F (BRAND-B4); wordmark font-family 'Fraunces, Georgia, \"Times New Roman\", serif', font-weight 600, font-size 28px desktop / 23.2px mobile (BRAND-B5). PUBLIC: /privacy renders with 'Privacy Policy' heading + last-updated + shared header/footer, /terms same; 10/10 footer links resolve to real destinations (Privacy Policy→/privacy, Terms of Use→/terms, register/login/hash anchors/mailto — no /login-as-placeholder, no 404) (PUBLIC-P1/P2/P3). AUTH: tab order on /login is auth-logo → auth-back-home → login-email → login-password → login-forgot → login-submit with visible focus rings (AUTH-N4); clicking auth-logo on /login lands on / (AUTH-N1); clicking auth-back-home mid-fill on /register lands on / and public-signin button is still visible → user is not authenticated (AUTH-N2/N5); at 390 both auth-logo and auth-back-home visible with hscroll=false on /register/forgot/reset (AUTH-N3/N14/N15); login has data-testid=login-forgot 'Forgot password?' → /forgot-password (AUTH-P1); /register shows 'Already have an account? Sign in' → /login and has NO forgot link (AUTH-P2/P3). PASSWORD RECOVERY: unknown email returns neutral 'If an account exists for …, password-reset instructions have been sent. The link expires after 60 minutes.' (anti-enumeration, AUTH-P4/P5); invalid email format blocked by HTML5 validity ('Please include an @ …', AUTH-P6); /reset-password?token=fake123 with mismatched passwords shows 'The two passwords do not match.' (AUTH-P9); matched passwords + fake token shows 'This reset link is invalid, expired or already used. Request a new one.' (AUTH-P11); /reset-password with no token shows 'This reset link is missing its token. Request a new reset link.' plus a 'Request a new reset link' CTA (AUTH-P11 missing-token variant). IMAGES: hero <img> has width=1200 height=1500 explicit attributes, loading='eager', srcset present, sizes='(max-width: 900px) 100vw, 45vw'; below-fold imgs all loading='lazy' (IMAGE-I1); hero renders sharp and correctly cropped on 390/1440 (IMAGE-I2). SEO: home title 'FloraSetu | Premium Flower Procurement & Fulfilment Network', meta description present, og:title/og:image (Unsplash 1200w), twitter:card=summary_large_image, JSON-LD scripts count=2 with @type Organization + WebSite; per-page titles verified — /privacy 'Privacy Policy | FloraSetu', /terms 'Terms of Use | FloraSetu', /login 'Sign in | FloraSetu', /register 'Create account | FloraSetu', /forgot-password 'Forgot password | FloraSetu', /reset-password 'Reset password | FloraSetu'. FOOTER: dark botanical footer with light-variant logo, 4 columns (brand/Platform/Company/Legal), copyright '© 2026 FloraSetu / Thinkvate Solutions Private Limited. All rights reserved.' Mobile menu: public-menu-btn appears at 390, opens sheet with 6 links (5 anchors + Sign in) — verified.",
+  "acceptance_results": {
+    "BRAND-B1": "PASS", "BRAND-B2": "PASS", "BRAND-B3": "PASS", "BRAND-B4": "PASS", "BRAND-B5": "PASS",
+    "PUBLIC-P1": "PASS", "PUBLIC-P2": "PASS", "PUBLIC-P3": "PASS",
+    "AUTH-N1": "PASS", "AUTH-N2": "PASS", "AUTH-N3": "PASS", "AUTH-N4": "PASS", "AUTH-N5": "PASS",
+    "AUTH-P1": "PASS", "AUTH-P2": "PASS", "AUTH-P3": "PASS", "AUTH-P4": "PASS", "AUTH-P5": "PASS", "AUTH-P6": "PASS",
+    "AUTH-P9": "PASS", "AUTH-P11": "PASS", "AUTH-P14": "PASS", "AUTH-P15": "PASS",
+    "IMAGE-I1": "PASS", "IMAGE-I2": "PASS",
+    "SEO": "PASS", "FOOTER_CONTENT": "PASS", "RESPONSIVE_SWEEP": "PASS with minor P3 (see frontend_issues)"
+  },
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/, /privacy, /terms at 390px",
+        "issues": ["6px horizontal overflow: documentElement.scrollWidth=396 vs innerWidth=390. Not visibly broken in screenshots (content fits, header + hero + legal body render correctly) but a small horizontal scroll is technically enabled. All auth pages (/login /register /forgot-password /reset-password) are clean (scrollWidth=390). P3 — likely a container/negative-margin/full-bleed section on the public homepage/legal layout leaking 6px. Recommend auditing .fs-pub__wrap / .fs-pub__hero / .pub-legal for a `100vw` or negative margin without matching overflow-x hidden."]
+      }
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "P3: Fix 6px horizontal overflow on /, /privacy, /terms at 390px (auth pages already clean). Add overflow-x: hidden on .fs-pub or audit the full-bleed hero/footer container for width:100vw without scrollbar compensation."
+  ],
+  "critical_code_review_comments": [
+    "Positive: Logo.tsx SVG geometry is mathematically correct — ARC path 'M12 50 A20 20 0 0 1 52 50' (apex at y=30, bottom at y=50), all three petal/bloom paths have bottom Y ≤ 30, so petals cannot cross or protrude below the arc regardless of stroke width. Owner ruling met.",
+    "Positive: Two-tone wordmark implemented cleanly via .fs-logo__flora / .fs-logo__setu spans with CSS variables — Fraunces 600 confirmed via computed style, and the --light variant swaps to bg + accent-tint for the dark footer with good contrast.",
+    "Positive: Auth pages use a single AuthLayout with auth-logo + auth-back-home data-testids on every page (/login /register /forgot-password /reset-password) — no duplicated markup, keyboard-first order verified.",
+    "Positive: Forgot-password copy is genuinely neutral ('If an account exists for …') — identical string returned for unknown email; anti-enumeration UX AC met.",
+    "Positive: Reset-password page distinguishes three states cleanly: missing token, invalid/expired token, password mismatch — each surfaces a 'Request a new reset link' recovery CTA. No token is ever echoed back in the UI.",
+    "Positive: SEO index.html carries per-page titles via useDocumentTitle, meta description, og:title/description/image (1200w Unsplash), twitter:card=summary_large_image, and two JSON-LD scripts (Organization + WebSite).",
+    "Positive: Hero <img> has explicit width=1200 height=1500 attributes plus srcset + sizes + loading=eager → LCP-friendly with near-zero CLS. Below-fold imgs all loading=lazy.",
+    "P3: 6px horizontal overflow on /, /privacy, /terms at 390px — likely a full-bleed section (hero image or dark footer band) using 100vw or negative margin. Cosmetic only; content is not clipped, but the scroll bar hint would be visible on some Android browsers."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "n/a (not retested per request)",
+    "frontend": "24/24 acceptance items GREEN, 1 minor P3 design issue (6px overflow on public pages at 390px)"
+  },
+  "test_credentials": "No login required — all acceptance items are on public/anonymous routes. Not exercised: demo.buyer authenticated contrast check (not needed for this brand/UX pass).",
+  "seed_data_creation": "None.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Brand + public-website + auth-navigation + password-recovery UX are RC-green. Only outstanding item is the 6px horizontal-scroll on /, /privacy, /terms at 390 (auth pages already clean). No P0/P1/P2 defects. Rate limiting from Cloudflare was not encountered this run with the >=4s pacing between page.goto calls. If revisiting, backend password-reset flow (P5/P7/P8/P10/P12/P13) is gated in server-side e2e spec — do not attempt to exercise the dev-reset-token via UI.",
+  "rca_of_the_issue": "The 6px overflow on public pages at 390 is almost certainly caused by a full-bleed element (hero image container or dark footer band) using width:100vw or a wrap container with a negative margin that isn't offset by overflow-x:hidden on the ancestor. Auth pages don't overflow because they use .fs-pub without the full-bleed sections. Suggested fix: add `overflow-x: hidden;` to `.fs-pub` (or `body`) in /app/apps/web/src/design/public.css."
+}
