@@ -28,7 +28,7 @@ export function PublicHeader(): JSX.Element {
     <header className="fs-pub__header">
       <div className="fs-pub__wrap fs-pub__header-in">
         <Link to="/" aria-label="FloraSetu home" className="fs-pub__logo-link" data-testid="public-logo">
-          <Logo variant="horizontal" size={44} testId="public-logo-img" />
+          <Logo variant="horizontal" size={50} testId="public-logo-img" />
         </Link>
         <nav className="fs-pub__nav" aria-label="Primary">
           {PUBLIC_NAV.map(([label, href]) => (
@@ -67,7 +67,7 @@ export function PublicFooter(): JSX.Element {
         <div className="fs-pub__footer-grid">
           <div className="fs-pub__footer-brand">
             <Link to="/" aria-label="FloraSetu home" data-testid="public-footer-logo">
-              <Logo variant="horizontal" light size={40} testId="public-footer-logo-img" />
+              <Logo variant="horizontal" light size={44} testId="public-footer-logo-img" />
             </Link>
             <p className="fs-pub__tagline">Premium Flower Procurement &amp; Fulfilment Network</p>
           </div>

@@ -234,11 +234,12 @@
 .fs-shell { min-height: 100vh; background: var(--fs-bg); color: var(--fs-text); font-family: var(--fs-font); display: flex; flex-direction: column; }
 .fs-shell__header { position: sticky; top: 0; z-index: 20; background: var(--fs-surface); border-bottom: 1px solid var(--fs-border); padding: var(--fs-space-2) var(--fs-space-5); display: flex; align-items: center; gap: var(--fs-space-4); min-height: 56px; }
 .fs-shell__brand { font-weight: 700; font-size: var(--fs-fs-h4); color: var(--fs-primary); }
-.fs-logo { display: inline-flex; align-items: center; gap: var(--fs-space-2); }
-/* Wordmark (owner ruling): Fraunces 600, two-tone — Flora botanical green, Setu plum. */
-.fs-logo__wordmark { font-family: 'Fraunces', Georgia, 'Times New Roman', serif; font-weight: 600; font-size: 1.5rem; line-height: 1; letter-spacing: 0.005em; white-space: nowrap; }
-.fs-logo__flora { color: var(--fs-primary); }
-.fs-logo__setu { color: var(--fs-accent); }
+.fs-logo { display: inline-flex; align-items: center; gap: var(--fs-space-3); }
+/* Wordmark (owner ruling): Fraunces 600, two-tone — Flora botanical green, Setu plum.
+   Optical treatment: tight tracking, optical sizing, shared visual center with the mark. */
+.fs-logo__wordmark { font-family: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif; font-weight: 600; font-optical-sizing: auto; font-size: 1.5rem; line-height: 0.95; letter-spacing: -0.02em; white-space: nowrap; }
+.fs-logo__flora { color: var(--fs-primary); font-family: inherit; }
+.fs-logo__setu { color: var(--fs-accent); font-family: inherit; }
 .fs-logo--light .fs-logo__flora { color: var(--fs-bg); }
 .fs-logo--light .fs-logo__setu { color: var(--fs-accent-tint); }
 .fs-shell__body { display: flex; flex: 1; width: 100%; max-width: var(--fs-content-max); margin: 0 auto; }

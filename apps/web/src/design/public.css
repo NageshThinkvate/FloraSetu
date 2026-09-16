@@ -27,7 +27,7 @@
 .fs-pub__header-in { display: flex; align-items: center; gap: var(--fs-space-6); min-height: 80px; }
 .fs-pub__logo-link { display: inline-flex; align-items: center; text-decoration: none; border-radius: 8px; }
 .fs-pub__logo-link:focus-visible { outline: 2px solid var(--pub-green); outline-offset: 4px; }
-.fs-pub__logo-link .fs-logo__wordmark { font-size: 1.75rem; }
+.fs-pub__logo-link .fs-logo__wordmark { font-size: 2.1rem; }
 .fs-pub__nav { display: flex; gap: var(--fs-space-5); margin-left: var(--fs-space-6); flex: 1; }
 .fs-pub__nav a { text-decoration: none; font-size: 15px; color: var(--pub-muted); }
 .fs-pub__nav a:hover { color: var(--pub-green); }
@@ -90,7 +90,7 @@
 /* Premium dark footer (brand polish): corrected light logo, organized columns, real routes only. */
 .fs-pub__footer { background: var(--pub-green); color: #c3d2ca; padding: var(--fs-space-12) 0 var(--fs-space-8); }
 .fs-pub__footer-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: var(--fs-space-8); }
-.fs-pub__footer-brand .fs-logo__wordmark { font-size: 1.6rem; }
+.fs-pub__footer-brand .fs-logo__wordmark { font-size: 1.8rem; }
 .fs-pub__footer-col { display: grid; gap: var(--fs-space-2); align-content: start; }
 .fs-pub__footer-heading { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; color: #8fa89c; margin: 0 0 var(--fs-space-2); }
 .fs-pub__footer nav a { font-size: 14px; color: #c3d2ca; text-decoration: none; }
@@ -134,8 +134,11 @@
 }
 @media (max-width: 520px) {
   .fs-pub__footer-grid { grid-template-columns: 1fr; }
-  .fs-pub__logo-link .fs-logo__wordmark { font-size: 1.45rem; }
+  .fs-pub__logo-link .fs-logo__wordmark { font-size: 1.55rem; }
+  .fs-pub__logo-link .fs-logo svg { width: 40px; height: 40px; }
   .pub-auth__top { padding: var(--fs-space-4) var(--fs-space-4); }
+  .pub-auth__logo .fs-logo__wordmark { font-size: 1.55rem; }
+  .pub-auth__logo .fs-logo svg { width: 40px; height: 40px; }
 }
 
 @media (max-width: 900px) {

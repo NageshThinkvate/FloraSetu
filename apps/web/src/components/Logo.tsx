@@ -5,13 +5,14 @@ interface LogoProps {
   testId?: string;
 }
 
-// Approved botanical bridge mark (corrected geometry): the flower rises from the
-// bridge arc's apex — petals never cross or protrude below the arc stroke.
-// Palette (owner ruling): bridge + foliage #183D33 (Setu), bloom #76518F (Flora).
-const ARC = 'M12 50 A20 20 0 0 1 52 50';
-const PETAL_LEFT = 'M32 30 C27 28.5 19 25 15 17 C23.5 18.5 30 23 32 30 Z';
-const PETAL_RIGHT = 'M32 30 C37 28.5 45 25 49 17 C40.5 18.5 34 23 32 30 Z';
-const BLOOM = 'M32 8 C38.5 15 39.5 23 32 30 C24.5 23 25.5 15 32 8 Z';
+// Canonical FloraSetu mark (final approved geometry): a restrained flower — central plum
+// petal with two botanical side petals — rising from the crown of a broad botanical-green
+// bridge arc ("Setu"). All three petal paths terminate at the crown junction (y=34);
+// nothing crosses or protrudes below the bridge. One geometry for every size/variant.
+const ARC = 'M8 52 A28 18 0 0 1 56 52';
+const PETAL_LEFT = 'M32 34 C27 32 20 28 17 20 C25 21 31 27 32 34 Z';
+const PETAL_RIGHT = 'M32 34 C37 32 44 28 47 20 C39 21 33 27 32 34 Z';
+const BLOOM = 'M32 34 C39 27 40 17 32 10 C24 17 25 27 32 34 Z';
 
 function Mark({ light, size }: { light: boolean; size: number }): JSX.Element {
   const structure = light ? 'var(--fs-bg)' : 'var(--fs-primary)';
@@ -25,7 +26,7 @@ function Mark({ light, size }: { light: boolean; size: number }): JSX.Element {
       aria-label="FloraSetu"
       data-testid="logo-mark-svg"
     >
-      <path d={ARC} fill="none" stroke={structure} strokeWidth="6.5" strokeLinecap="round" />
+      <path d={ARC} fill="none" stroke={structure} strokeWidth="6" strokeLinecap="round" />
       <path d={PETAL_LEFT} fill={structure} />
       <path d={PETAL_RIGHT} fill={structure} />
       <path d={BLOOM} fill={bloom} />
