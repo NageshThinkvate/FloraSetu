@@ -5,6 +5,7 @@ import { AuditService } from '../../../common/audit/audit.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { ReferenceIdService } from '../../../common/pagination/reference-id.service';
 import { ApiException } from '../../../common/errors/error-envelope';
+import { MediaService } from '../../../common/media/media.service';
 import { RequestContext } from '../../../common/request-context';
 import { claimIdempotencyKey, completeIdempotencyKey, hashRequest } from '../../../common/idempotency/idempotency.service';
 import { DemandRfq_SERVICE, DemandRfqService } from '../../demand-rfq/contracts';
@@ -23,6 +24,7 @@ export class OrdersService {
     private readonly audit: AuditService,
     private readonly outbox: OutboxService,
     private readonly refIds: ReferenceIdService,
+    private readonly media: MediaService,
     @Inject(DemandRfq_SERVICE) private readonly demand: DemandRfqService,
     @Inject(SupplyInventory_SERVICE) private readonly supply: SupplyInventoryService,
     @Inject(LogisticsColdchain_SERVICE) private readonly logistics: LogisticsColdchainService,
@@ -354,6 +356,43 @@ export class OrdersService {
        WHERE order_id = $1 ORDER BY captured_at`,
       [orderId]);
     return { items: rows.rows };
+  }
+
+  // ADR-011 Phase 3: buyer-facing evidence pack — the pilot trust chain in one read:
+  // supplier declaration → actual-lot evidence → packing → logistics → POD → buyer receipt.
+  // Buyer org or ops only; the supplier slice keeps its own (already visible) surfaces.
+  async getEvidencePack(orderId: string): Promise<unknown> {
+    const order = (await this.get(orderId)) as Record<string, unknown>;
+    if ('allocation' in order) {
+      throw new ApiException(404, 'NOT_FOUND', 'Order not found');
+    }
+    const lotAllocations = (order.lotAllocations ?? []) as { lot_id: string }[];
+    const lotIds = [...new Set(lotAllocations.map((l) => l.lot_id))];
+    const lots = (await Promise.all(lotIds.map((lotId) => this.supply.getLotEvidence(lotId))))
+      .filter((l): l is NonNullable<typeof l> => l !== null);
+    const [packs, shipments] = await Promise.all([
+      this.logistics.getPackEvidenceForOrder(orderId),
+      this.logistics.getShipmentsEvidenceForOrder(orderId)
+    ]);
+    const receiptRows = await this.db.query<{
+      id: string; media_object_id: string; purpose: string; captured_at: string; content_type: string;
+    }>(
+      `SELECT om.id, om.media_object_id, om.purpose, om.captured_at, mo.content_type
+       FROM ordering.order_media om JOIN core.media_objects mo ON mo.id = om.media_object_id
+       WHERE om.order_id = $1 ORDER BY om.captured_at`, [orderId]);
+    const receipt = await Promise.all(receiptRows.rows.map(async (m) => ({
+      id: m.id, purpose: m.purpose, contentType: m.content_type, capturedAt: m.captured_at,
+      url: (await this.media.signRead(m.media_object_id, 300)).url
+    })));
+    return {
+      order: {
+        id: order.id, ref: order.ref, status: order.status,
+        acceptedQty: order.accepted_qty ?? null, disputedQty: order.disputed_qty ?? null,
+        acceptedAt: order.accepted_at ?? null
+      },
+      lots, packs, shipments,
+      receipt: { items: receipt }
+    };
   }
 
   // Buyer acceptance (§19): accepted and disputed quantities stay separate.

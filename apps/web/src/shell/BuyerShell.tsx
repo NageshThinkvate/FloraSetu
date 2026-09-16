@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
+import { UserRound } from 'lucide-react';
 import { ShellFrame } from './ShellFrame';
 import { WorkspaceGuard } from './WorkspaceGuard';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -30,6 +31,9 @@ export default function BuyerShell(): JSX.Element {
             <WorkspaceSwitcher />
             <span className="fs-shell__header-actions">
               <NotificationBell />
+              <Link to="/buyer/org" className="fs-icon-btn" aria-label="Organization profile" data-testid="buyer-profile-link">
+                <UserRound size={20} />
+              </Link>
             </span>
           </>
         }

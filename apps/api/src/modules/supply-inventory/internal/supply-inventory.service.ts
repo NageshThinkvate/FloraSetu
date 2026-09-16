@@ -3,13 +3,15 @@ import { PoolClient } from 'pg';
 import { DatabaseService } from '../../../common/database/database.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { ApiException } from '../../../common/errors/error-envelope';
-import { LotSnapshot, ReserveInput, SupplyInventoryService } from '../contracts';
+import { LotEvidence, LotSnapshot, ReserveInput, SupplyInventoryService } from '../contracts';
+import { MediaService } from '../../../common/media/media.service';
 
 @Injectable()
 export class SupplyInventoryServiceImpl implements SupplyInventoryService {
   constructor(
     private readonly db: DatabaseService,
-    private readonly outbox: OutboxService
+    private readonly outbox: OutboxService,
+    private readonly media: MediaService
   ) {}
 
   contextKey(): 'supply-inventory' {
@@ -32,6 +34,42 @@ export class SupplyInventoryServiceImpl implements SupplyInventoryService {
       availableQty: Number(l.available_qty), allocatedQty: Number(l.allocated_qty),
       qcAcceptedQty: l.qc_accepted_qty === null ? null : Number(l.qc_accepted_qty),
       gradeProfileId: l.grade_profile_id, originType: l.origin_type
+    };
+  }
+
+  // ADR-011 Phase 3: evidence for the buyer's order evidence pack. Signed URLs are
+  // minted here; the CALLER (order-allocation) performs object-level authorization.
+  async getLotEvidence(lotId: string): Promise<LotEvidence | null> {
+    const r = await this.db.query<{
+      id: string; ref: string; status: string; quality_basis: string; declared_qty: string | null;
+      uom_id: string | null; declared_stem_length_cm: string | null; bloom_stage: string | null;
+      batch_ref: string | null; declaration_notes: string | null; declared_at: string | null;
+      harvest_at: string | null; received_at: string | null; origin_type: string | null;
+    }>(
+      `SELECT id, ref, status, quality_basis, declared_qty, uom_id, declared_stem_length_cm,
+              bloom_stage, batch_ref, declaration_notes, declared_at, harvest_at, received_at, origin_type
+       FROM supply.supply_lots WHERE id = $1`, [lotId]);
+    if (r.rowCount === 0) {
+      return null;
+    }
+    const l = r.rows[0];
+    const media = await this.db.query<{
+      id: string; purpose: string; captured_at: string; media_object_id: string; content_type: string;
+    }>(
+      `SELECT lm.id, lm.purpose, lm.captured_at, lm.media_object_id, mo.content_type
+       FROM supply.lot_media lm JOIN core.media_objects mo ON mo.id = lm.media_object_id
+       WHERE lm.lot_id = $1 ORDER BY lm.captured_at`, [lotId]);
+    const items = await Promise.all(media.rows.map(async (m) => ({
+      id: m.id, purpose: m.purpose, contentType: m.content_type,
+      capturedAt: m.captured_at, url: (await this.media.signRead(m.media_object_id, 300)).url
+    })));
+    return {
+      id: l.id, ref: l.ref, status: l.status, qualityBasis: l.quality_basis,
+      declaredQty: l.declared_qty === null ? null : Number(l.declared_qty), uomId: l.uom_id,
+      declaredStemLengthCm: l.declared_stem_length_cm === null ? null : Number(l.declared_stem_length_cm),
+      bloomStage: l.bloom_stage, batchRef: l.batch_ref, declarationNotes: l.declaration_notes,
+      declaredAt: l.declared_at, harvestAt: l.harvest_at, receivedAt: l.received_at,
+      originType: l.origin_type, media: items
     };
   }
 

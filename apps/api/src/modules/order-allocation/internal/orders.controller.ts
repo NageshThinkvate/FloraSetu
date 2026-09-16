@@ -76,4 +76,11 @@ export class OrdersController {
   listReceiptEvidence(@Param('id') id: string) {
     return this.orders.listReceiptEvidence(id);
   }
+
+  // ADR-011 Phase 3: buyer evidence pack (declaration → lot evidence → packing → logistics → POD → receipt).
+  @Get(':id/evidence-pack')
+  @RequirePermission('order.read')
+  evidencePack(@Param('id') id: string) {
+    return this.orders.getEvidencePack(id);
+  }
 }

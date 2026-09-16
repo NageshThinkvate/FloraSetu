@@ -82,6 +82,8 @@ export interface Comparison {
   offers: {
     quotation_id: string; ref: string; supplier_org_id: string; version_id: string; version_no: number;
     version_status: string; valid_to: string; lead_time_days: number | null; submitted_at: string;
+    delivery_commitment?: string | null; moq?: number | null; partial_fulfilment_offered?: boolean;
+    supplier_org_name: string | null; supplier_kyb_status: string | null;
     lines: QuoteLine[]; landedCostComplete: boolean; landedCostLabel: string;
   }[];
 }

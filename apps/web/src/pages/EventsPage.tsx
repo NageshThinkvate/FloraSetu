@@ -1,68 +1,114 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { createEvent, EventSummary, listEvents } from '../lib/api/demand';
+import { createEvent, listEvents, EventSummary } from '../lib/api/demand';
+import { fmtDate } from '../lib/api/fulfilment';
 
-const EVENT_TYPES = ['WEDDING', 'CORPORATE', 'FESTIVAL', 'FUNERAL', 'HOTEL_DAILY', 'OTHER'];
+const EVENT_TYPES = ['WEDDING', 'CORPORATE', 'FESTIVAL', 'PUJA', 'FUNERAL', 'OTHER'];
+import { PageHeader } from '../components/PageHeader';
+import { TaskCard } from '../components/TaskCard';
+import { EmptyState } from '../components/EmptyState';
+import { InlineAlert } from '../components/InlineAlert';
+import { SkeletonLoader } from '../components/SkeletonLoader';
 
+// Events (Phase 3 §10): event-first — the buyer thinks in events and ceremonies,
+// never in RFQs. Coverage and sourcing status surface on the event itself.
 export function EventsPage(): JSX.Element {
-  const [items, setItems] = useState<EventSummary[]>([]);
-  const [name, setName] = useState('');
-  const [eventType, setEventType] = useState(EVENT_TYPES[0]);
-  const [startsAt, setStartsAt] = useState('');
-  const [endsAt, setEndsAt] = useState('');
+  const [events, setEvents] = useState<EventSummary[] | null>(null);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const load = async (): Promise<void> => setItems((await listEvents()).items);
-  useEffect(() => {
-    void load().catch(() => setError('Could not load events'));
+  const load = useCallback(async (): Promise<void> => {
+    setEvents((await listEvents()).items);
   }, []);
+  useEffect(() => {
+    void load().catch(() => setEvents([]));
+  }, [load]);
 
   const create = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
+    const fd = new FormData(e.target as HTMLFormElement);
+    setBusy(true);
     setError('');
     try {
       await createEvent({
-        name, eventType,
-        startsAt: startsAt ? new Date(startsAt).toISOString() : undefined,
-        endsAt: endsAt ? new Date(endsAt).toISOString() : undefined
+        name: String(fd.get('name') ?? ''),
+        eventType: String(fd.get('eventType') ?? 'OTHER'),
+        startAt: new Date(String(fd.get('startAt'))).toISOString(),
+        endAt: new Date(String(fd.get('endAt'))).toISOString()
       });
-      setName(''); setStartsAt(''); setEndsAt('');
+      setCreating(false);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Create failed');
+      setError(err instanceof Error ? err.message : 'Could not create the event');
+    } finally {
+      setBusy(false);
     }
   };
 
+  if (events === null) {
+    return <SkeletonLoader variant="card" count={2} testId="events-loading" />;
+  }
+
   return (
-    <main className="app-shell" data-testid="events-page">
-      <header className="shell-header"><h1>Events</h1></header>
-      <form className="panel inline-form" onSubmit={create} data-testid="event-create-form">
-        <input data-testid="event-name" placeholder="Event name" value={name} onChange={(e) => setName(e.target.value)} />
-        <select data-testid="event-type" value={eventType} onChange={(e) => setEventType(e.target.value)}>
-          {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
-        <input data-testid="event-starts" type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
-        <input data-testid="event-ends" type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
-        <button type="submit" data-testid="event-create-btn" disabled={!name.trim()}>Create</button>
-      </form>
-      {error && <p className="form-error" data-testid="events-error">{error}</p>}
-      <section className="module-grid" data-testid="event-list">
-        {items.map((ev) => (
-          <article key={ev.id} className="module-tile" data-testid={`event-${ev.id}`}>
-            <h2>{ev.name}</h2>
-            <p>
-              <span className="state-chip">{ev.event_type}</span>{' '}
-              <span className="state-chip frozen">{ev.status}</span>
-            </p>
-            <p>{ev.ref} · {ev.ceremonies} ceremonies · {ev.bom_lines} BOM lines
-              {ev.starts_at ? ` · ${new Date(ev.starts_at).toLocaleDateString()}` : ''}</p>
-            <Link to={`/demand/events/${ev.id}`} data-testid={`open-event-${ev.id}`}>
-              <button className="ghost-btn">Open</button>
-            </Link>
-          </article>
+    <div data-testid="events-page">
+      <PageHeader
+        overline="Events"
+        title="Your events"
+        testId="events-header"
+        actions={<button className="fs-btn" data-testid="event-new-btn" onClick={() => setCreating((v) => !v)}>New event</button>}
+      />
+      {error && <InlineAlert variant="error" testId="events-error">{error}</InlineAlert>}
+
+      {creating && (
+        <form onSubmit={create} className="fs-card fs-md-card" data-testid="event-form" style={{ marginBottom: 'var(--fs-space-4)' }}>
+          <div className="fs-field">
+            <label className="fs-field__label" htmlFor="ev-name">Event name</label>
+            <input id="ev-name" name="name" className="fs-input" data-testid="event-name" placeholder="Arun & Lakshmi Wedding" required />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 'var(--fs-space-3)' }}>
+            <div className="fs-field">
+              <label className="fs-field__label" htmlFor="ev-type">Type</label>
+              <select id="ev-type" name="eventType" className="fs-select" data-testid="event-type">
+                {EVENT_TYPES.map((t) => <option key={t} value={t}>{t.charAt(0) + t.slice(1).toLowerCase()}</option>)}
+              </select>
+            </div>
+            <div className="fs-field">
+              <label className="fs-field__label" htmlFor="ev-start">Starts</label>
+              <input id="ev-start" name="startAt" type="datetime-local" className="fs-input" data-testid="event-start" required />
+            </div>
+            <div className="fs-field">
+              <label className="fs-field__label" htmlFor="ev-end">Ends</label>
+              <input id="ev-end" name="endAt" type="datetime-local" className="fs-input" data-testid="event-end" required />
+            </div>
+          </div>
+          <button type="submit" className="fs-btn" data-testid="event-create" disabled={busy} style={{ marginTop: 'var(--fs-space-3)' }}>
+            {busy ? 'Creating…' : 'Create event'}
+          </button>
+        </form>
+      )}
+
+      {events.length === 0 && !creating && (
+        <EmptyState
+          title="No events yet"
+          hint="Start with the event — ceremonies, milestones and flower lists. FloraSetu organizes the sourcing behind the scenes."
+          actionLabel="Plan an event"
+          onAction={() => setCreating(true)}
+          testId="events-empty"
+        />
+      )}
+      <div className="fs-md-stack">
+        {events.map((e) => (
+          <TaskCard
+            key={e.id}
+            testId={`event-card-${e.id.slice(0, 8)}`}
+            title={e.name}
+            meta={[`${fmtDate(e.starts_at)} → ${fmtDate(e.ends_at)}`, e.event_type.toLowerCase()]}
+            status={e.status}
+            footer={<Link className="fs-btn fs-btn--sm" data-testid={`event-open-${e.id.slice(0, 8)}`} to={`/buyer/events/${e.id}`}>Open event</Link>}
+          />
         ))}
-        {items.length === 0 && !error && <p className="hint">No events yet.</p>}
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

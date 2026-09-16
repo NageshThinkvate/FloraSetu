@@ -30,6 +30,20 @@ export interface LotSnapshot {
   originType: string | null;
 }
 
+export interface LotEvidenceMedia {
+  id: string; purpose: string; contentType: string; capturedAt: string; url: string;
+}
+
+// ADR-011 evidence pack: buyer-facing supplier declaration + actual-lot/packing media.
+export interface LotEvidence {
+  id: string; ref: string; status: string; qualityBasis: string;
+  declaredQty: number | null; uomId: string | null;
+  declaredStemLengthCm: number | null; bloomStage: string | null; batchRef: string | null;
+  declarationNotes: string | null; declaredAt: string | null;
+  harvestAt: string | null; receivedAt: string | null; originType: string | null;
+  media: LotEvidenceMedia[];
+}
+
 export interface SupplyInventoryService {
   contextKey(): 'supply-inventory';
   getLotSnapshot(lotId: string): Promise<LotSnapshot | null>;
@@ -48,6 +62,8 @@ export interface SupplyInventoryService {
   // QC queue: lots awaiting inspection (for the inspector worklist).
   listQcQueue(): Promise<LotSnapshot[]>;
   pilotExceptions(): Promise<Record<string, unknown[]>>;
+  // ADR-011 evidence pack: declaration + actual-lot media with short-lived signed URLs.
+  getLotEvidence(lotId: string): Promise<LotEvidence | null>;
 }
 
 export const SupplyInventory_SERVICE = 'SupplyInventory_SERVICE';

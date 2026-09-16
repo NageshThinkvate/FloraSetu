@@ -194,6 +194,31 @@ export const addLotMedia = (id: string, body: { mediaObjectId: string; purpose?:
   apiPost<{ id: string }>(`/supply/lots/${id}/media`, body);
 export const getLotMedia = (id: string) => apiGet<{ items: LotMediaRow[] }>(`/supply/lots/${id}/media`);
 
+// ADR-011 Phase 3: buyer evidence pack (declaration → lot media → packing → logistics → POD → receipt)
+export interface EvidenceMedia { id: string; purpose: string; contentType: string; capturedAt: string; url: string }
+export interface LotEvidencePack {
+  id: string; ref: string; status: string; qualityBasis: string; declaredQty: number | null;
+  uomId: string | null; declaredStemLengthCm: number | null; bloomStage: string | null;
+  batchRef: string | null; declarationNotes: string | null; declaredAt: string | null;
+  harvestAt: string | null; receivedAt: string | null; originType: string | null; media: EvidenceMedia[];
+}
+export interface ShipmentEvidencePack {
+  id: string; ref: string; status: string; mode: string; carrierName: string | null;
+  parcelAwbRef: string | null; transportRef: string | null; packageCount: number | null;
+  pickupAt: string | null; dispatchedAt: string | null; eta: string | null; actualArrivalAt: string | null;
+  logisticsOrgId: string | null; media: EvidenceMedia[];
+  pods: { id: string; deliveredQty: number; receiverName: string | null; receivedAt: string }[];
+}
+export interface PackEvidenceRow {
+  id: string; ref: string; packedQty: number; packType: string | null; cartonCount: number | null; packedAt: string;
+}
+export interface EvidencePack {
+  order: { id: string; ref: string; status: string; acceptedQty: number | null; disputedQty: number | null; acceptedAt: string | null };
+  lots: LotEvidencePack[]; packs: PackEvidenceRow[]; shipments: ShipmentEvidencePack[];
+  receipt: { items: EvidenceMedia[] };
+}
+export const getEvidencePack = (id: string) => apiGet<EvidencePack>(`/orders/${id}/evidence-pack`);
+
 // Quality & custody
 export const qcQueue = () => apiGet<{ items: QcQueueLot[] }>('/quality/queue');
 export const createInspection = (body: { lotId: string; scope: string; notes?: string; conflictOverrideReason?: string }) =>
@@ -238,6 +263,8 @@ export const listSettlementsForOrder = (orderId: string) => apiGet<{ items: Sett
 export const createClaim = (body: unknown) =>
   apiPost<{ id: string; ref: string; status: string }>('/claims', body, { idempotencyKey: newIdempotencyKey() });
 export const listMyClaims = () => apiGet<{ items: ClaimRow[] }>('/claims');
+export const addReceiptEvidence = (orderId: string, body: { mediaObjectId: string; purpose?: string; caption?: string }) =>
+  apiPost<{ id: string; attached: boolean }>(`/orders/${orderId}/receipt-evidence`, body);
 export const getClaim = (id: string) => apiGet<ClaimDetail>(`/claims/${id}`);
 export const submitClaim = (id: string) =>
   apiPost<{ id: string; status: string }>(`/claims/${id}/submit`, undefined, { idempotencyKey: newIdempotencyKey() });

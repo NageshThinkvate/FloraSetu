@@ -9,24 +9,25 @@ import { BuyerHome, SupplierHome } from './shell/homes';
 import { PlaceholderPage } from './shell/placeholders';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { PublicHomePage } from './pages/PublicHomePage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { AccountPage } from './pages/AccountPage';
 import { AdminPage } from './pages/AdminPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { CatalogAdminPage } from './pages/CatalogAdminPage';
 import { CapabilitiesPage } from './pages/CapabilitiesPage';
-import { QuickRequestPage } from './pages/QuickRequestPage';
+import { GetFlowersPage } from './pages/GetFlowersPage';
 import { RequirementDetailPage } from './pages/RequirementDetailPage';
 import { EventsPage } from './pages/EventsPage';
 import { EventDetailPage } from './pages/EventDetailPage';
 import { RfqsPage } from './pages/RfqsPage';
-import { RfqDetailPage } from './pages/RfqDetailPage';
+import { OfferComparisonPage } from './pages/OfferComparisonPage';
 import { SupplierInboxPage } from './pages/SupplierInboxPage';
 import { SupplierRfqPage } from './pages/SupplierRfqPage';
 import { MyQuotesPage } from './pages/MyQuotesPage';
 import { OpsDeskPage } from './pages/OpsDeskPage';
 import { OrdersPage } from './pages/OrdersPage';
-import { OrderDetailPage } from './pages/OrderDetailPage';
+import { BuyerOrderPage } from './pages/BuyerOrderPage';
 import { SupplierOrdersPage } from './pages/SupplierOrdersPage';
 import { LotsPage } from './pages/LotsPage';
 import { LotDetailPage } from './pages/LotDetailPage';
@@ -72,6 +73,16 @@ function CatalogRedirect(): JSX.Element {
   return <Navigate to={activeWorkspace === 'supplier' ? '/supplier/catalog' : '/buyer/catalog'} replace />;
 }
 
+// Phase 3 Part B: logged-out visitors see the public homepage; authenticated
+// users continue through the workspace router.
+function RootRoute(): JSX.Element {
+  const { me, loading } = useAuth();
+  if (loading) {
+    return <ShellLoading />;
+  }
+  return me ? <WorkspaceRouter /> : <PublicHomePage />;
+}
+
 export default function App(): JSX.Element {
   return (
     <AuthProvider>
@@ -79,7 +90,7 @@ export default function App(): JSX.Element {
         <ToastProvider>
           <WorkspaceProvider>
             <Routes>
-              <Route path="/" element={<WorkspaceRouter />} />
+              <Route path="/" element={<RootRoute />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/onboarding" element={<Protected><OnboardingPage /></Protected>} />
@@ -90,13 +101,14 @@ export default function App(): JSX.Element {
               <Route path="/buyer" element={<Suspense fallback={<ShellLoading />}><BuyerShell /></Suspense>}>
                 <Route index element={<Navigate to="home" replace />} />
                 <Route path="home" element={<BuyerHome />} />
-                <Route path="requests/new" element={<QuickRequestPage />} />
+                <Route path="requests/new" element={<GetFlowersPage />} />
                 <Route path="requests/:id" element={<RequirementDetailPage />} />
+                <Route path="requirements/:id" element={<RequirementDetailPage />} />
                 <Route path="offers" element={<RfqsPage />} />
-                <Route path="offers/:id" element={<RfqDetailPage />} />
+                <Route path="offers/:id" element={<OfferComparisonPage />} />
                 <Route path="orders" element={<OrdersPage />} />
-                <Route path="orders/:id" element={<OrderDetailPage />} />
-                <Route path="deliveries" element={<OrdersPage />} />
+                <Route path="orders/:id" element={<BuyerOrderPage />} />
+                <Route path="deliveries" element={<OrdersPage deliveriesOnly />} />
                 <Route path="events" element={<EventsPage />} />
                 <Route path="events/:id" element={<EventDetailPage />} />
                 <Route path="issues" element={<ClaimsPage />} />

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../../common/database/database.service';
-import { IdentityPartyService } from '../contracts';
+import { IdentityPartyService, OrgPublicProfile } from '../contracts';
 
 @Injectable()
 export class IdentityPartyServiceImpl implements IdentityPartyService {
@@ -43,5 +43,17 @@ export class IdentityPartyServiceImpl implements IdentityPartyService {
       [orgId]
     );
     return (r.rowCount ?? 0) > 0;
+  }
+
+  async getOrgPublicProfiles(orgIds: string[]): Promise<OrgPublicProfile[]> {
+    if (orgIds.length === 0) {
+      return [];
+    }
+    const r = await this.db.query<{ id: string; name: string; ref: string; type: string; kyb_status: string }>(
+      `SELECT id, name, ref, type, kyb_status FROM identity.organizations
+       WHERE id = ANY($1) AND deleted_at IS NULL`,
+      [orgIds]
+    );
+    return r.rows.map((o) => ({ orgId: o.id, name: o.name, ref: o.ref, type: o.type, kybStatus: o.kyb_status }));
   }
 }

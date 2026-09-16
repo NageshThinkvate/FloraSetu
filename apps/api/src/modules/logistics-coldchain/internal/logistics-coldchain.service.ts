@@ -1,10 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../../common/database/database.service';
-import { LogisticsColdchainService, PodSnapshot } from '../contracts';
+import { MediaService } from '../../../common/media/media.service';
+import {
+  LogisticsColdchainService, PackEvidence, PodSnapshot, ShipmentEvidence
+} from '../contracts';
 
 @Injectable()
 export class LogisticsColdchainServiceImpl implements LogisticsColdchainService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(private readonly db: DatabaseService, private readonly media: MediaService) {}
 
   contextKey(): 'logistics-coldchain' {
     return 'logistics-coldchain';
@@ -64,5 +67,60 @@ export class LogisticsColdchainServiceImpl implements LogisticsColdchainService 
       podMissing: podMissing.rows,
       openShipmentExceptions: openExceptions.rows
     };
+  }
+
+  // ADR-011 Phase 3: buyer evidence pack legs. Signed URLs minted here; object-level
+  // authorization happens in the calling context (order-allocation).
+  async getShipmentsEvidenceForOrder(orderId: string): Promise<ShipmentEvidence[]> {
+    const shipments = await this.db.query<{
+      id: string; ref: string; status: string; mode: string; carrier_name: string | null;
+      parcel_awb_ref: string | null; transport_ref: string | null; package_count: number | null;
+      pickup_at: string | null; dispatched_at: string | null; eta: string | null;
+      actual_arrival_at: string | null; logistics_org_id: string | null;
+    }>(
+      `SELECT id, ref, status, mode, carrier_name, parcel_awb_ref, transport_ref, package_count,
+              pickup_at, dispatched_at, eta, actual_arrival_at, logistics_org_id
+       FROM logistics.shipments WHERE order_id = $1 ORDER BY created_at`, [orderId]);
+    const out: ShipmentEvidence[] = [];
+    for (const s of shipments.rows) {
+      const media = await this.db.query<{
+        id: string; purpose: string; captured_at: string; media_object_id: string; content_type: string;
+      }>(
+        `SELECT sm.id, sm.purpose, sm.captured_at, sm.media_object_id, mo.content_type
+         FROM logistics.shipment_media sm JOIN core.media_objects mo ON mo.id = sm.media_object_id
+         WHERE sm.shipment_id = $1 ORDER BY sm.captured_at`, [s.id]);
+      const pods = await this.db.query<{
+        id: string; delivered_qty: string; receiver_name: string | null; received_at: string;
+      }>(
+        `SELECT id, delivered_qty, receiver_name, received_at FROM logistics.pod_records
+         WHERE shipment_id = $1`, [s.id]);
+      out.push({
+        id: s.id, ref: s.ref, status: s.status, mode: s.mode, carrierName: s.carrier_name,
+        parcelAwbRef: s.parcel_awb_ref, transportRef: s.transport_ref, packageCount: s.package_count,
+        pickupAt: s.pickup_at, dispatchedAt: s.dispatched_at, eta: s.eta,
+        actualArrivalAt: s.actual_arrival_at, logisticsOrgId: s.logistics_org_id,
+        media: await Promise.all(media.rows.map(async (m) => ({
+          id: m.id, purpose: m.purpose, contentType: m.content_type,
+          capturedAt: m.captured_at, url: (await this.media.signRead(m.media_object_id, 300)).url
+        }))),
+        pods: pods.rows.map((p) => ({
+          id: p.id, deliveredQty: Number(p.delivered_qty), receiverName: p.receiver_name, receivedAt: p.received_at
+        }))
+      });
+    }
+    return out;
+  }
+
+  async getPackEvidenceForOrder(orderId: string): Promise<PackEvidence[]> {
+    const r = await this.db.query<{
+      id: string; ref: string; packed_qty: string; pack_type: string | null;
+      carton_count: number | null; packed_at: string;
+    }>(
+      `SELECT id, ref, packed_qty, pack_type, carton_count, packed_at
+       FROM logistics.pack_records WHERE order_id = $1 ORDER BY packed_at`, [orderId]);
+    return r.rows.map((p) => ({
+      id: p.id, ref: p.ref, packedQty: Number(p.packed_qty), packType: p.pack_type,
+      cartonCount: p.carton_count, packedAt: p.packed_at
+    }));
   }
 }

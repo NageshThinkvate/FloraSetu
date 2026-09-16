@@ -11,6 +11,25 @@ export interface PodSnapshot {
   damageFlag: boolean;
 }
 
+export interface ShipmentMediaEvidence {
+  id: string; purpose: string; contentType: string; capturedAt: string; url: string;
+}
+
+// ADR-011 evidence pack (Phase 3): buyer-facing logistics leg with media + POD.
+export interface ShipmentEvidence {
+  id: string; ref: string; status: string; mode: string; carrierName: string | null;
+  parcelAwbRef: string | null; transportRef: string | null; packageCount: number | null;
+  pickupAt: string | null; dispatchedAt: string | null; eta: string | null; actualArrivalAt: string | null;
+  logisticsOrgId: string | null;
+  media: ShipmentMediaEvidence[];
+  pods: { id: string; deliveredQty: number; receiverName: string | null; receivedAt: string }[];
+}
+
+export interface PackEvidence {
+  id: string; ref: string; packedQty: number; packType: string | null;
+  cartonCount: number | null; packedAt: string;
+}
+
 export interface LogisticsColdchainService {
   contextKey(): 'logistics-coldchain';
   getPodForOrder(orderId: string): Promise<PodSnapshot[]>;
@@ -20,6 +39,9 @@ export interface LogisticsColdchainService {
   // ADR-002: an open severe exception blocks buyer acceptance / supplier settlement.
   hasBlockingException(orderId: string): Promise<boolean>;
   pilotExceptions(): Promise<Record<string, unknown[]>>;
+  // ADR-011 evidence pack (Phase 3): signed-URL evidence; caller authorizes.
+  getShipmentsEvidenceForOrder(orderId: string): Promise<ShipmentEvidence[]>;
+  getPackEvidenceForOrder(orderId: string): Promise<PackEvidence[]>;
 }
 
 export const LogisticsColdchain_SERVICE = 'LogisticsColdchain_SERVICE';

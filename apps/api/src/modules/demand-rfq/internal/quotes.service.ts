@@ -8,6 +8,7 @@ import { ApiException } from '../../../common/errors/error-envelope';
 import { RequestContext } from '../../../common/request-context';
 import { claimIdempotencyKey, completeIdempotencyKey, hashRequest } from '../../../common/idempotency/idempotency.service';
 import { CatalogStandards_SERVICE, CatalogStandardsService } from '../../catalog-standards/contracts';
+import { IdentityParty_SERVICE, IdentityPartyService } from '../../identity-party/contracts';
 import { Notifications_SERVICE, NotificationsService } from '../../notifications/contracts';
 import { isOps } from './demand-policies';
 import { QuotationLineDto, ReviseQuotationDto, SubmitQuotationDto } from './dto';
@@ -20,6 +21,7 @@ export class QuotesService {
     private readonly outbox: OutboxService,
     private readonly refIds: ReferenceIdService,
     @Inject(CatalogStandards_SERVICE) private readonly catalogService: CatalogStandardsService,
+    @Inject(IdentityParty_SERVICE) private readonly identityService: IdentityPartyService,
     @Inject(Notifications_SERVICE) private readonly notificationsService: NotificationsService
   ) {}
 
@@ -345,10 +347,16 @@ export class QuotesService {
       ? (await this.db.query(
           `SELECT * FROM demand.quotation_lines WHERE quotation_version_id = ANY($1)`, [versionIds])).rows
       : [];
+    // B3 (Phase 3): supplier display name + verification status on every offer.
+    const profiles = await this.identityService.getOrgPublicProfiles(
+      quotes.rows.map((q) => q.supplier_org_id as string));
+    const profileById = new Map(profiles.map((p) => [p.orgId, p]));
     return {
       requirementLines: reqLines.rows,
       offers: quotes.rows.map((q) => ({
         ...q,
+        supplier_org_name: profileById.get(q.supplier_org_id as string)?.name ?? null,
+        supplier_kyb_status: profileById.get(q.supplier_org_id as string)?.kybStatus ?? null,
         lines: lines.filter((l) => l.quotation_version_id === q.version_id),
         landedCostComplete: lines
           .filter((l) => l.quotation_version_id === q.version_id)

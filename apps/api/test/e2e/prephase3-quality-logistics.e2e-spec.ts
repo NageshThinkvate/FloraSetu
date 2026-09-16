@@ -353,4 +353,60 @@ describe('GATE Pre-Phase-3: quality basis + logistics partner (ADR-011)', () => 
       `SELECT action FROM core.audit_events WHERE object_id = $1 AND action = 'lot.declare'`, [lotId]);
     expect(audit.rowCount).toBe(1);
   });
+
+  // ---------- Phase 3 buyer surfaces (B3 comparison enrichment + evidence pack) ----------
+
+  it('(P1) comparison shows supplier organization name and verification status', async () => {
+    const req = await t.http.post('/api/demand/requirements').set(asBuyer()).send({
+      mode: 'FORMAL', title: `P3 cmp ${RUN}`,
+      lines: [{ commodityId: productId, quantity: 10, uomId: stemUom, neededAt: FUTURE, deliveryDestination: 'Cmp Dest' }]
+    });
+    expectOk(req.status);
+    const reqId = req.body.id as string;
+    expectOk((await t.http.post(`/api/demand/requirements/${reqId}/submit`).set(asBuyer()).set('Idempotency-Key', idem('p1-sub'))).status);
+    const pub = await t.http.post(`/api/demand/requirements/${reqId}/publish-rfq`).set(asBuyer())
+      .set('Idempotency-Key', idem('p1-pub')).send({ supplierOrgIds: [supOrg], quoteDeadline: FUTURE });
+    expectOk(pub.status);
+    const rfqId = pub.body.id as string;
+    const detail = await t.http.get(`/api/demand/rfqs/${rfqId}`).set(asBuyer());
+    const lineId = detail.body.lines[0].requirement_line_id as string;
+    expectOk((await t.http.post(`/api/demand/rfqs/${rfqId}/quotes`).set(asSup())
+      .set('Idempotency-Key', idem('p1-q'))
+      .send({ validTo: FUTURE, lines: [{ requirementLineId: lineId, quotedQty: 10, quotedUomId: stemUom, unitPriceMinor: 42000 }] })).status);
+    const cmp = await t.http.get(`/api/demand/rfqs/${rfqId}/comparison`).set(asBuyer());
+    expectOk(cmp.status);
+    const offers = cmp.body.offers as { supplier_org_name: string | null; supplier_kyb_status: string | null }[];
+    expect(offers.length).toBe(1);
+    expect(offers[0].supplier_org_name).toBe(`P3 Grower ${RUN}`);
+    expect(offers[0].supplier_kyb_status).toBeDefined();
+  });
+
+  it('(P2) buyer evidence pack composes the full trust chain; outsider denied', async () => {
+    const fx = await jobChain('p2', 'REEFER_ROAD', true);
+    expectOk((await t.http.post(`/api/logistics/jobs/${fx.shipmentId}/accept`).set(asDriver())).status);
+    const pk = await upload(asDriver());
+    expectOk((await t.http.post(`/api/logistics/jobs/${fx.shipmentId}/pickup`).set(asDriver())
+      .send({ awbRef: `AWB-P2-${RUN}`, mediaObjectId: pk.body.id })).status);
+    expectOk((await t.http.post(`/api/logistics/jobs/${fx.shipmentId}/transit`).set(asDriver())).status);
+    expectOk((await t.http.post(`/api/logistics/jobs/${fx.shipmentId}/deliver`).set(asDriver())
+      .send({ deliveredQty: 40, receiverName: 'Front Desk' })).status);
+    const up = await upload(asBuyer());
+    expectOk((await t.http.post(`/api/orders/${fx.orderId}/receipt-evidence`).set(asBuyer())
+      .send({ mediaObjectId: up.body.id, purpose: 'RECEIPT_EVIDENCE' })).status);
+    const pack = await t.http.get(`/api/orders/${fx.orderId}/evidence-pack`).set(asBuyer());
+    expectOk(pack.status);
+    expect(pack.body.order.id).toBe(fx.orderId);
+    const lots = pack.body.lots as { qualityBasis: string; media: unknown[]; batchRef: string | null }[];
+    expect(lots.length).toBeGreaterThanOrEqual(1);
+    expect(lots[0].qualityBasis).toBe('SUPPLIER_DECLARATION');
+    expect(lots[0].media.length).toBeGreaterThanOrEqual(2);
+    expect((pack.body.packs as unknown[]).length).toBe(1);
+    const shipments = pack.body.shipments as { pods: unknown[]; media: unknown[] }[];
+    expect(shipments.length).toBe(1);
+    expect(shipments[0].pods.length).toBe(1);
+    expect(shipments[0].media.length).toBeGreaterThanOrEqual(1);
+    expect((pack.body.receipt.items as unknown[]).length).toBe(1);
+    const denied = await t.http.get(`/api/orders/${fx.orderId}/evidence-pack`).set(asOutsider());
+    expect(denied.status).toBe(404);
+  });
 });
