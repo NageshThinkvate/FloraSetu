@@ -101,6 +101,7 @@ async function main(): Promise<void> {
     await member('USR-2026-000112', 'ORG-2026-000103');
     await role('USR-2026-000112', 'ORG-2026-000103', 'MEMBER');
     // Phase 6 (ADR-013): discipline-separated support persona for control-tower acceptance.
+    await member('USR-2026-000113', 'ORG-2026-000000');
     await role('USR-2026-000113', 'ORG-2026-000000', 'SUPPORT_AGENT');
 
     // E/F/G/H on the platform org

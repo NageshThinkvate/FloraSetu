@@ -1,0 +1,51 @@
+{
+  "summary": "Frontend E2E verification of FloraSetu Phase 6 Ops Control Tower + discipline-isolated Ops workspaces (ADR-013). Executed via the public preview URL against the live NestJS backend. All Phase 6 owner rulings verified GREEN for demo.procops and demo.finance. One BLOCKER discovered: demo.support user has empty org memberships and cannot enter the Ops workspace at all — the support-side READ-ONLY claims path could not be exercised because /api/auth/me returns memberships:[] and WorkspaceGuard shows 'You don't have access to Operations'.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "demo.support login → Ops workspace", "issue": "GET /api/auth/me returns memberships:[] for demo.support@florasetu.dev, so WorkspaceGuard blocks the entire /ops/* area (screen: \"You don't have access to Operations\"). Cannot verify the claims read-only + support nav ruling. Likely a seed-data gap — the SUPPORT_AGENT membership on FloraSetu Platform org is missing.", "affected_selectors": ["ops-nav", "ops-claims-page", "ops-claim-readonly-note"]}
+    ],
+    "design_issues": []
+  },
+  "verified_rulings": {
+    "procops_nav_has_no_quality_no_finance_entry": true,
+    "exceptions_lane_filters_all_six_present": true,
+    "exceptions_search_min2_shows_results": true,
+    "exceptions_export_csv_button_present": true,
+    "orders_side_sheet_has_ZERO_action_buttons": true,
+    "logistics_page_has_ZERO_forbidden_words_or_action_buttons": true,
+    "logistics_side_sheet_has_ZERO_buttons_and_readonly_note_visible": true,
+    "claims_empty_state_renders_correctly_for_procops": true,
+    "finance_isolation_procops_on_ops_finance_shows_readonly_note_no_forms": true,
+    "finance_user_nav_exactly_exceptions_orders_claims_finance": true,
+    "finance_page_has_pay_form_settle_form_and_empty_queue": true,
+    "finance_settlement_order_select_populates_supplier_select": true,
+    "finance_user_on_ops_procurement_gets_missing_required_permission": true,
+    "mobile_390_bottom_nav_items_render": true,
+    "support_read_only_claims_flow": "BLOCKED — support user has no org memberships"
+  },
+  "critical_code_review_comments": [
+    "OpsLogisticsPage.tsx correctly renders ZERO action buttons and includes ops-shipment-readonly-note in the SideSheet body — ADR-012 respected.",
+    "OpsOrdersPage.tsx correctly renders a monitor-only SideSheet with the 'Domain actions stay with the responsible party' note and no fulfilment buttons.",
+    "OpsShell.tsx opsNav() correctly gates entries by PROCUREMENT_OPS / SUPPORT_AGENT / FINANCE_OPS with no universal ops menu and no Quality/Sourcing entry.",
+    "OpsClaimDetailPage.tsx gates the ops-claim-decision-panel behind explicit permission and renders ops-claim-readonly-note otherwise — verified structurally.",
+    "OpsFinancePage.tsx correctly withholds record forms when canFinance is false and renders ops-finance-readonly-note — verified for demo.procops.",
+    "SEED DATA / BACKEND: demo.support@florasetu.dev returns memberships:[] on /api/auth/me despite being a documented Phase 6 test credential. Add a SUPPORT_AGENT membership on the FloraSetu Platform org for this user."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Fix seed data: assign SUPPORT_AGENT membership on the FloraSetu Platform org to demo.support@florasetu.dev so the support discipline-isolation UI test can be exercised. Currently /api/auth/me returns memberships:[] and the WorkspaceGuard blocks /ops/* entirely."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not tested per request)", "frontend": "~90% (9/10 flows verified; support-only flow blocked by seed data)"},
+  "test_credentials": "demo.procops@florasetu.dev / Demo-ProcOps-2026 ✓ works; demo.finance@florasetu.dev / Demo-Finance-2026 ✓ works; demo.support@florasetu.dev / Demo-Support-2026 authenticates (returns tokens) but has empty memberships.",
+  "seed_data_creation": "None. Recommend main agent run the demo-seed script that grants SUPPORT_AGENT to demo.support on FloraSetu Platform org.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Phase 6 UI is behaving to spec for procops and finance. The one gap is a seed-data issue — demo.support has no memberships. After the main agent fixes the seed, re-run only these two checks: (a) support nav shows exactly Exceptions/Orders/Logistics/Claims with NO Procurement/Finance/Quality entries; (b) on any claim detail (via /ops/claims card or direct URL) verify ops-claim-decision-panel is absent and ops-claim-readonly-note is present. Everything else in this iteration is green.",
+  "rca_of_the_issue": "Support user authenticates successfully (POST /api/auth/login → 201 with accessToken) but the subsequent GET /api/auth/me returns memberships:[]. Because WorkspaceGuard requires an active org membership matching workspace='ops', the ops shell never mounts for this user. Root cause is missing seed data (no SUPPORT_AGENT membership row for this user on the FloraSetu Platform org). Mitigation: extend the demo/seed script to insert a SUPPORT_AGENT membership on the platform org for demo.support@florasetu.dev; no frontend code change required."
+}
