@@ -6,6 +6,12 @@ import { ApiException } from '../../../common/errors/error-envelope';
 import { RequestContext } from '../../../common/request-context';
 import { assertOrgAccess } from './policies';
 
+// Phase 7 (ADR-014): structured KYB rejection/correction reason codes.
+export const KYB_REJECTION_REASONS = new Set([
+  'CORRECTION_REQUIRED', 'DOCUMENT_ILLEGIBLE', 'DOCUMENT_EXPIRED',
+  'DETAILS_MISMATCH', 'INELIGIBLE', 'OTHER'
+]);
+
 @Injectable()
 export class KybService {
   constructor(
@@ -61,8 +67,22 @@ export class KybService {
     });
   }
 
-  async review(orgId: string, decision: 'VERIFIED' | 'REJECTED', note?: string): Promise<void> {
+  // Phase 7 (ADR-014): REJECTED always requires a structured reason code;
+  // CORRECTION_REQUIRED additionally requires a note explaining what to fix.
+  // The state machine is unchanged — correction = REJECTED + reason_code, and the
+  // organization resubmits through the existing REJECTED → IN_REVIEW path.
+  async review(orgId: string, decision: 'VERIFIED' | 'REJECTED', reasonCode?: string, note?: string): Promise<void> {
     const ctx = RequestContext.get();
+    if (decision === 'REJECTED') {
+      if (!reasonCode || !KYB_REJECTION_REASONS.has(reasonCode)) {
+        throw new ApiException(400, 'VALIDATION_FAILED', 'A structured reason code is required when rejecting', {
+          allowed: [...KYB_REJECTION_REASONS]
+        });
+      }
+      if (reasonCode === 'CORRECTION_REQUIRED' && !note?.trim()) {
+        throw new ApiException(400, 'VALIDATION_FAILED', 'Explain what the organization must correct');
+      }
+    }
     await this.db.withTransaction(async (client) => {
       const current = await client.query<{ kyb_status: string }>(
         `SELECT kyb_status FROM identity.organizations WHERE id = $1 FOR UPDATE`,
@@ -84,12 +104,13 @@ export class KybService {
         [orgId, decision, ctx.userId]
       );
       await client.query(
-        `INSERT INTO identity.verification_history (org_id, subject_type, from_status, to_status, actor_user_id, note)
-         VALUES ($1, 'ORGANIZATION', 'IN_REVIEW', $2, $3, $4)`,
-        [orgId, decision, ctx.userId, note ?? null]
+        `INSERT INTO identity.verification_history (org_id, subject_type, from_status, to_status, actor_user_id, note, reason_code)
+         VALUES ($1, 'ORGANIZATION', 'IN_REVIEW', $2, $3, $4, $5)`,
+        [orgId, decision, ctx.userId, note ?? null, decision === 'REJECTED' ? reasonCode : null]
       );
       await this.audit.record(client, {
-        action: 'org.kyb.review', objectType: 'organization', objectId: orgId, after: { decision, note }
+        action: 'org.kyb.review', objectType: 'organization', objectId: orgId,
+        after: { decision, reasonCode: decision === 'REJECTED' ? reasonCode : null, note }
       });
       await this.outbox.emit(client, {
         aggregateType: 'organization', aggregateId: orgId, type: 'party.kyb.updated',
@@ -102,7 +123,7 @@ export class KybService {
   async history(orgId: string): Promise<{ items: unknown[] }> {
     assertOrgAccess(RequestContext.get(), orgId);
     const result = await this.db.query(
-      `SELECT subject_type, subject_id, from_status, to_status, actor_user_id, note, created_at
+      `SELECT subject_type, subject_id, from_status, to_status, actor_user_id, note, reason_code, created_at
        FROM identity.verification_history WHERE org_id = $1 ORDER BY created_at DESC`,
       [orgId]
     );

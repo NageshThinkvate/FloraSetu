@@ -6,13 +6,22 @@ import { WorkspaceProvider, useWorkspace } from './lib/workspace-context';
 import { WorkspaceRouter } from './shell/WorkspaceRouter';
 import { ShellLoading } from './shell/states';
 import { BuyerHome, SupplierHome } from './shell/homes';
-import { PlaceholderPage } from './shell/placeholders';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { PublicHomePage } from './pages/PublicHomePage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { AccountPage } from './pages/AccountPage';
-import { AdminPage } from './pages/AdminPage';
+import { AdminOverviewPage } from './pages/AdminOverviewPage';
+import { AdminOrganizationsPage } from './pages/AdminOrganizationsPage';
+import { AdminOrgDetailPage } from './pages/AdminOrgDetailPage';
+import { AdminKybQueuePage } from './pages/AdminKybQueuePage';
+import { AdminKybReviewPage } from './pages/AdminKybReviewPage';
+import { AdminUsersPage } from './pages/AdminUsersPage';
+import { AdminRolesPage } from './pages/AdminRolesPage';
+import { AdminConfigPage } from './pages/AdminConfigPage';
+import { AdminFlagsPage } from './pages/AdminFlagsPage';
+import { AdminSecurityPage } from './pages/AdminSecurityPage';
+import { AdminAuditPage } from './pages/AdminAuditPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { CatalogAdminPage } from './pages/CatalogAdminPage';
 import { CapabilitiesPage } from './pages/CapabilitiesPage';
@@ -167,76 +176,19 @@ export default function App(): JSX.Element {
               </Route>
 
               <Route path="/admin" element={<Suspense fallback={<ShellLoading />}><AdminShell /></Suspense>}>
-                <Route index element={<Navigate to="organizations" replace />} />
-                <Route path="organizations" element={<AdminPage />} />
-                <Route path="kyb" element={<AdminPage />} />
-                <Route
-                  path="users"
-                  element={
-                    <PlaceholderPage
-                      overline="Platform Admin"
-                      title="Users & access"
-                      description="Member and role management across organizations arrives with the Platform Admin phase."
-                      testId="admin-users"
-                    />
-                  }
-                />
-                <Route
-                  path="roles"
-                  element={
-                    <PlaceholderPage
-                      overline="Platform Admin"
-                      title="Roles & permissions"
-                      description="Role and permission matrices arrive with the Platform Admin phase."
-                      testId="admin-roles"
-                    />
-                  }
-                />
+                <Route index element={<Navigate to="overview" replace />} />
+                <Route path="overview" element={<AdminOverviewPage />} />
+                <Route path="organizations" element={<AdminOrganizationsPage />} />
+                <Route path="organizations/:id" element={<AdminOrgDetailPage />} />
+                <Route path="kyb" element={<AdminKybQueuePage />} />
+                <Route path="kyb/:orgId" element={<AdminKybReviewPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
+                <Route path="roles" element={<AdminRolesPage />} />
                 <Route path="catalog" element={<CatalogAdminPage />} />
-                <Route
-                  path="config"
-                  element={
-                    <PlaceholderPage
-                      overline="Platform Admin"
-                      title="Configuration"
-                      description="Effective-dated platform configuration arrives with the Platform Admin phase."
-                      testId="admin-config"
-                    />
-                  }
-                />
-                <Route
-                  path="flags"
-                  element={
-                    <PlaceholderPage
-                      overline="Platform Admin"
-                      title="Feature flags"
-                      description="Feature flag management arrives with the Platform Admin phase."
-                      testId="admin-flags"
-                    />
-                  }
-                />
-                <Route
-                  path="security"
-                  element={
-                    <PlaceholderPage
-                      overline="Platform Admin"
-                      title="Security"
-                      description="MFA policy, sessions and security controls arrive with the Platform Admin phase."
-                      testId="admin-security"
-                    />
-                  }
-                />
-                <Route
-                  path="audit"
-                  element={
-                    <PlaceholderPage
-                      overline="Platform Admin"
-                      title="Audit"
-                      description="Audit log search (trace ID, organization, actor, object) arrives with the Platform Admin phase."
-                      testId="admin-audit"
-                    />
-                  }
-                />
+                <Route path="config" element={<AdminConfigPage />} />
+                <Route path="flags" element={<AdminFlagsPage />} />
+                <Route path="security" element={<AdminSecurityPage />} />
+                <Route path="audit" element={<AdminAuditPage />} />
               </Route>
 
               {/* Legacy redirect map — §5 controlled migration */}

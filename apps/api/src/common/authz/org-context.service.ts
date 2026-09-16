@@ -10,6 +10,14 @@ export class OrgContextService {
   constructor(private readonly db: DatabaseService) {}
 
   async resolve(ctx: RequestContextData, orgId: string): Promise<void> {
+    // Suspended/deactivated users cannot act in any organization context (Phase 7, ADR-014).
+    const user = await this.db.query<{ status: string }>(
+      `SELECT status FROM identity.users WHERE id = $1 AND deleted_at IS NULL`,
+      [ctx.userId]
+    );
+    if (!user.rows[0] || user.rows[0].status !== 'ACTIVE') {
+      throw new ApiException(403, 'FORBIDDEN', 'User account is not active');
+    }
     const membership = await this.db.query(
       `SELECT m.status AS membership_status, o.status AS org_status, o.type AS org_type
        FROM identity.org_memberships m

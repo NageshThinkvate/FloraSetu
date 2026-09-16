@@ -6,6 +6,7 @@ import { NotificationBell } from './NotificationBell';
 import { NavList, BottomNav, NavItem } from './ShellNav';
 
 const NAV: NavItem[] = [
+  { to: '/admin/overview', label: 'Overview', testId: 'admin-nav-overview' },
   { to: '/admin/organizations', label: 'Organizations', testId: 'admin-nav-orgs' },
   { to: '/admin/kyb', label: 'KYB governance', testId: 'admin-nav-kyb' },
   { to: '/admin/users', label: 'Users & access', testId: 'admin-nav-users' },
