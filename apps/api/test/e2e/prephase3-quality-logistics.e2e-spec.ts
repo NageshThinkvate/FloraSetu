@@ -283,9 +283,15 @@ describe('GATE Pre-Phase-3: quality basis + logistics partner (ADR-011)', () => 
       .send({ orderId: fx.orderId, mode, tempControlled: mode === 'REEFER_ROAD', carrierName: 'Partner Co', packageCount: 2 });
     expectOk(shp.status);
     const shipmentId = shp.body.id as string;
+    // ADR-012: Ops selects the logistics PARTNER only; the partner assigns its own driver.
     const assign = await t.http.post(`/api/logistics/shipments/${shipmentId}/assign`).set(asOps())
-      .send({ logisticsOrgId: partnerOrg, driverUserId: withDriver ? driver.userId : undefined });
+      .send({ logisticsOrgId: partnerOrg });
     expectOk(assign.status);
+    if (withDriver) {
+      const ad = await t.http.post(`/api/logistics/jobs/${shipmentId}/assign-driver`).set(asPartner())
+        .send({ driverUserId: driver.userId });
+      expectOk(ad.status);
+    }
     return { ...fx, lotId, shipmentId };
   };
 

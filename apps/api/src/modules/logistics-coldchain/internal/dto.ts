@@ -38,6 +38,7 @@ export class CreateShipmentDto {
   @IsOptional() @IsISO8601() etd?: string;
   @IsOptional() @IsISO8601() eta?: string;
   @IsOptional() @IsString() @MaxLength(300) lastMileDetail?: string;
+  @IsOptional() @IsString() @MaxLength(300) handlingNote?: string;
 }
 
 export class PodDto {
@@ -46,6 +47,8 @@ export class PodDto {
   @IsOptional() @IsString() @MaxLength(120) receiverName?: string;
   @IsOptional() @IsUUID() mediaObjectId?: string;
   @IsOptional() @IsString() @MaxLength(120) signatureRef?: string;
+  @IsOptional() @IsUUID() signatureMediaObjectId?: string;
+  @IsOptional() @IsString() @MaxLength(120) podRef?: string;
   @IsOptional() @IsString() @MaxLength(500) notes?: string;
   @IsOptional() @IsBoolean() shortageFlag?: boolean;
   @IsOptional() @IsBoolean() damageFlag?: boolean;
@@ -83,4 +86,15 @@ export class ReportLogisticsExceptionDto {
   type: string;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
   @IsOptional() @IsUUID() mediaObjectId?: string;
+}
+
+// ADR-012: partner-controlled driver assignment (own-org members only).
+export class AssignDriverDto {
+  @IsUUID() driverUserId: string;
+  @IsOptional() @IsString() @MaxLength(120) vehicleRef?: string;
+  @IsOptional() @IsString() @MaxLength(300) reason?: string;
+}
+
+export class UnassignDriverDto {
+  @IsOptional() @IsString() @MaxLength(300) reason?: string;
 }

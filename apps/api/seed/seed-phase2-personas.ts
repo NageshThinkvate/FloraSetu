@@ -19,7 +19,8 @@ const PERSONAS: { ref: string; email: string; password: string; name: string }[]
   { ref: 'USR-2026-000108', email: 'demo.opsadmin@florasetu.dev', password: 'Demo-OpsAdmin-2026', name: 'Demo Ops + Admin' },
   { ref: 'USR-2026-000109', email: 'demo.multi@florasetu.dev', password: 'Demo-Multi-2026', name: 'Demo Multi Org' },
   { ref: 'USR-2026-000110', email: 'demo.logistics@florasetu.dev', password: 'Demo-Logistics-2026', name: 'Demo Logistics Admin' },
-  { ref: 'USR-2026-000111', email: 'demo.driver@florasetu.dev', password: 'Demo-Driver-2026', name: 'Demo Driver' }
+  { ref: 'USR-2026-000111', email: 'demo.driver@florasetu.dev', password: 'Demo-Driver-2026', name: 'Demo Driver' },
+  { ref: 'USR-2026-000112', email: 'demo.driver2@florasetu.dev', password: 'Demo-Driver2-2026', name: 'Demo Driver Two' }
 ];
 
 async function main(): Promise<void> {
@@ -91,10 +92,13 @@ async function main(): Promise<void> {
     await role('USR-2026-000104', 'ORG-2026-000102', 'QC_AGENT');
 
     // J/K. logistics partner admin + driver (ADR-011 partner = logistics)
+    // Phase 5 (ADR-012): second same-org driver member for assignment/reassignment demos.
     await member('USR-2026-000110', 'ORG-2026-000103');
     await role('USR-2026-000110', 'ORG-2026-000103', 'ORG_ADMIN');
     await member('USR-2026-000111', 'ORG-2026-000103');
     await role('USR-2026-000111', 'ORG-2026-000103', 'MEMBER');
+    await member('USR-2026-000112', 'ORG-2026-000103');
+    await role('USR-2026-000112', 'ORG-2026-000103', 'MEMBER');
 
     // E/F/G/H on the platform org
     await member('USR-2026-000105', 'ORG-2026-000000');
@@ -129,7 +133,7 @@ async function main(): Promise<void> {
 
     await client.query(`
       INSERT INTO core.reference_counters (entity, year, next_value) VALUES
-        ('USR', 2026, 112), ('ORG', 2026, 104)
+        ('USR', 2026, 113), ('ORG', 2026, 104)
       ON CONFLICT (entity, year) DO UPDATE
         SET next_value = GREATEST(core.reference_counters.next_value, EXCLUDED.next_value);
     `);

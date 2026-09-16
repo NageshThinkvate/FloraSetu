@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../../common/database/database.service';
-import { IdentityPartyService, OrgPublicProfile } from '../contracts';
+import { IdentityPartyService, OrgMemberSummary, OrgPublicProfile } from '../contracts';
 
 @Injectable()
 export class IdentityPartyServiceImpl implements IdentityPartyService {
@@ -55,5 +55,43 @@ export class IdentityPartyServiceImpl implements IdentityPartyService {
       [orgIds]
     );
     return r.rows.map((o) => ({ orgId: o.id, name: o.name, ref: o.ref, type: o.type, kybStatus: o.kyb_status }));
+  }
+
+  // ADR-012: driver assignment eligibility — ACTIVE membership AND ACTIVE user account.
+  async isActiveMember(orgId: string, userId: string): Promise<boolean> {
+    const r = await this.db.query(
+      `SELECT 1 FROM identity.org_memberships m
+       JOIN identity.users u ON u.id = m.user_id
+       WHERE m.org_id = $1 AND m.user_id = $2 AND m.status = 'ACTIVE' AND u.status = 'ACTIVE'`,
+      [orgId, userId]
+    );
+    return (r.rowCount ?? 0) > 0;
+  }
+
+  async listActiveMembers(orgId: string): Promise<OrgMemberSummary[]> {
+    const r = await this.db.query<{ id: string; ref: string; display_name: string; roles: string[] }>(
+      `SELECT u.id, u.ref, u.display_name,
+              COALESCE(array_agg(DISTINCT ro.name) FILTER (WHERE ro.name IS NOT NULL), '{}') AS roles
+       FROM identity.org_memberships m
+       JOIN identity.users u ON u.id = m.user_id
+       LEFT JOIN identity.user_roles ur ON ur.org_id = m.org_id AND ur.user_id = m.user_id
+       LEFT JOIN identity.roles ro ON ro.id = ur.role_id
+       WHERE m.org_id = $1 AND m.status = 'ACTIVE' AND u.status = 'ACTIVE'
+       GROUP BY u.id, u.ref, u.display_name
+       ORDER BY u.display_name`,
+      [orgId]
+    );
+    return r.rows.map((m) => ({ userId: m.id, ref: m.ref, displayName: m.display_name, roles: m.roles }));
+  }
+
+  async getUserDisplayNames(userIds: string[]): Promise<{ userId: string; displayName: string }[]> {
+    if (userIds.length === 0) {
+      return [];
+    }
+    const r = await this.db.query<{ id: string; display_name: string }>(
+      `SELECT id, display_name FROM identity.users WHERE id = ANY($1)`,
+      [userIds]
+    );
+    return r.rows.map((u) => ({ userId: u.id, displayName: u.display_name }));
   }
 }

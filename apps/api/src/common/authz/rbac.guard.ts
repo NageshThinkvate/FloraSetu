@@ -17,7 +17,9 @@ export const TRANSACTIONAL_PERMISSIONS = new Set([
   'order.manage', 'inventory.reserve', 'inventory.allocate', 'lot.write',
   'qc.inspect', 'pack.manage', 'dispatch.manage', 'delivery.accept',
   'payment.record', 'payment.verify', 'settlement.record', 'settlement.verify',
-  'claim.create', 'claim.manage'
+  'claim.create', 'claim.manage',
+  // ADR-012 (Phase 5): partner logistics execution privileges
+  'logistics.execute', 'logistics.assign_driver'
 ]);
 
 @Injectable()

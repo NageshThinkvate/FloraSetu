@@ -37,6 +37,7 @@ import { LotDetailPage } from './pages/LotDetailPage';
 import { QcQueuePage } from './pages/QcQueuePage';
 import { PartnerJobsPage } from './pages/PartnerJobsPage';
 import { PartnerJobDetailPage } from './pages/PartnerJobDetailPage';
+import { PartnerHomePage } from './pages/PartnerHomePage';
 import { ControlTowerPage } from './pages/ControlTowerPage';
 import { FinancePage } from './pages/FinancePage';
 import { ClaimsPage } from './pages/ClaimsPage';
@@ -139,7 +140,8 @@ export default function App(): JSX.Element {
 
               <Route path="/partner" element={<Suspense fallback={<ShellLoading />}><PartnerShell /></Suspense>}>
                 <Route index element={<Navigate to="logistics" replace />} />
-                <Route path="logistics" element={<PartnerJobsPage />} />
+                <Route path="logistics" element={<PartnerHomePage />} />
+                <Route path="logistics/jobs" element={<PartnerJobsPage />} />
                 <Route path="logistics/delivered" element={<PartnerJobsPage deliveredOnly />} />
                 <Route path="logistics/jobs/:id" element={<PartnerJobDetailPage />} />
                 <Route path="qc" element={<Navigate to="/partner/logistics" replace />} />

@@ -6,7 +6,8 @@ import { NotificationBell } from './NotificationBell';
 import { NavList, BottomNav, NavItem } from './ShellNav';
 
 const NAV: NavItem[] = [
-  { to: '/partner/logistics', label: 'Jobs', testId: 'partner-nav-jobs' },
+  { to: '/partner/logistics', label: 'Home', testId: 'partner-nav-home', end: true },
+  { to: '/partner/logistics/jobs', label: 'Jobs', testId: 'partner-nav-jobs' },
   { to: '/partner/logistics/delivered', label: 'Delivered', testId: 'partner-nav-delivered' }
 ];
 

@@ -2,7 +2,7 @@ import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, UseGuards }
 import { RbacGuard, RequirePermission } from '../../../common/authz/rbac.guard';
 import { PackingService } from './packing.service';
 import { ShipmentsService } from './shipments.service';
-import { AssignJobDto, ConfirmPickupDto, CreatePackDto, CreateShipmentDto, PodDto, ReportLogisticsExceptionDto, ResolveExceptionDto, TemperatureExceptionDto } from './dto';
+import { AssignDriverDto, AssignJobDto, ConfirmPickupDto, CreatePackDto, CreateShipmentDto, PodDto, ReportLogisticsExceptionDto, ResolveExceptionDto, TemperatureExceptionDto, UnassignDriverDto } from './dto';
 
 @Controller('logistics')
 @UseGuards(RbacGuard)
@@ -71,6 +71,17 @@ export class LogisticsController {
     return this.shipments.listDriverJobs();
   }
 
+  // Phase 5 (ADR-012): static segments must be declared before jobs/:id.
+  @Get('jobs/dashboard')
+  jobsDashboard() {
+    return this.shipments.jobsDashboard();
+  }
+
+  @Get('jobs/eligible-drivers')
+  eligibleDrivers() {
+    return this.shipments.listEligibleDrivers();
+  }
+
   @Get('jobs/:id')
   getJob(@Param('id') id: string) {
     return this.shipments.getJob(id);
@@ -99,6 +110,27 @@ export class LogisticsController {
   @Post('jobs/:id/exception')
   reportJobException(@Param('id') id: string, @Body() dto: ReportLogisticsExceptionDto) {
     return this.shipments.reportException(id, dto);
+  }
+
+  // ---------- Phase 5 (ADR-012): partner-controlled execution ----------
+  @Post('jobs/:id/assign-driver')
+  assignDriver(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AssignDriverDto) {
+    return this.shipments.assignDriver(id, dto);
+  }
+
+  @Post('jobs/:id/unassign-driver')
+  unassignDriver(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UnassignDriverDto) {
+    return this.shipments.unassignDriver(id, dto);
+  }
+
+  @Post('jobs/:id/arrived-pickup')
+  arrivedAtPickup(@Param('id', ParseUUIDPipe) id: string) {
+    return this.shipments.arrivedAtPickup(id);
+  }
+
+  @Post('jobs/:id/arrived-delivery')
+  arrivedAtDelivery(@Param('id', ParseUUIDPipe) id: string) {
+    return this.shipments.arrivedAtDelivery(id);
   }
 
   @Get('shipments/order/:orderId')
