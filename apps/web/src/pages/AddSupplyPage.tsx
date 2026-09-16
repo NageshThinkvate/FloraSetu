@@ -107,7 +107,8 @@ export function AddSupplyPage(): JSX.Element {
         commodityId: productId,
         declaredQty: Number(qty),
         uomId,
-        originType: flow === 'harvest' ? 'FARM' : 'MARKET',
+        // Backend ORIGIN_TYPES enum (supply-inventory dto) — keep in sync.
+        originType: flow === 'harvest' ? 'OWN_FARM' : 'MARKET_PURCHASE',
         originDetail: originDetail || undefined,
         colourCode: colour || undefined
       };

@@ -207,7 +207,11 @@ export function SupplierRfqPage(): JSX.Element {
                   <div className="fs-field">
                     <label className="fs-field__label" htmlFor={`qf-${l.requirement_line_id}`}>Freight</label>
                     <select id={`qf-${l.requirement_line_id}`} className="fs-select" data-testid={`quote-freight-${l.requirement_line_id}`}
-                      value={input.freight} onChange={(e) => set({ freight: e.target.value as LineInput['freight'] })}>
+                      value={input.freight} onChange={(e) => {
+                        const freight = e.target.value as LineInput['freight'];
+                        // Clear a stale amount when switching away from EXTRA.
+                        set(freight === 'EXTRA' ? { freight } : { freight, freightAmount: '' });
+                      }}>
                       <option value="INCLUDED">Included in price</option>
                       <option value="EXTRA">Extra (amount)</option>
                       <option value="PENDING">Pending — confirm later</option>

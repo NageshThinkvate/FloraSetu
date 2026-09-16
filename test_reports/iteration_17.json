@@ -1,0 +1,61 @@
+{
+  "summary": "Phase 4 supplier workspace frontend test. Verified end-to-end: supplier login → home (1440 + 390 both render with supplier-action-requests, supplier-action-supply, supplier-attention, supplier-payout-status), Requests inbox (2 cards, no UUIDs leaked, 'View & quote' CTA), Request detail (request-summary + req-flower/req-qty/req-needed/req-destination all present, no UUIDs, no QC terminology), Quote builder (all fields — qty/uom/price/freight/deviation; freight=EXTRA reveals freight-amount input; live total correctly updates 100×500=₹50,000 → adds freight ₹2,000 → ₹52,000 incl. freight; submit succeeds with 'Offer sent to the buyer.'), Revise flow (revision reason field appears after first submit; submit button correctly gated disabled until reason filled; revision succeeds with 'Revision sent to the buyer.' and MyQuotes shows 'version 2'), Ask buyer/Decline gating (decline-btn disabled until reason typed), Supply wizard (all 7 steps navigate correctly: photos gate enforces 2+ minimum with 'Next' disabled → both uploaded together enables Next; searchable flower select works; qty w/ STEM uom default; batch + stem + bloom stage + colour; harvest/stock toggle + datetime; video accept='video/*' and optional; review page shows accurate summary; sticky mobile action bar present, desktop supply-next-desktop/supply-submit-desktop present), Payouts page (payouts-page testid, empty state 'No payouts yet' renders cleanly, no QC terms), Supplier orders (alloc-card-<ref> cards render; order detail page shows supplier-order-steps + supplier-order-logistics; already-delivered order shows all steps complete with 'Nilgiri Fresh Logistics' partner name + AWB reference), Terminology scan: NO 'QC approved' / 'FloraSetu QC' / 'Submit QC' found on ANY supplier surface tested (home, requests list, request detail, quote builder, supply wizard, lot list, supplier orders, order detail, payments). Regression: buyer-home loads, /buyer/offers loads, public / renders. ONE CRITICAL BUG found blocking the demo: Supply wizard submit → 400 because AddSupplyPage sends invalid originType values.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "AddSupplyPage.tsx submit()",
+        "issue": "Supply wizard 'Submit evidence' returns 400 VALIDATION_FAILED because the frontend sends originType: 'FARM' (harvest flow) or 'MARKET' (stock flow), but backend CreateHarvestLotDto/CreateStockLotDto require one of ['OWN_FARM','PARTNER_FARM','WHOLESALE_STOCK','IMPORTER_STOCK','MARKET_PURCHASE','OTHER_APPROVED_SOURCE']. Repro: /supplier/supply/new → complete all 7 steps → click Submit evidence → red inline alert 'Bad Request Exception'. Network shows POST /api/supply/lots/harvest 400. Fix in AddSupplyPage.tsx line ~110: change `originType: flow === 'harvest' ? 'FARM' : 'MARKET'` to `originType: flow === 'harvest' ? 'OWN_FARM' : 'MARKET_PURCHASE'`. Verified by hitting the API with OWN_FARM and getting 201.",
+        "selector": "[data-testid='supply-submit-desktop']",
+        "priority": "CRITICAL"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "Supply intake (Add supply wizard → Create lot)",
+        "issue": "End-to-end supply intake broken due to originType enum mismatch above. Owner's demo script step 'Create Supply → Photos → Video → Declaration → Order (allocation from a DECLARED lot)' cannot complete via UI without this fix. Photos upload OK, media OK, wizard UI OK — only the final POST /api/supply/lots/harvest 400s.",
+        "affected_selectors": ["[data-testid='supply-submit-desktop']", "[data-testid='supply-submit']"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Supply wizard step 5 (Timing) and Quote builder (Offer valid until)",
+        "issues": ["Uses browser-native <input type='datetime-local'> for supply-when and quote-valid-to — inconsistent with app design system per prior iterations. Not a blocker; carried over from earlier phases."]
+      },
+      {
+        "screen": "Supplier orders list",
+        "issues": ["Testid on cards is 'alloc-card-<ref>' but the Phase 4 spec/review calls the card 'Order <ref>' — testid uses allocation ref not order ref. Minor naming inconsistency; functional flow works and 'Open fulfilment' routes to /supplier/orders/:orderId correctly."]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/tmp/seed_rfqs.py",
+    "/tmp/check_lot.py",
+    "/tmp/check_lot2.py",
+    "/tmp/check_orders.py"
+  ],
+  "action_items": [
+    "CRITICAL: Fix originType values in /app/apps/web/src/pages/AddSupplyPage.tsx submit() — 'FARM' → 'OWN_FARM', 'MARKET' → 'MARKET_PURCHASE' (allowed enum in supply-inventory/internal/dto.ts:ORIGIN_TYPES). Without this the entire supply wizard demo path is broken.",
+    "OPTIONAL: Rename Supplier orders card testid from alloc-card-<ref> to supplier-order-<ref> to match owner's Phase 4 demo terminology.",
+    "OPTIONAL: Replace native datetime-local inputs (supply-when, quote-valid-to) with the design-system calendar component to match the rest of the redesign."
+  ],
+  "critical_code_review_comments": [
+    "AddSupplyPage.tsx maps flow to origin with hardcoded 'FARM'/'MARKET' strings — these don't match the backend enum ORIGIN_TYPES. Add a shared constants module (packages/contracts) so origin-type values can't drift between web + api again.",
+    "SupplierRfqPage.tsx `submit` handler validates but doesn't clear the freight amount when user switches from EXTRA back to INCLUDED/PENDING — value stays in state and would be sent as amount if user toggled back to EXTRA without clearing. Minor UX polish; not blocking.",
+    "Supply wizard step gating relies on a static tuple index (`canNext = [..][step]`) which is easy to break as steps are reordered. Consider a per-step validator function map."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "n/a (frontend-only per request; backend 215/215 per main agent)",
+    "frontend": "10/11 major flows PASS. Supplier Home 1440+390 PASS. Requests inbox + no UUID leak PASS. Request detail + summary PASS. Quote builder + freight EXTRA live total PASS. Quote submit PASS. Revise (reason gate + submit + version 2 in MyQuotes) PASS. Clarification/Decline gating PASS. Supply wizard UI + 7-step navigation PASS. Supply wizard SUBMIT FAIL (400 due to originType). Payouts empty state PASS. Supplier orders + order detail (steps + logistics + no QC terms) PASS. Regression (buyer home / offers / public home) PASS. Terminology scan PASS."
+  },
+  "test_credentials": "demo.supplier@florasetu.dev / Demo-Supplier-2026, demo.buyer@florasetu.dev / Demo-Buyer-2026 — from /app/memory/test_credentials.md",
+  "seed_data_creation": "Created via API: LOT-2026-000003 (Anthurium 500 STEM, OWN_FARM, HARVESTED — created to prove backend accepts correct enum) and LOT-2026-000004 via UI submit failure recovery. Existing ORD-2026-000001 remains from iter15/16 in DELIVERED state via API pipeline built by main agent; used it to verify supplier order-detail page shows completed steps + Nilgiri Fresh Logistics partner + AWB-RET-3. No test data cleanup needed.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "PRIMARY BLOCKER: AddSupplyPage.tsx originType string values. Fix is a 2-word change (see action_items). After fix: rerun /supplier/supply/new wizard end-to-end, then verify /supplier/supply/<newLotId> shows lot-evidence-completeness (photos 2/2, declaration ✓), lot-media-list with 2 images, lot-declaration-panel with batch, balances grid, custody timeline + custody-action/custody-submit form. Also verify buyer /buyer/offers comparison shows freight extra + landed cost estimate after the freight-EXTRA quote submitted in this iteration (RFQ-2026-000005 has an ₹480/unit revision v2 now). Not exercised this iter: fresh order confirm/pack flow (supplier-confirm-btn / supplier-pack-btn-<id8>) because the only allocation is already DELIVERED; a new RFQ→quote→award→order chain is needed to test those states.",
+  "rca_of_the_issue": "AddSupplyPage.tsx line ~110 passes originType hardcoded as 'FARM' (harvest) or 'MARKET' (stock). Backend CreateHarvestLotDto/CreateStockLotDto validate against ORIGIN_TYPES = ['OWN_FARM','PARTNER_FARM','WHOLESALE_STOCK','IMPORTER_STOCK','MARKET_PURCHASE','OTHER_APPROVED_SOURCE'] (see /app/apps/api/src/modules/supply-inventory/internal/dto.ts). Bypassing the wizard and hitting /api/supply/lots/harvest with originType='OWN_FARM' returns 201; with 'FARM' returns 400. Fix: change the ternary in AddSupplyPage submit() to use 'OWN_FARM' and 'MARKET_PURCHASE'. Or, better, expose a step-6.5 origin-type picker so suppliers can pick partner-farm vs own-farm vs wholesale stock etc. — the wizard currently collapses six enum values into two hidden defaults."
+}
