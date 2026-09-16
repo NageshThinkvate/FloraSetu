@@ -280,14 +280,14 @@ export const towerExceptions = () => apiGet<TowerExceptions>('/tower/exceptions'
 
 // Media (dev local store — OD-03 production blocker noted for pilot)
 export const mediaUrl = (path: string): string => `${import.meta.env.VITE_API_URL as string}${path}`;
-export const uploadMedia = async (file: File): Promise<{ id: string; objectKey: string }> => {
+export const uploadMedia = async (file: File, bucket: 'pilot' | 'kyb' | 'claim' = 'pilot'): Promise<{ id: string; objectKey: string }> => {
   const dataBase64 = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result).split(',')[1] ?? '');
     reader.onerror = () => reject(new Error('File read failed'));
     reader.readAsDataURL(file);
   });
-  return apiPost('/media', { contentType: file.type || 'application/octet-stream', dataBase64, bucket: 'pilot' });
+  return apiPost('/media', { contentType: file.type || 'application/octet-stream', dataBase64, bucket });
 };
 
 export const fmtDate = (s?: string | null): string => (s ? new Date(s).toLocaleString('en-IN') : '—');

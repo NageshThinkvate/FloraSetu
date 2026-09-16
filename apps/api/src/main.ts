@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
+import { json } from 'express';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { loadConfig } from './config/configuration';
@@ -13,6 +14,9 @@ async function bootstrap(): Promise<void> {
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
   app.setGlobalPrefix('api');
   app.enableCors({ origin: config.corsOrigins, credentials: false });
+  // Media uploads are base64 JSON (15MB binary ≈ 20MB encoded) — bound the body
+  // limit so oversize payloads get a clean 4xx instead of a parser 500.
+  app.use(json({ limit: '30mb' }));
   app.use(new TraceMiddleware().use);
   app.use(new AuthMiddleware(config.jwtDevSecret).use);
   app.useGlobalFilters(new HttpExceptionFilter());

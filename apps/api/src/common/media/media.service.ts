@@ -17,6 +17,29 @@ export interface StoredMedia {
   objectKey: string;
 }
 
+// Phase 8 (§32): pilot upload allowlist.
+const PILOT_MEDIA_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf', 'video/mp4']);
+
+// Content-signature (magic-byte) verification for the allowlisted types.
+export function sniffMediaType(bytes: Buffer): string | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  if (bytes.length >= 4 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+    return 'image/png';
+  }
+  if (bytes.length >= 12 && bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP') {
+    return 'image/webp';
+  }
+  if (bytes.length >= 4 && bytes.toString('ascii', 0, 4) === '%PDF') {
+    return 'application/pdf';
+  }
+  if (bytes.length >= 8 && bytes.toString('ascii', 4, 8) === 'ftyp') {
+    return 'video/mp4';
+  }
+  return null;
+}
+
 // DEV/LOCAL storage until OD-03 selects the S3-compatible provider.
 // PILOT PRODUCTION BLOCKER: OD-03 — replace local-disk store with durable object storage
 // before live pilot media. Private-by-default contract: reads require a short-lived
@@ -37,6 +60,11 @@ export class MediaService {
     const bytes = Buffer.from(dataBase64, 'base64');
     if (bytes.length === 0 || bytes.length > 15 * 1024 * 1024) {
       throw new ApiException(400, 'VALIDATION_FAILED', 'Media must be 1 byte to 15MB');
+    }
+    // Phase 8 (§32): allowlist + magic-byte verification — the declared Content-Type
+    // is never trusted on its own; executable/scriptable types are rejected outright.
+    if (!PILOT_MEDIA_TYPES.has(contentType) || sniffMediaType(bytes) !== contentType) {
+      throw new ApiException(400, 'VALIDATION_FAILED', 'Unsupported or mismatched media type. Allowed: JPEG, PNG, WebP, PDF, MP4');
     }
     const id = randomUUID();
     fs.writeFileSync(path.join(this.dir, id), bytes);

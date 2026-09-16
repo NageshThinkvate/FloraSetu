@@ -1,7 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { addSourcingNote, opsDesk, OpsDesk } from '../lib/api/demand';
+import { PageHeader } from '../components/PageHeader';
+import { StatusPill } from '../components/StatusPill';
+import { SkeletonLoader } from '../components/SkeletonLoader';
+import { EmptyState } from '../components/EmptyState';
+import { InlineAlert } from '../components/InlineAlert';
 
+const fmtDateTime = (v: string): string =>
+  new Date(v).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+
+// Operations procurement desk (Phase 8: design-system rebuild — functionality unchanged;
+// broken cross-shell /demand links removed, the desk itself is the workspace).
 export function OpsDeskPage(): JSX.Element {
   const [desk, setDesk] = useState<OpsDesk | null>(null);
   const [error, setError] = useState('');
@@ -10,7 +19,7 @@ export function OpsDeskPage(): JSX.Element {
 
   const load = async (): Promise<void> => setDesk(await opsDesk());
   useEffect(() => {
-    void load().catch((err) => setError(err instanceof Error ? err.message : 'Desk unavailable'));
+    void load().catch(() => setError("We couldn't load the procurement desk. Try again."));
   }, []);
 
   const saveNote = async (requirementId: string): Promise<void> => {
@@ -26,98 +35,140 @@ export function OpsDeskPage(): JSX.Element {
 
   if (error && !desk) {
     return (
-      <main className="app-shell" data-testid="ops-desk-denied">
-        <header className="shell-header"><h1>Procurement desk</h1></header>
-        <p className="form-error" data-testid="ops-error">{error}</p>
-      </main>
+      <div data-testid="ops-desk-denied">
+        <PageHeader overline="Operations" title="Procurement desk" testId="ops-desk-header" />
+        <InlineAlert variant="error" testId="ops-error">{error}</InlineAlert>
+      </div>
     );
   }
   if (!desk) {
-    return <main className="app-shell" data-testid="ops-desk-loading"><p className="hint">Loading…</p></main>;
+    return (
+      <div data-testid="ops-desk-loading">
+        <PageHeader overline="Operations" title="Procurement desk" testId="ops-desk-header" />
+        <SkeletonLoader variant="card" count={3} testId="ops-desk-skeleton" />
+      </div>
+    );
   }
 
+  const empty = desk.needsSourcing.length === 0 && desk.openRfqs.length === 0
+    && desk.uncoveredDemand.length === 0 && desk.openClarifications.length === 0
+    && desk.assistanceRequested.length === 0;
+
   return (
-    <main className="app-shell" data-testid="ops-desk">
-      <header className="shell-header"><h1>Procurement desk</h1></header>
-      {error && <p className="form-error" data-testid="ops-error-inline">{error}</p>}
-      {notice && <p className="form-ok" data-testid="ops-notice">{notice}</p>}
+    <div data-testid="ops-desk">
+      <PageHeader overline="Operations" title="Procurement desk" testId="ops-desk-header" />
+      {error && <InlineAlert variant="error" testId="ops-error-inline">{error}</InlineAlert>}
+      {notice && <InlineAlert variant="success" testId="ops-notice">{notice}</InlineAlert>}
+      {empty && (
+        <EmptyState
+          title="Nothing needs the sourcing desk"
+          hint="New demand, quote activity and buyer questions will appear here."
+          testId="ops-desk-empty"
+        />
+      )}
 
-      <section className="panel" data-testid="ops-needs-sourcing">
-        <h2>Needs sourcing ({desk.needsSourcing.length})</h2>
-        <ul className="plain-list">
-          {desk.needsSourcing.map((r) => (
-            <li key={r.id} data-testid={`ops-req-${r.id}`}>
-              <code>{r.ref}</code>
-              <span>{r.title}</span>
-              <span className="state-chip">{r.mode}</span>
-              <span className="inline-form">
-                <input data-testid={`ops-note-${r.id}`} placeholder="Sourcing note…" value={note[r.id] ?? ''}
-                  onChange={(e) => setNote({ ...note, [r.id]: e.target.value })} />
-                <button className="ghost-btn" data-testid={`ops-note-btn-${r.id}`}
-                  disabled={!(note[r.id] ?? '').trim()} onClick={() => void saveNote(r.id)}>
-                  Note
-                </button>
-              </span>
-              <Link to={`/demand/requirements/${r.id}`}><button className="ghost-btn">Open</button></Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {desk.needsSourcing.length > 0 && (
+        <>
+          <h2 className="fs-heading-3" data-testid="ops-needs-sourcing-title">Needs sourcing ({desk.needsSourcing.length})</h2>
+          <div className="fs-md-stack" data-testid="ops-needs-sourcing">
+            {desk.needsSourcing.map((r) => (
+              <div key={r.id} className="fs-card fs-md-card" data-testid={`ops-req-${r.id}`}>
+                <div className="fs-task-card__top">
+                  <span className="fs-md-card__primary">{r.ref} · {r.title}</span>
+                  <StatusPill status={r.mode} />
+                </div>
+                <div className="fs-field">
+                  <label className="fs-field__label" htmlFor={`ops-note-${r.id}`}>Sourcing note</label>
+                  <div style={{ display: 'flex', gap: 'var(--fs-space-2)' }}>
+                    <input
+                      id={`ops-note-${r.id}`}
+                      className="fs-input"
+                      data-testid={`ops-note-${r.id}`}
+                      value={note[r.id] ?? ''}
+                      onChange={(e) => setNote({ ...note, [r.id]: e.target.value })}
+                    />
+                    <button
+                      className="fs-btn fs-btn--sm"
+                      data-testid={`ops-note-btn-${r.id}`}
+                      disabled={!(note[r.id] ?? '').trim()}
+                      onClick={() => void saveNote(r.id)}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
-      <section className="panel" data-testid="ops-open-rfqs">
-        <h2>Open RFQs ({desk.openRfqs.length})</h2>
-        <ul className="plain-list">
-          {desk.openRfqs.map((r) => (
-            <li key={r.id} data-testid={`ops-rfq-${r.id}`}>
-              <code>{r.ref}</code>
-              <span>{r.title}</span>
-              <span className="hint">{r.invited} invited · {r.quotes} quotes</span>
-              {r.deadlineRisk && <span className="state-chip frozen">deadline risk</span>}
-              <Link to={`/demand/rfqs/${r.id}`}><button className="ghost-btn">Open</button></Link>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {desk.openRfqs.length > 0 && (
+        <>
+          <h2 className="fs-heading-3" data-testid="ops-open-rfqs-title">Open RFQs ({desk.openRfqs.length})</h2>
+          <div className="fs-md-stack" data-testid="ops-open-rfqs">
+            {desk.openRfqs.map((r) => (
+              <div key={r.id} className="fs-card fs-md-card" data-testid={`ops-rfq-${r.id}`}>
+                <div className="fs-task-card__top">
+                  <span className="fs-md-card__primary">{r.ref} · {r.title}</span>
+                  {r.deadlineRisk && <StatusPill status="deadline_risk" label="Deadline risk" />}
+                </div>
+                <p className="fs-body" style={{ margin: 0 }}>{r.invited} invited · {r.quotes} quotes</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
-      <section className="panel" data-testid="ops-uncovered">
-        <h2>Uncovered demand ({desk.uncoveredDemand.length})</h2>
-        <ul className="plain-list">
-          {desk.uncoveredDemand.map((r) => (
-            <li key={r.id} data-testid={`ops-uncovered-${r.id}`}>
-              <code>{r.ref}</code>
-              <span>{r.title}</span>
-              <span className="hint">remaining {r.remaining_qty}</span>
-              <span className="state-chip">{r.status}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {desk.uncoveredDemand.length > 0 && (
+        <>
+          <h2 className="fs-heading-3" data-testid="ops-uncovered-title">Uncovered demand ({desk.uncoveredDemand.length})</h2>
+          <div className="fs-md-stack" data-testid="ops-uncovered">
+            {desk.uncoveredDemand.map((r) => (
+              <div key={r.id} className="fs-card fs-md-card" data-testid={`ops-uncovered-${r.id}`}>
+                <div className="fs-task-card__top">
+                  <span className="fs-md-card__primary">{r.ref} · {r.title}</span>
+                  <StatusPill status={r.status} />
+                </div>
+                <p className="fs-body" style={{ margin: 0 }}>Remaining {r.remaining_qty}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
-      <section className="panel" data-testid="ops-clarifications">
-        <h2>Open clarifications ({desk.openClarifications.length})</h2>
-        <ul className="plain-list">
-          {desk.openClarifications.map((c) => (
-            <li key={c.id} data-testid={`ops-clarification-${c.id}`}>
-              <code>{c.rfq_ref}</code>
-              <span>{c.question}</span>
-              <span className="hint">{new Date(c.created_at).toLocaleString()}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {desk.openClarifications.length > 0 && (
+        <>
+          <h2 className="fs-heading-3" data-testid="ops-clarifications-title">Open clarifications ({desk.openClarifications.length})</h2>
+          <div className="fs-md-stack" data-testid="ops-clarifications">
+            {desk.openClarifications.map((c) => (
+              <div key={c.id} className="fs-card fs-md-card" data-testid={`ops-clarification-${c.id}`}>
+                <div className="fs-task-card__top">
+                  <span className="fs-md-card__primary">{c.rfq_ref}</span>
+                  <span className="fs-body">{fmtDateTime(c.created_at)}</span>
+                </div>
+                <p className="fs-body" style={{ margin: 0 }}>{c.question}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
-      <section className="panel" data-testid="ops-assistance">
-        <h2>Assistance requested ({desk.assistanceRequested.length})</h2>
-        <ul className="plain-list">
-          {desk.assistanceRequested.map((r) => (
-            <li key={r.id} data-testid={`ops-assist-${r.id}`}>
-              <code>{r.ref}</code>
-              <span>{r.title}</span>
-              <span className="state-chip">{r.status}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
+      {desk.assistanceRequested.length > 0 && (
+        <>
+          <h2 className="fs-heading-3" data-testid="ops-assistance-title">Assistance requested ({desk.assistanceRequested.length})</h2>
+          <div className="fs-md-stack" data-testid="ops-assistance">
+            {desk.assistanceRequested.map((r) => (
+              <div key={r.id} className="fs-card fs-md-card" data-testid={`ops-assist-${r.id}`}>
+                <div className="fs-task-card__top">
+                  <span className="fs-md-card__primary">{r.ref} · {r.title}</span>
+                  <StatusPill status={r.status} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }

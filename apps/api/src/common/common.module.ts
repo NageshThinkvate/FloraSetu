@@ -1,4 +1,4 @@
-import { DynamicModule, Global, Module, Type } from '@nestjs/common';
+import { DynamicModule, Global, MiddlewareConsumer, Module, NestModule, Type } from '@nestjs/common';
 import { APP_GUARD, Reflector } from '@nestjs/core';
 import { AppConfig } from '../config/configuration';
 import { DatabaseModule } from './database/database.module';
@@ -11,6 +11,7 @@ import { RbacGuard } from './authz/rbac.guard';
 import { OrgContextService } from './authz/org-context.service';
 import { RateLimitService } from './rate-limit/rate-limit.service';
 import { HealthController } from './health/health.controller';
+import { SecurityHeadersMiddleware } from './tracing/security-headers.middleware';
 import { BaselineController } from './baseline/baseline.controller';
 import { MediaController } from './media/media.controller';
 import { PilotConfigController } from './flags/pilot-config.controller';
@@ -18,7 +19,11 @@ import { AdminConfigController } from './flags/admin-config.controller';
 
 @Global()
 @Module({})
-export class CommonModule {
+export class CommonModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(SecurityHeadersMiddleware).forRoutes('*');
+  }
+
   static forRoot(config: AppConfig): DynamicModule {
     const providers = [
       AuditService,

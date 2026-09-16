@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { json } from 'express';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { AppConfig, loadConfig } from '../../src/config/configuration';
@@ -29,6 +30,7 @@ export async function bootTestApp(): Promise<TestApp> {
   process.env.NODE_ENV = 'test';
   const config = loadConfig();
   const app = await NestFactory.create(AppModule.forRoot(config), { logger: false });
+  app.use(json({ limit: '30mb' }));
   app.setGlobalPrefix('api');
   app.use(new TraceMiddleware().use);
   app.use(new AuthMiddleware(config.jwtDevSecret).use);

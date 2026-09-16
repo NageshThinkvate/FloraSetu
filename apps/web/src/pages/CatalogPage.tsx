@@ -1,5 +1,11 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { apiGet } from '../lib/api/client';
+import { PageHeader } from '../components/PageHeader';
+import { StatusPill } from '../components/StatusPill';
+import { SkeletonLoader } from '../components/SkeletonLoader';
+import { EmptyState } from '../components/EmptyState';
+import { InlineAlert } from '../components/InlineAlert';
+import { SideSheet } from '../components/SideSheet';
 
 interface ProductSummary {
   id: string;
@@ -25,28 +31,32 @@ interface ProductDetail extends ProductSummary {
   handlingProfiles: { id: string; code: string; version_no: number; temp_min_c: string | null; temp_max_c: string | null; status: string; validation_status: string }[];
 }
 
+const validationLabel = (v: string): string => (v === 'VALIDATED' ? 'Validated' : 'Demo — not for production buying');
+
+// Canonical catalog browsing (Phase 8: design-system rebuild — functionality unchanged;
+// human validation labels replace raw status vocabulary).
 export function CatalogPage(): JSX.Element {
   const [q, setQ] = useState('');
-  const [items, setItems] = useState<ProductSummary[]>([]);
+  const [items, setItems] = useState<ProductSummary[] | null>(null);
   const [detail, setDetail] = useState<ProductDetail | null>(null);
   const [error, setError] = useState('');
 
   const loadAll = async (): Promise<void> => {
     setItems((await apiGet<{ items: ProductSummary[] }>('/catalog/products')).items);
   };
-
   useEffect(() => {
-    void loadAll().catch(() => setError('Catalog unavailable'));
+    void loadAll().catch(() => setError("We couldn't load the catalog. Try again."));
   }, []);
 
   const search = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     setError('');
     try {
-      setItems(q.trim() ? (await apiGet<{ items: ProductSummary[] }>(`/catalog/search?q=${encodeURIComponent(q)}`)).items
+      setItems(q.trim()
+        ? (await apiGet<{ items: ProductSummary[] }>(`/catalog/search?q=${encodeURIComponent(q)}`)).items
         : (await apiGet<{ items: ProductSummary[] }>('/catalog/products')).items);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed');
+    } catch {
+      setError('Search failed. Try again.');
     }
   };
 
@@ -55,82 +65,116 @@ export function CatalogPage(): JSX.Element {
   };
 
   return (
-    <main className="app-shell" data-testid="catalog-page">
-      <header className="shell-header">
-        <h1>Catalog</h1>
-      </header>
-      <form className="inline-form" onSubmit={search} data-testid="catalog-search-form">
-        <input
-          data-testid="catalog-search-input"
-          placeholder="Search product, commercial name, alias, variety…"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <button type="submit" data-testid="catalog-search-btn">Search</button>
+    <div data-testid="catalog-page">
+      <PageHeader overline="Catalog" title="Flowers & standards" testId="catalog-header" />
+      <form className="fs-field" style={{ maxWidth: 420 }} onSubmit={(e) => void search(e)} data-testid="catalog-search-form">
+        <label className="fs-field__label" htmlFor="catalog-search-input">Search product, commercial name, alias or variety</label>
+        <div style={{ display: 'flex', gap: 'var(--fs-space-2)' }}>
+          <input
+            id="catalog-search-input"
+            className="fs-input"
+            data-testid="catalog-search-input"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          <button type="submit" className="fs-btn fs-btn--sm" data-testid="catalog-search-btn">Search</button>
+        </div>
       </form>
-      {error && <p className="form-error" data-testid="catalog-error">{error}</p>}
-
-      <section className="module-grid" data-testid="catalog-results">
-        {items.map((p) => (
-          <article key={p.id} className="module-tile" data-testid={`catalog-product-${p.id}`}>
-            <h2>{p.name}</h2>
-            <p>
-              {p.category_code ?? ''} {p.commercial_name ? `· ${p.commercial_name}` : ''}
-              {p.matched_alias ? ` · matched alias “${p.matched_alias}”` : ''}
-            </p>
-            <p>
-              <span className={`state-chip${p.validation_status === 'DEMO' ? '' : ' frozen'}`}>
-                {p.validation_status === 'DEMO' ? 'DEMO — not validated' : 'VALIDATED'}
-              </span>{' '}
-              {p.launch_enabled && <span className="state-chip frozen">Launch: {p.launch_cities.join(', ')}</span>}
-            </p>
-            <button className="ghost-btn" data-testid={`catalog-open-${p.id}`} onClick={() => void open(p.id)}>View</button>
-          </article>
+      {error && <InlineAlert variant="error" testId="catalog-error">{error}</InlineAlert>}
+      {items === null && !error && <SkeletonLoader variant="card" count={4} testId="catalog-loading" />}
+      {items !== null && items.length === 0 && (
+        <EmptyState title="No products found" hint="Try a different name or alias." testId="catalog-empty" />
+      )}
+      <div className="fs-md-stack" data-testid="catalog-results">
+        {(items ?? []).map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className="fs-card fs-md-card"
+            style={{ textAlign: 'left', cursor: 'pointer', width: '100%' }}
+            data-testid={`catalog-product-${p.id}`}
+            onClick={() => void open(p.id)}
+          >
+            <div className="fs-task-card__top">
+              <span className="fs-md-card__primary">{p.name}</span>
+              <StatusPill status={p.validation_status} label={validationLabel(p.validation_status)} />
+            </div>
+            <div className="fs-md-card__fields">
+              {p.commercial_name && (
+                <div>
+                  <div className="fs-md-card__field-label">Also known as</div>
+                  <div className="fs-md-card__field-value">{p.commercial_name}</div>
+                </div>
+              )}
+              {p.matched_alias && (
+                <div>
+                  <div className="fs-md-card__field-label">Matched alias</div>
+                  <div className="fs-md-card__field-value">{p.matched_alias}</div>
+                </div>
+              )}
+              {p.launch_enabled && (
+                <div>
+                  <div className="fs-md-card__field-label">Available in</div>
+                  <div className="fs-md-card__field-value">{p.launch_cities.join(', ')}</div>
+                </div>
+              )}
+            </div>
+          </button>
         ))}
-      </section>
+      </div>
 
-      {detail && (
-        <section className="panel" data-testid="catalog-detail">
-          <h2>{detail.name} <span className="state-chip">{detail.ref}</span></h2>
-          <p>
-            {detail.botanical_name && <>Botanical: <em>{detail.botanical_name}</em> · </>}
-            {detail.common_name && <>Common: {detail.common_name} · </>}
-            Aliases: {detail.aliases.map((a) => a.alias).join(', ') || '—'}
-          </p>
-          <h3 className="sub-h">Varieties</h3>
-          <ul className="plain-list">
+      <SideSheet
+        open={detail !== null}
+        onClose={() => setDetail(null)}
+        title={detail ? detail.name : ''}
+        testId="catalog-detail"
+      >
+        {detail && (
+          <div className="fs-md-stack" data-testid="catalog-detail-body">
+            <div className="fs-task-card__top">
+              <span className="fs-md-card__primary">{detail.ref}</span>
+              <StatusPill status={detail.validation_status} label={validationLabel(detail.validation_status)} />
+            </div>
+            <div className="fs-md-card__fields">
+              {detail.botanical_name && <div><div className="fs-md-card__field-label">Botanical</div><div className="fs-md-card__field-value"><em>{detail.botanical_name}</em></div></div>}
+              {detail.common_name && <div><div className="fs-md-card__field-label">Common name</div><div className="fs-md-card__field-value">{detail.common_name}</div></div>}
+              <div><div className="fs-md-card__field-label">Aliases</div><div className="fs-md-card__field-value">{detail.aliases.map((a) => a.alias).join(', ') || '—'}</div></div>
+            </div>
+            <div className="fs-md-card__field-label">Varieties</div>
             {detail.varieties.map((v) => (
-              <li key={v.id} data-testid={`detail-variety-${v.id}`}>
-                {v.name} {v.colour ? `· ${v.colour}` : ''} · {v.status} · {v.validation_status}
-              </li>
+              <p key={v.id} className="fs-body" style={{ margin: 0 }} data-testid={`detail-variety-${v.id}`}>
+                {v.name}{v.colour ? ` · ${v.colour}` : ''} · {v.status.toLowerCase()} · {validationLabel(v.validation_status).toLowerCase()}
+              </p>
             ))}
-          </ul>
-          <h3 className="sub-h">Grade profiles</h3>
-          <ul className="plain-list">
+            <div className="fs-md-card__field-label">Grade profiles</div>
+            {detail.gradeProfiles.length === 0 && <p className="fs-body" style={{ margin: 0 }}>None defined.</p>}
             {detail.gradeProfiles.map((g) => (
-              <li key={g.id}>Grade {g.grade_code} v{g.version_no} — {g.status} (from {new Date(g.effective_from).toLocaleDateString()}) · {g.validation_status}</li>
+              <p key={g.id} className="fs-body" style={{ margin: 0 }}>
+                Grade {g.grade_code} v{g.version_no} — {g.status.toLowerCase()} (from {new Date(g.effective_from).toLocaleDateString('en-IN')}) · {validationLabel(g.validation_status).toLowerCase()}
+              </p>
             ))}
-          </ul>
-          <h3 className="sub-h">Packs & conversions</h3>
-          <ul className="plain-list">
+            <div className="fs-md-card__field-label">Packs & conversions</div>
             {detail.packDefinitions.map((p) => (
-              <li key={p.id}>{p.name} ({p.level}) — {p.contains_qty} {p.uom} · v{p.version_no} · {p.status}</li>
+              <p key={p.id} className="fs-body" style={{ margin: 0 }}>
+                {p.name} ({p.level.toLowerCase()}) — {p.contains_qty} {p.uom} · v{p.version_no} · {p.status.toLowerCase()}
+              </p>
             ))}
             {detail.unitConversions.map((c) => (
-              <li key={c.id}>1 {c.from_uom} = {c.factor} {c.to_uom} · v{c.version_no} · {c.status}</li>
+              <p key={c.id} className="fs-body" style={{ margin: 0 }}>
+                1 {c.from_uom} = {c.factor} {c.to_uom} · v{c.version_no} · {c.status.toLowerCase()}
+              </p>
             ))}
-          </ul>
-          <h3 className="sub-h">Handling</h3>
-          <ul className="plain-list">
+            <div className="fs-md-card__field-label">Handling</div>
+            {detail.handlingProfiles.length === 0 && <p className="fs-body" style={{ margin: 0 }}>No handling profile.</p>}
             {detail.handlingProfiles.map((h) => (
-              <li key={h.id}>
-                {h.code} v{h.version_no} — {h.temp_min_c ?? '—'}…{h.temp_max_c ?? '—'} °C · {h.status} · {h.validation_status}
-              </li>
+              <p key={h.id} className="fs-body" style={{ margin: 0 }}>
+                {h.code} v{h.version_no} — {h.temp_min_c ?? '—'}…{h.temp_max_c ?? '—'} °C · {h.status.toLowerCase()} · {validationLabel(h.validation_status).toLowerCase()}
+              </p>
             ))}
-          </ul>
-          <button className="ghost-btn" data-testid="catalog-detail-close" onClick={() => setDetail(null)}>Close</button>
-        </section>
-      )}
-    </main>
+            <button className="fs-btn fs-btn--ghost" data-testid="catalog-detail-close" onClick={() => setDetail(null)}>Close</button>
+          </div>
+        )}
+      </SideSheet>
+    </div>
   );
 }
