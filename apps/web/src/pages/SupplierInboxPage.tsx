@@ -1,35 +1,53 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { fmtDate } from '../lib/api/fulfilment';
 import { InboxItem, rfqInbox } from '../lib/api/demand';
+import { PageHeader } from '../components/PageHeader';
+import { TaskCard } from '../components/TaskCard';
+import { EmptyState } from '../components/EmptyState';
+import { SkeletonLoader } from '../components/SkeletonLoader';
 
+// Supplier requests inbox (Phase 4): attention-first — soonest offer deadline first.
+// No internal IDs; cards carry the buyer's request summary and deadline.
 export function SupplierInboxPage(): JSX.Element {
-  const [items, setItems] = useState<InboxItem[]>([]);
-  const [error, setError] = useState('');
+  const [items, setItems] = useState<InboxItem[] | null>(null);
 
   useEffect(() => {
-    rfqInbox().then((r) => setItems(r.items)).catch(() => setError('Could not load inbox'));
+    rfqInbox().then((r) => setItems(r.items)).catch(() => setItems([]));
   }, []);
 
+  if (items === null) {
+    return <SkeletonLoader variant="card" count={3} testId="inbox-loading" />;
+  }
+  const ordered = [...items].sort((a, b) =>
+    new Date(a.quote_deadline ?? '9999').getTime() - new Date(b.quote_deadline ?? '9999').getTime());
+
   return (
-    <main className="app-shell" data-testid="supplier-inbox">
-      <header className="shell-header"><h1>RFQ inbox</h1></header>
-      {error && <p className="form-error" data-testid="inbox-error">{error}</p>}
-      <section className="module-grid" data-testid="inbox-list">
-        {items.map((i) => (
-          <article key={i.invitation_id} className="module-tile" data-testid={`inbox-${i.id}`}>
-            <h2>{i.title}</h2>
-            <p>
-              <span className="state-chip">{i.invitation_status}</span>{' '}
-              {i.quote_deadline && <span className="hint">quote by {new Date(i.quote_deadline).toLocaleString()}</span>}
-            </p>
-            <p>{i.ref}</p>
-            <Link to={`/supply/rfqs/${i.id}`} data-testid={`inbox-open-${i.id}`}>
-              <button className="ghost-btn">Open</button>
-            </Link>
-          </article>
+    <div data-testid="supplier-inbox">
+      <PageHeader overline="Requests" title="Buyer requests" testId="inbox-header" />
+      {ordered.length === 0 && (
+        <EmptyState
+          title="No open requests"
+          hint="When a buyer's requirement matches your catalog, it lands here with a clear deadline."
+          testId="inbox-empty"
+        />
+      )}
+      <div className="fs-md-stack">
+        {ordered.map((i) => (
+          <TaskCard
+            key={i.invitation_id}
+            testId={`inbox-${i.ref}`}
+            title={i.title}
+            meta={[i.quote_deadline ? `Offer due ${fmtDate(i.quote_deadline)}` : 'No deadline']}
+            status={i.invitation_status}
+            footer={
+              <Link className="fs-btn fs-btn--sm" data-testid={`inbox-open-${i.ref}`} to={`/supplier/requests/${i.id}`}>
+                {i.invitation_status === 'INVITED' || i.invitation_status === 'VIEWED' ? 'View & quote' : 'Open'}
+              </Link>
+            }
+          />
         ))}
-        {items.length === 0 && !error && <p className="hint">No open invitations.</p>}
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }

@@ -88,6 +88,7 @@ export interface ShipmentRow {
   transport_ref: string | null; parcel_awb_ref: string | null; package_count: number | null;
   pickup_at: string | null; etd: string | null; eta: string | null; dispatched_at: string | null;
   actual_arrival_at: string | null; acceptance_hold: boolean; exception_note: string | null; created_at: string;
+  logistics_org_id?: string | null; logistics_org_name?: string | null;
   pods?: PodRow[]; exceptions?: ShipmentExceptionRow[];
 }
 

@@ -10,6 +10,7 @@ import { OrderAllocation_SERVICE, OrderAllocationService } from '../../order-all
 import { SupplyInventory_SERVICE, SupplyInventoryService } from '../../supply-inventory/contracts';
 import { QualityTraceability_SERVICE, QualityTraceabilityService } from '../../quality-traceability/contracts';
 import { Notifications_SERVICE, NotificationsService } from '../../notifications/contracts';
+import { IdentityParty_SERVICE, IdentityPartyService } from '../../identity-party/contracts';
 import { AssignJobDto, ConfirmPickupDto, CreateShipmentDto, PodDto, ReportLogisticsExceptionDto, ResolveExceptionDto, TemperatureExceptionDto } from './dto';
 
 @Injectable()
@@ -22,7 +23,8 @@ export class ShipmentsService {
     @Inject(OrderAllocation_SERVICE) private readonly orders: OrderAllocationService,
     @Inject(SupplyInventory_SERVICE) private readonly supply: SupplyInventoryService,
     @Inject(QualityTraceability_SERVICE) private readonly quality: QualityTraceabilityService,
-    @Inject(Notifications_SERVICE) private readonly notifications: NotificationsService
+    @Inject(Notifications_SERVICE) private readonly notifications: NotificationsService,
+    @Inject(IdentityParty_SERVICE) private readonly identity: IdentityPartyService
   ) {}
 
   private isOps(ctx: { permissions: string[] }): boolean {
@@ -344,7 +346,16 @@ export class ShipmentsService {
     }
     const rows = await this.db.query(
       `SELECT * FROM logistics.shipments WHERE order_id = $1 ORDER BY created_at`, [orderId]);
-    return { items: rows.rows };
+    // Phase 4: show the logistics partner by name on the supplier's fulfilment page.
+    const partnerIds = [...new Set(rows.rows.map((r) => r.logistics_org_id as string | null).filter((v): v is string => Boolean(v)))];
+    const profiles = await this.identity.getOrgPublicProfiles(partnerIds);
+    const nameById = new Map(profiles.map((p) => [p.orgId, p.name]));
+    return {
+      items: rows.rows.map((r) => ({
+        ...r,
+        logistics_org_name: r.logistics_org_id ? nameById.get(r.logistics_org_id as string) ?? null : null
+      }))
+    };
   }
 
   async get(id: string): Promise<unknown> {

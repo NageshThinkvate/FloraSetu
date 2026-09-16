@@ -291,6 +291,10 @@ describe('GATE Pre-Phase-3: quality basis + logistics partner (ADR-011)', () => 
 
   it('(L1) ops assigns job; partner admin and driver see their jobs; outsider does not', async () => {
     const fx = await jobChain('l1', 'REEFER_ROAD', true);
+    // Phase 4: order-scoped shipment list shows the logistics partner by name.
+    const shipList = await t.http.get(`/api/logistics/shipments/order/${fx.orderId}`).set(asBuyer());
+    expectOk(shipList.status);
+    expect(shipList.body.items[0].logistics_org_name).toBe(`P3 Logistics ${RUN}`);
     const partnerJobs = await t.http.get('/api/logistics/jobs').set(asPartner());
     expectOk(partnerJobs.status);
     expect((partnerJobs.body.items as { id: string }[]).some((j) => j.id === fx.shipmentId)).toBe(true);

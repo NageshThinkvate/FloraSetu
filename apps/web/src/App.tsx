@@ -25,6 +25,9 @@ import { OfferComparisonPage } from './pages/OfferComparisonPage';
 import { SupplierInboxPage } from './pages/SupplierInboxPage';
 import { SupplierRfqPage } from './pages/SupplierRfqPage';
 import { MyQuotesPage } from './pages/MyQuotesPage';
+import { AddSupplyPage } from './pages/AddSupplyPage';
+import { SupplierOrderDetailPage } from './pages/SupplierOrderDetailPage';
+import { PayoutsPage } from './pages/PayoutsPage';
 import { OpsDeskPage } from './pages/OpsDeskPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { BuyerOrderPage } from './pages/BuyerOrderPage';
@@ -124,19 +127,11 @@ export default function App(): JSX.Element {
                 <Route path="requests/:id" element={<SupplierRfqPage />} />
                 <Route path="offers" element={<MyQuotesPage />} />
                 <Route path="orders" element={<SupplierOrdersPage />} />
+                <Route path="orders/:id" element={<SupplierOrderDetailPage />} />
                 <Route path="supply" element={<LotsPage />} />
+                <Route path="supply/new" element={<AddSupplyPage />} />
                 <Route path="supply/:id" element={<LotDetailPage />} />
-                <Route
-                  path="payments"
-                  element={
-                    <PlaceholderPage
-                      overline="Supplier workspace"
-                      title="Payouts"
-                      description="Gross, deductions, adjustments, net and payout status with references will appear here."
-                      testId="supplier-payments"
-                    />
-                  }
-                />
+                <Route path="payments" element={<PayoutsPage />} />
                 <Route path="catalog" element={<CatalogPage />} />
                 <Route path="capabilities" element={<CapabilitiesPage />} />
                 <Route path="org" element={<AccountPage />} />
