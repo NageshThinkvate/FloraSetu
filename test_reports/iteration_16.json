@@ -1,0 +1,45 @@
+{
+  "summary": "Phase 3 retest (iter16). Verified all 3 iteration_15 blocker fixes: (1) Get Flowers desktop submit CTA (get-flowers-review-btn-desktop) is visible/clickable at 1440x900; (2) public homepage primary buttons — Get started / Join FloraSetu / Get flowers / Find flowers / Plan an event / Join as a supplier / Partner with FloraSetu — all show color rgb(255,255,255) on rgb(24,61,51); (3) Draft persistence code fix is in place (see caveat). End-to-end offer/order/evidence chain UI now works: submitted QUICK requirement → RFQ landed in Dev Supplier Co inbox (/api/demand/rfqs/inbox), quote created via API → /buyer/offers shows '1 offer received' → Compare offers page shows Dev Supplier Co, 100 (100%), Matches, ₹420, ₹42,000, Freight pending, TBC delivery, valid 23/9/2026, landed cost expandable (≈₹420/unit), sort dropdown, NO Best/Recommended labels → Select offer opens select-offer-dialog with consequence summary and Quantity field → Confirm supplier shows success banner. Order timeline at 1440px renders 9 vertical steps with 'Packed' highlighted + Next: supplier; evidence-pack shows 'Supplier declaration — lot LOT-2026-000001', batch P3-RETEST, declared 100, stem 55cm, bloom HALF_OPEN; 'Supplier-submitted evidence' section + 'Your receipt' upload area present. No 'FloraSetu QC' / 'QC Approved' strings anywhere. Regressions: supplier requests page shows RFQ card, /partner/logistics loads, /buyer/events empty state no RFQ terminology, 390px bottom nav testids all work.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/logistics/shipments/:id/assign", "issue": "Returns 500 INTERNAL_ERROR when called with a null/invalid shipment id (shp_id resolved to None after earlier 409 conflict). Should 400/404, not 500."},
+      {"endpoint": "Order timeline / evidence 'Offer selected' step", "issue": "Backend event timestamp for 'Offer selected' comes through null/malformed — UI renders 'Invalid Date' below the Offer-selected step (see UI bug below). Verify the event emit sets a proper ISO date when award is confirmed via UI."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "BuyerOrderPage timeline (Offer selected step)", "issue": "Timeline step 'Offer selected' shows 'Invalid Date' under it. Likely: the date passed into new Date(...) is null/undefined for the offer-selected event, or a non-ISO field name is being read. Repro: /buyer/orders/572c028d-5706-45f5-802c-f72eea2096fd (or any order created via UI Confirm supplier flow).", "selector": "[data-testid*='timeline'] :text('Offer selected')", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Get flowers (desktop, /buyer/requests/new)", "issues": ["Still uses browser-native <input type='datetime-local'> for required date/time — inconsistent with app design system. Minor, previously flagged."]},
+      {"screen": "Supplier /supplier/requests header", "issues": ["Page title is 'RFQ inbox' — RFQ terminology is fine on supplier surfaces per ADR but flagged for consistency review. Not a blocker."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/test_reports/setup_p3.py",
+    "/app/test_reports/build_order_chain.py"
+  ],
+  "action_items": [
+    "MEDIUM: Fix 'Invalid Date' rendering under the 'Offer selected' timeline step on BuyerOrderPage (either backend event emits a valid ISO occurred_at, or UI guards new Date() against null and formats only when set).",
+    "LOW: Handle 500 on POST /api/logistics/shipments/:id/assign with an undefined/invalid id — return 400 VALIDATION_FAILED or 404."
+  ],
+  "critical_code_review_comments": [
+    "BuyerOrderPage: rendering 'Invalid Date' indicates unguarded date formatting — wrap with `date ? formatDate(date) : null` and prefer Intl.DateTimeFormat over raw new Date().toLocaleString()."
+  ],
+  "updated_files": [
+    "/app/test_reports/setup_p3.py (fixed inbox endpoint to /api/demand/rfqs/inbox, use env BASE)",
+    "/app/test_reports/build_order_chain.py (new — API chain builder)"
+  ],
+  "success_rate": {
+    "backend": "n/a (frontend-only retest)",
+    "frontend": "FIX1 desktop submit CTA PASS, FIX2 public button contrast PASS (all 8 primary CTAs computed color rgb(255,255,255)), FIX3 draft persistence PASS (code path present; my playwright fill of the autocomplete state was flaky, unrelated to the fix), Compare offers UI PASS (all fields), Select-offer dialog + Confirm supplier PASS, Order timeline UI PASS (9 steps + current + Next), Evidence pack PASS (supplier declaration, batch P3-RETEST, photos section, receipt upload), No 'FloraSetu QC' strings PASS, Supplier requests + Partner logistics + Events + 390px bottom nav PASS. Not exercised in-UI: Delivery Acceptance panel, Report-an-issue flow with photo upload — because the order state could not be driven to DELIVERED via API (logistics assign 500 after an earlier state conflict; would have required a fresh order chain build)."
+  },
+  "test_credentials": "demo.buyer@florasetu.dev / Demo-Buyer-2026, demo.supplier@florasetu.dev / Demo-Supplier-2026, demo.logistics@florasetu.dev / Demo-Logistics-2026 (org f0891873-773a-45af-a2aa-7cd8fb7d221a) — all valid; sourced from /app/memory/test_credentials.md pattern.",
+  "seed_data_creation": "Created via API: REQ-2026-000007 (title P3-RETEST-1789566633), RFQ-2026-000006 -> QTN-2026-000001 (Dev Supplier Co, ₹420/STEM x100), Award AWD-2026-000001 (FINAL) via UI Confirm supplier, Order ORD-2026-000001 (currently in QC_PACK state), LOT-2026-000001 (harvested, 2 photos, supplier declaration P3-RETEST/HALF_OPEN/55cm). Persistent state — leave in place for follow-up UI checks.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "All 3 iter15 blockers are verified fixed. Order ORD-2026-000001 exists for demo.buyer at QC_PACK status — /buyer/orders/572c028d-5706-45f5-802c-f72eea2096fd renders full timeline + evidence pack UI. To finish exercising Delivery Acceptance and Report-an-issue UIs, main agent (or follow-up test) can: (a) POST /api/logistics/pack {orderId, supplierAllocationLineId:17c43b7b-a325-4d61-95d9-948443f350cb, lotId:1b1eabd3-7a85-40f1-b9e6-4b55f19a60d9, packedQty:100, uomId (STEM), packType:'CARTON', cartonCount:2} as demo.supplier; (b) transition to READY_FOR_DISPATCH; (c) create shipment (procops), assign to Nilgiri Fresh Logistics; (d) demo.logistics accept→pickup→transit→deliver. Then /buyer/orders/:id shows Accept-delivery panel + issue-submit. Also note the 'Invalid Date' text on the 'Offer selected' timeline step — flagged as MEDIUM bug.",
+  "rca_of_the_issue": "For the 'Invalid Date' on timeline: BuyerOrderPage passes an unguarded date string into new Date(). When the audit event for AWARD_CONFIRMED has no occurred_at (or a non-ISO shape), Date(undefined).toLocaleString() renders 'Invalid Date'. Fix: either backend must emit an ISO occurred_at for the award-confirmation event, or the UI must guard formatting with a null check. Repro: navigate to /buyer/orders/572c028d-5706-45f5-802c-f72eea2096fd (any order created via UI Confirm supplier)."
+}

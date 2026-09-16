@@ -105,7 +105,7 @@ export function BuyerOrderPage(): JSX.Element {
   const lots = pack?.lots ?? [];
   const eta = shipments.find((s) => s.eta)?.eta ?? null;
   const steps: Step[] = [
-    { key: 'offer-selected', label: 'Offer selected', owner: 'You', done: true, when: fmtDate(order.created_at) },
+    { key: 'offer-selected', label: 'Offer selected', owner: 'You', done: true, when: order.created_at ?? null },
     { key: 'supplier-confirmed', label: 'Supplier confirmed', owner: 'Supplier', done: r >= rank('SUPPLY_CONFIRMED') },
     {
       key: 'lot-evidence', label: 'Lot evidence submitted', owner: 'Supplier',
@@ -136,7 +136,7 @@ export function BuyerOrderPage(): JSX.Element {
   const current = steps.find((s) => !s.done);
   const orderedQty = order.lines.reduce((sum, l) => sum + Number(l.qty), 0);
   const declaredQty = lots.reduce((sum, l) => sum + (l.declaredQty ?? 0), 0);
-  const canReview = ['DELIVERED', 'ACCEPTANCE_PENDING'].includes(order.status);
+  const canReview = ['DELIVERED', 'ACCEPTANCE_PENDING', 'CLAIM_OPEN'].includes(order.status);
 
   const accept = async (withIssue: boolean): Promise<void> => {
     setBusy(true);

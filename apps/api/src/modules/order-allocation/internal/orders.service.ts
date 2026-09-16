@@ -400,7 +400,8 @@ export class OrdersService {
     const ctx = RequestContext.get();
     return this.db.withTransaction(async (client) => {
       const order = await this.lockOwn(client, orderId, ctx, true);
-      if (!['DELIVERED', 'ACCEPTANCE_PENDING'].includes(order.status)) {
+      // CLAIM_OPEN allowed: reporting an issue must not lock the buyer out of accepting (§20).
+      if (!['DELIVERED', 'ACCEPTANCE_PENDING', 'CLAIM_OPEN'].includes(order.status)) {
         throw new ApiException(409, 'CONFLICT', `Order is ${order.status}`, { code_detail: 'ILLEGAL_TRANSITION' });
       }
       // ADR-002/§21: an open severe temperature exception holds buyer acceptance.

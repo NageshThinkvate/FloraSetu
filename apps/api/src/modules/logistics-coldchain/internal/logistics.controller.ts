@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { RbacGuard, RequirePermission } from '../../../common/authz/rbac.guard';
 import { PackingService } from './packing.service';
 import { ShipmentsService } from './shipments.service';
@@ -57,7 +57,7 @@ export class LogisticsController {
   // ---------- B4: logistics partner jobs (ADR-011) ----------
   @Post('shipments/:id/assign')
   @RequirePermission('procurement.manage')
-  assignJob(@Param('id') id: string, @Body() dto: AssignJobDto) {
+  assignJob(@Param('id', ParseUUIDPipe) id: string, @Body() dto: AssignJobDto) {
     return this.shipments.assignJob(id, dto);
   }
 

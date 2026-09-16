@@ -259,6 +259,10 @@ describe('GATE Pre-Phase-3: quality basis + logistics partner (ADR-011)', () => 
     const claim = await t.http.post('/api/claims').set(asBuyer()).set('Idempotency-Key', idem('q8'))
       .send({ orderId: fx.orderId, category: 'QUALITY_MISMATCH', description: 'wilted on arrival', mediaObjectIds: [up.body.id] });
     expectOk(claim.status);
+    // Reporting an issue must not lock the buyer out of accepting the delivery (Phase 3 §8).
+    const accept = await t.http.post(`/api/orders/${fx.orderId}/accept`).set(asBuyer())
+      .send({ acceptedQty: 30, disputedQty: 10, reason: 'wilted stems on 10' });
+    expectOk(accept.status);
   });
 
   // ---------- logistics partner jobs ----------
