@@ -40,7 +40,7 @@ export function BottomNav({
   const [moreOpen, setMoreOpen] = useState(false);
   const main = moreItems.length > 0 ? items.slice(0, 4) : items.slice(0, 5);
   return (
-    <>
+    <span data-testid={testId} style={{ display: 'contents' }}>
       {main.map((i) => (
         <NavLink
           key={i.to}
@@ -79,6 +79,6 @@ export function BottomNav({
           ))}
         </div>
       </Drawer>
-    </>
+    </span>
   );
 }

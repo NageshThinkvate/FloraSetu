@@ -1,0 +1,89 @@
+{
+  "summary": "Phase 8 final UAT sweep — frontend only against public preview. Ran a targeted acceptance pass across security headers, PWA assets, nav redirects, rebuilt pages, responsive matrix and terminology sweep. Verified GREEN: (1) all Phase-8 API security headers present on /api responses (X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Referrer-Policy, Content-Security-Policy-Report-Only, Permissions-Policy); (2) /sw.js and /manifest.webmanifest load 200 with correct content (versioned caches, /api never cached, network-first navigations with offline shell fallback, valid PWA manifest with name/icons); (3) retired-route redirects for buyer scope work — /demand→/buyer/home, /claims→/buyer/issues, /orders→/buyer/orders; (4) rebuilt pages render with expected data-testids — claims-page, account-page (with real KYB file input + kyb-submit-btn, no hardcoded document), catalog-page (human 'Demo — not for production buying' label present); (5) responsive matrix at 360/390/412/768/1440 for buyer home, buyer request wizard, buyer orders, buyer catalog — no horizontal body scroll; (6) buyer bottom nav renders at 390px with Home/Offers/Orders/Events/More; (7) no page/console errors on tested rebuilt pages; (8) buyer Issues page shows no raw enum tokens (PENDING_CONFIRMATION / COUNTERPARTY_RESPONSE / IN_REVIEW absent). Findings (all P2/P3): SW registration is gated on import.meta.env.PROD but the preview environment runs Vite dev mode (/@vite/client + /src/main.tsx present in the HTML) so navigator.serviceWorker.getRegistration() returns null in the preview — SW code itself is correct, this only affects the preview environment. BottomNav container does not attach its `testId` prop to a DOM node (only inner items do), so `data-testid=\"buyer-bottomnav\"` selector cannot find the container. Several other flows (supplier capabilities, ops/partner redirects while logged in with those roles, requirement workspace publish-RFQ, admin catalog version history, keyboard-only a11y pass, offline shell fallback, upload MIME/magic-byte rejection UI) could not be fully exercised in this session because Cloudflare's bot-challenge kicked in mid-run (429s + human-verification captcha) — this is a testing-environment constraint, not a product defect. Static code review of the rebuilt pages confirms the shape of each fix (real file input in AccountPage, no supplier-UUID input in RequirementDetailPage, product/variety selects in CapabilitiesPage).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "apps/web/src/main.tsx — service worker registration",
+        "issue": "SW registration is guarded by `if (import.meta.env.PROD && 'serviceWorker' in navigator)`. The preview URL is currently served by Vite dev (HTML shows `/@vite/client` and `/src/main.tsx?t=...`), so `import.meta.env.PROD` is false and the SW never registers on the preview. Consequence: navigator.serviceWorker.getRegistration() returns null on the preview and the 'offline shell fallback' AC cannot be validated here. /sw.js itself is served 200 with the correct cache-first-static / network-first-navigation / never-cache-/api policy, and /manifest.webmanifest is valid. This is fine for production builds; flagging so main agent decides whether to also enable SW in preview builds or explicitly document the exception.",
+        "selector": "n/a",
+        "priority": "P3"
+      },
+      {
+        "component": "apps/web/src/shell/ShellNav.tsx — BottomNav",
+        "issue": "The `testId` prop passed to <BottomNav testId=\"buyer-bottomnav\"/> (and supplier/partner/ops/admin equivalents) is only propagated to inner elements (`${i.testId}-bottom` for items, `${testId}-more` for the More button, `${testId}-more-drawer` for the drawer). The bottom-nav container itself has no `data-testid`, so `[data-testid=\"buyer-bottomnav\"]` returns 0 matches even though the nav is visually present at 390px. Recommend adding `data-testid={testId}` to the <nav>/root element of BottomNav.",
+        "selector": "buyer-bottomnav / supplier-bottomnav / partner-bottomnav / ops-bottomnav / admin-bottomnav",
+        "priority": "P3"
+      },
+      {
+        "component": "CatalogPage — Validated badge",
+        "issue": "Buyer catalog renders products with the human label 'Demo — not for production buying' as expected, but the counterpart 'Validated' label was not visible in the seeded catalog. Likely a seed-data condition (no validated products in dev DB) rather than a code bug — noting so main agent can confirm the Validated code path is exercised in a fuller seed.",
+        "selector": "catalog-page",
+        "priority": "P3"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_rulings": {
+    "api_security_headers_present": true,
+    "x_content_type_options_nosniff": true,
+    "x_frame_options_DENY": true,
+    "referrer_policy_strict_origin_when_cross_origin": true,
+    "csp_report_only_present": true,
+    "permissions_policy_present": true,
+    "sw_js_serves_200_with_versioned_cache_and_api_bypass_and_shell_fallback": true,
+    "manifest_webmanifest_valid_json_with_name_and_icons": true,
+    "redirect_demand_to_buyer_home": true,
+    "redirect_claims_to_buyer_issues": true,
+    "redirect_orders_to_buyer_orders": true,
+    "buyer_issues_page_testid_present_no_raw_enums": true,
+    "buyer_account_page_has_real_kyb_file_input_and_kyb_submit_btn": true,
+    "buyer_catalog_page_testid_present_demo_label_visible": true,
+    "no_horizontal_overflow_360_390_412_768_1440_on_buyer_home_wizard_orders_catalog": true,
+    "mobile_390_buyer_bottom_nav_visually_renders_home_offers_orders_events_more": true,
+    "no_page_errors_on_tested_rebuilt_pages": true,
+    "buyer_home_no_visible_uuids_or_raw_enums_or_qc_language": true
+  },
+  "not_verified_due_to_rate_limiting_or_seed": [
+    "Supplier capabilities product→variety picker interactive add",
+    "/ops/sourcing→/ops/procurement redirect while logged in as procops",
+    "/ops/quality→/ops/exceptions redirect while logged in as procops",
+    "/partner/qc→/partner/logistics redirect while logged in as partner",
+    "Ops nav absence of 'Quality' entry (only static check; needs live login retest)",
+    "Partner nav absence of 'QC' entry (only static check; needs live login retest)",
+    "Requirement workspace publish-RFQ form (deadline min, no supplier-UUID field) — no seeded requirements for demo.buyer",
+    "Admin Catalog version-history human-summary rendering",
+    "Full role-isolation matrix (procops/support/finance/admin/partner/driver friendly-denial screens)",
+    "Keyboard-only a11y pass on login/buyer home/wizard/SideSheet/bottom nav",
+    "axe-core automated scan on buyer home / ops exceptions / admin organizations",
+    "Offline shell fallback (SW does not register in preview)",
+    "Upload MIME/magic-byte rejection UX — reject .txt/.exe via JS-injected File on claim evidence or KYB",
+    "Ops procurement sourcing-note save on a needs-sourcing row",
+    "Empty-state / skeleton-loader spot checks across roles"
+  ],
+  "critical_code_review_comments": [
+    "P3: apps/web/src/main.tsx wraps SW registration in `import.meta.env.PROD`. Preview is served in Vite dev mode, so the SW never registers there and the Phase-8 offline-shell AC cannot be validated on the preview URL. Consider either (a) documenting the preview-vs-prod gap explicitly, or (b) allowing SW registration when `import.meta.env.MODE !== 'test'` so preview builds can be verified.",
+    "P3: apps/web/src/shell/ShellNav.tsx `BottomNav` accepts a `testId` prop but never applies it to a root DOM node. Only items and the More affordance carry it. Add `data-testid={testId}` to the container to make the selectors used in Phase-8 mobile AC (`buyer-bottomnav`, `ops-bottomnav`, etc.) resolvable.",
+    "Carryover from iteration_20 (still recommended even though outside Phase-8 scope): apps/web/src/lib/api/client.ts still calls `await res.json()` on the success path — any 204 response will throw. Not re-tested this iteration but the fix from iteration_20 should be verified.",
+    "Positive: The SW policy in public/sw.js is correctly implemented — versioned cache names, activate cleanup, /api bypass, network-first navigations with `/index.html` shell fallback, cache-first ONLY for /assets|/icons|/brand. This is exactly what the Phase-8 ADR requires.",
+    "Positive: Security-headers middleware is correctly applied to all API responses — verified live via curl on /api/health. All required headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Content-Security-Policy-Report-Only, Permissions-Policy) present.",
+    "Positive: AccountPage KYB submission uses a real <input type=file> (no fake hardcoded document), and kyb-submit-btn testid is present. Static review confirms no supplier-UUID text input on RequirementDetailPage and product/variety <select> pickers on CapabilitiesPage."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Decide policy on SW registration for preview builds — either enable it or document why preview cannot validate the offline-shell AC.",
+    "Add `data-testid={testId}` to the BottomNav container in apps/web/src/shell/ShellNav.tsx so the mobile-shell testids from Phase 8 resolve.",
+    "Confirm iteration_20 fix for apps/web/src/lib/api/client.ts 204/empty-body handling is deployed (was HIGH-priority carryover).",
+    "Consider seeding at least one 'Validated' catalog product so the Validated-label code path is exercised in UAT.",
+    "Rerun the remainder of the Phase-8 UAT list (supplier/ops/partner redirects with correct roles, requirement workspace, admin catalog version history, role isolation, a11y pass, upload rejection UX) — a large portion of this run was cut short by Cloudflare bot-challenge/429 rate limiting. Consider whitelisting the testing runner IP for the acceptance sweep or adding backoff/pacing between navigations."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not retested per request; live curl on /api/health confirmed 200 + all security headers)", "frontend": "~55% of Phase-8 UAT items directly verified this run; the verified subset is 100% GREEN. Remaining ~45% blocked by CF rate limiting mid-run — no evidence of failure, just not exercised."},
+  "test_credentials": "demo.buyer@florasetu.dev / Demo-Buyer-2026 ✓ (login OK, /admin denied path attempted but hit CF challenge before assertion). Other credentials not exercised due to rate-limit.",
+  "seed_data_creation": "None. Read-only verification pass.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Rate limiting is the primary blocker for a full sweep on this preview URL — pace navigations (>=3–5s between goto()s), avoid rapid multi-role login churn, and if a captcha appears, wait ~60–120s before continuing. Iteration_20 flagged a client.ts 204+json bug that is still worth spot-checking on the KYB approve/reject flow because Phase 8 did not scope a fix for it. All Phase-8 items verified in this run are listed under `verified_rulings`; the remaining items are enumerated under `not_verified_due_to_rate_limiting_or_seed` — that is the exact list the next agent should resume from. Preview is Vite dev (not prod build), so SW registration is expected to be null there; do not flag that as a code bug beyond the P3 note in this report.",
+  "rca_of_the_issue": "PWA SW-not-registering-on-preview root cause: apps/web/src/main.tsx line 19 gates `navigator.serviceWorker.register('/sw.js')` on `import.meta.env.PROD`. The preview URL is served by Vite dev (evidence: index.html contains `<script type=\"module\" src=\"/@vite/client\">` and `src=\"/src/main.tsx?t=...\"`), so PROD is false and the register() call never runs. /sw.js and /manifest.webmanifest themselves are served correctly (curl 200, valid content). Fix (if desired for preview validation): change guard to `import.meta.env.MODE !== 'test'` OR set `mode: 'production'` for preview builds. Otherwise, the AC 'service worker registers in a fresh Chromium session' should be tested against a production build, not the preview."
+}
