@@ -2,10 +2,26 @@
   "meta_and_positioning": {
     "project_name": "FloraSetu B2B Floriculture Platform",
     "design_persona": "E1 - The Anti-AI Designer (Premium Botanical B2B)",
-    "positioning_statement": "FloraSetu is a modern, calm, trustworthy, and ultra-efficient B2B floriculture procurement engine. It bridges growers, wholesalers, florists, and logistics with operational clarity and botanical warmth. It avoids generic ERP/database clutter, wedding-app pink, and consumer gifting aesthetics in favor of clean high-density information architecture, explicit action hierarchy, and tactile physical feedback.",
-    "emotional_tone": "Grounded, calm, authoritative, precise, transparent, and responsive.",
-    "design_context": "B2B Marketplace PWA with Mobile-First operations (Buyer/Supplier/QC/Driver) and Desktop-Heavy Control Planes (Ops/Admin)",
-    "dark_mode_stance": "Light Theme Default with warm botanical ivory (#F8F8F5) and deep forest emerald (#183D33). High contrast light mode minimizes outdoor glare for field operations (farms, hubs, delivery vehicles). Dark mode is reserved exclusively for darkroom logistics/night hubs if enabled via user preference."
+    "positioning_statement": "FloraSetu is an elegant, authoritative, and trustworthy B2B floriculture procurement and fulfilment network. The design bridges physical botanical craft with modern digital infrastructure using rich botanical greens, orchid plum accents, warm ivory surfaces, and bespoke serif typography.",
+    "emotional_tone": "Refined, calm, authoritative, precise, and botanically grounded.",
+    "design_context": "B2B Marketing Landing Page & Public Identity System with React SPA frontend using vanilla CSS tokens, high-density operational contrast, and exact brand SVG geometry.",
+    "dark_mode_stance": "Light Theme Default with warm botanical ivory (#F8F8F5), deep forest emerald (#183D33), and plum (#76518F / #5C3A4D). Dark green contrast bands and footers create structural rhythm."
+  },
+  "brand_identity_and_logo_spec": {
+    "viewBox": "0 0 64 64",
+    "logo_geometry": {
+      "central_plum_petal": "M32 34 C39 27 40 17 32 10 C24 17 25 27 32 34 Z (fill: plum #76518F)",
+      "left_green_petal": "M32 34 C27 32 20 28 17 20 C25 21 31 27 32 34 Z (fill: deep botanical green #183D33)",
+      "right_green_petal": "M32 34 C37 32 44 28 47 20 C39 21 33 27 32 34 Z (fill: deep botanical green #183D33)",
+      "detached_bottom_arc": "M8 52 A28 18 0 0 1 56 52 (stroke: deep botanical green #183D33, strokeWidth: 6, strokeLinecap: round, fill: none)",
+      "relative_positioning_rule": "The 3 petals sit OVER the detached arc; petal junctions terminate at y=34 above the arc, creating clean visual separation with no overlapping or crossing line segments."
+    },
+    "wordmark_typography": {
+      "font_family": "Fraunces Variable / Cormorant Garamond, serif",
+      "flora_styling": "Flora in deep botanical green (#183D33), serif, 600 weight",
+      "setu_styling": "Setu in plum (#76518F / #5C3A4D), serif, 600 weight",
+      "size_ratio": "Elegant high-contrast display serif wordmark matching reference design"
+    }
   },
   "color_system": {
     "primary": {
@@ -16,6 +32,7 @@
     },
     "accent": {
       "orchid_plum": "#76518F",
+      "plum_dark": "#5C3A4D",
       "hover": "#624177",
       "subtle_tint": "#F3EEF6"
     },
@@ -30,243 +47,95 @@
       "text_tertiary": "#808A85",
       "text_on_dark": "#FFFFFF"
     },
-    "semantic": {
-      "success": {
-        "text": "#135436",
-        "bg": "#E6F4ED",
-        "border": "#A3D9C0",
-        "icon": "#1B7A4F"
-      },
-      "warning": {
-        "text": "#7A4D05",
-        "bg": "#FEF7E6",
-        "border": "#F8DC9B",
-        "icon": "#B8750B"
-      },
-      "error": {
-        "text": "#821B1B",
-        "bg": "#FDF2F2",
-        "border": "#F8B4B4",
-        "icon": "#C82323"
-      },
-      "info": {
-        "text": "#1A4971",
-        "bg": "#EFF6FC",
-        "border": "#B3D7F5",
-        "icon": "#2B6CB0"
-      }
-    },
-    "contrast_policy": "All text elements MUST adhere to WCAG 2.2 AA standards (minimum 4.5:1 ratio for normal text, 3:1 for large text). Primary interactive elements use #183D33 on #FFFFFF or #FFFFFF on #183D33 (ratio > 11:1)."
+    "contrast_policy": "All public text and interactive buttons meet WCAG 2.2 AA standards (minimum 4.5:1 ratio for body text, 3:1 for large display headers)."
   },
   "typography_system": {
-    "font_family_primary": "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    "font_family_fallback_indian": "'Noto Sans Devnagari', 'Noto Sans Tamil', 'Noto Sans Telugu', sans-serif",
+    "font_family_display": "'Fraunces Variable', 'Cormorant Garamond', Georgia, serif",
+    "font_family_body": "'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     "scale": {
-      "display": { "size": "36px", "line_height": "44px", "weight": "700", "tracking": "-0.02em" },
-      "h1": { "size": "30px", "line_height": "38px", "weight": "700", "tracking": "-0.015em" },
-      "h2": { "size": "24px", "line_height": "32px", "weight": "600", "tracking": "-0.01em" },
-      "h3": { "size": "20px", "line_height": "28px", "weight": "600", "tracking": "-0.005em" },
-      "h4": { "size": "16px", "line_height": "24px", "weight": "600", "tracking": "0em" },
-      "body_large": { "size": "16px", "line_height": "24px", "weight": "400", "tracking": "0em" },
-      "body_regular": { "size": "14px", "line_height": "20px", "weight": "400", "tracking": "0em" },
-      "body_semibold": { "size": "14px", "line_height": "20px", "weight": "600", "tracking": "0em" },
-      "caption": { "size": "12px", "line_height": "16px", "weight": "500", "tracking": "0.01em" },
-      "overline": { "size": "11px", "line_height": "14px", "weight": "700", "tracking": "0.08em", "transform": "uppercase" }
-    },
-    "numeric_emphasis": "All prices, stem counts, percentages, and lot numbers must use tabular figures font-variant-numeric: tabular-nums for vertical alignment in tables and cards."
-  },
-  "spacing_and_layout_system": {
-    "spacing_scale": [4, 8, 12, 16, 20, 24, 32, 40, 48, 64],
-    "card_radii": "14px (rounded-2xl) for primary containers, 10px (rounded-xl) for nested cards, 6px (rounded-lg) for buttons and inputs",
-    "elevation_and_shadows": {
-      "flat_subtle_border": "1px solid #E2E2D8",
-      "card_shadow": "0px 2px 8px rgba(24, 61, 51, 0.04), 0px 1px 2px rgba(0, 0, 0, 0.02)",
-      "floating_nav_shadow": "0px 12px 32px rgba(24, 32, 29, 0.12)",
-      "dropdown_shadow": "0px 8px 24px rgba(24, 32, 29, 0.08)"
-    },
-    "grid_breakpoints": {
-      "mobile_sm": "360px - 1 column, gap-3, padding-4",
-      "mobile_md": "390px - 1 column, gap-4, padding-4",
-      "mobile_lg": "412px - 1 column, gap-4, padding-4",
-      "tablet": "768px - 6 column grid, gap-4, padding-6",
-      "desktop_sm": "1024px - 8 column grid + 260px sticky sidebar, gap-6",
-      "desktop_md": "1280px - 12 column grid + 280px sidebar, gap-6",
-      "desktop_lg": "1440px - 12 column grid + 280px sidebar, max-w-7xl centered",
-      "desktop_xl": "1920px - 12 column grid + 300px sidebar, max-w-1600px centered"
+      "hero_h1": { "size": "52px", "line_height": "1.08", "weight": "600", "font": "serif" },
+      "section_h2": { "size": "36px", "line_height": "1.2", "weight": "600", "font": "serif" },
+      "card_h3": { "size": "18px", "line_height": "1.4", "weight": "600", "font": "sans" },
+      "body_large": { "size": "18px", "line_height": "1.6", "weight": "400", "font": "sans" },
+      "body_regular": { "size": "15px", "line_height": "1.55", "weight": "400", "font": "sans" },
+      "eyebrow_label": { "size": "12px", "line_height": "1.2", "weight": "700", "tracking": "0.14em", "transform": "uppercase" }
     }
   },
-  "five_role_shells": {
-    "buyer": {
-      "root_path": "/buyer/*",
-      "nav_type_mobile": "Bottom Bar (5 items: Home, Offers, Orders, Events, More)",
-      "nav_type_desktop": "Left Collapsible Sidebar + Sticky Header with Active Org Switcher",
-      "primary_color_theme": "#183D33",
-      "key_destinations": ["/buyer/home", "/buyer/requests/new", "/buyer/offers", "/buyer/orders", "/buyer/events", "/buyer/kyb"]
+  "homepage_layout_and_sections": {
+    "header": {
+      "sticky": true,
+      "background": "rgba(248, 248, 245, 0.92) with backdrop-filter blur(12px)",
+      "left": "FloraSetu logo (3-petal + arc mark + two-tone serif wordmark)",
+      "center": "Nav links (How it works, Solutions, Features, About)",
+      "right": "Sign in button + Request demo CTA button (Pill-shaped, deep botanical green)"
     },
-    "supplier": {
-      "root_path": "/supplier/*",
-      "nav_type_mobile": "Bottom Bar (4 items: Home, Requests, Supply, Orders)",
-      "nav_type_desktop": "Left Collapsible Sidebar + Quick Supply Floating CTA",
-      "primary_color_theme": "#183D33",
-      "key_destinations": ["/supplier/home", "/supplier/requests", "/supplier/supply/new", "/supplier/orders", "/supplier/settlements"]
+    "hero_section": {
+      "grid": "2-column split (1.05fr content | 0.95fr image)",
+      "eyebrow": "A SMARTER FLOWER TRADE STARTS HERE (Plum uppercase label)",
+      "headline": "Source premium flowers with more confidence.",
+      "lede": "FloraSetu connects professional buyers with verified growers, wholesalers, importers and fulfilment partners...",
+      "hero_image": "https://images.unsplash.com/photo-1567428051128-5f09a0200655?crop=entropy&cs=srgb&fm=jpg&q=85 (Elegant white lilies blooming in natural light)",
+      "actions": "Get started (Primary Green Pill CTA) + See how FloraSetu works (Ghost Button)"
     },
-    "partner": {
-      "root_path": "/partner/*",
-      "nav_type_mobile": "Touch-Optimized Field Shell (Task Switcher Header + Large Cards)",
-      "nav_type_desktop": "High-Density Operational Board",
-      "sub_roles": {
-        "qc_grader": "/partner/qc (Camera-first inspection queues)",
-        "hub_operator": "/partner/hub (Receiving, sorting, batching)",
-        "driver": "/partner/logistics (Trip execution, dispatch, POD)"
-      }
+    "trust_strip": {
+      "background": "#183D33 (Deep botanical green)",
+      "items": 4,
+      "columns": "4-column grid (Verified business network, Clear flower specifications, Actual lot visibility, Delivery clarity)",
+      "explicit_exclusion": "Do NOT build stats row (no 1,200+ / 500+ / 300+ stats)"
     },
-    "ops": {
-      "root_path": "/ops/*",
-      "nav_type_desktop": "Left Technical Nav + Top Filter Bar + Exception Control Tower Header",
-      "primary_color_theme": "#18201D",
-      "key_queues": ["/ops/exceptions", "/ops/sourcing-rfqs", "/ops/qc-holds", "/ops/logistics-risk", "/ops/claims", "/ops/kyb-reviews"]
+    "how_it_works": {
+      "header": "How FloraSetu works — Five simple steps from requirement to receipt.",
+      "layout": "5-card horizontal grid with numbered circles (01 to 05) in plum serif type",
+      "steps": [
+        "01: Tell us what you need",
+        "02: Receive offers",
+        "03: Choose your offer",
+        "04: See the actual supply",
+        "05: Track delivery"
+      ]
     },
-    "admin": {
-      "root_path": "/admin/*",
-      "nav_type_desktop": "Left Control Plane Sidebar + System Governance TopBar",
-      "primary_color_theme": "#18201D",
-      "key_queues": ["/admin/organizations", "/admin/kyb-governance", "/admin/users-access", "/admin/catalog-standards", "/admin/audit-logs", "/admin/feature-flags"]
+    "solutions_section": {
+      "header": "One network. Different jobs.",
+      "layout": "3-column audience card grid (Buyers, Suppliers, Logistics Partners) with category tag, description, and CTA button"
+    },
+    "features_grid": {
+      "header": "Built for real flower trade — not just listings.",
+      "layout": "6-card 3x2 grid detailing requests, offers, event plans, lot evidence, timeline tracking, and organization workspaces"
+    },
+    "dark_band_section": {
+      "background": "#183D33 (Deep botanical green)",
+      "headline": "Built for organizations, not casual flower shopping.",
+      "content": "Organization-based accounts, role-based permissions, and traceable commercial actions with white lily / garden Imagery"
+    },
+    "footer": {
+      "background": "#183D33 (Deep botanical green)",
+      "logo": "FloraSetu light logo (white petals/arc + light wordmark)",
+      "columns": [
+        "Brand description & tagline",
+        "Solutions (Buyers, Suppliers, Partners)",
+        "Platform (Features, How it works, Security)",
+        "Company (About, Privacy, Terms, Contact)"
+      ]
     }
   },
-  "status_vocabulary_and_microcopy_mappings": {
-    "status_mapping_table": [
-      { "backend_code": "QC_PENDING", "human_label": "Quality Check Pending", "variant": "warning", "icon": "Clock" },
-      { "backend_code": "QC_PASSED", "human_label": "Quality Check Passed", "variant": "success", "icon": "CheckCircle2" },
-      { "backend_code": "QC_REJECTED", "human_label": "Quality Check Failed", "variant": "error", "icon": "XCircle" },
-      { "backend_code": "PARTIALLY_AWARDED", "human_label": "Some Flowers Confirmed", "variant": "info", "icon": "PieChart" },
-      { "backend_code": "FULLY_AWARDED", "human_label": "All Flowers Confirmed", "variant": "success", "icon": "CheckCheck" },
-      { "backend_code": "IN_TRANSIT", "human_label": "On The Way", "variant": "info", "icon": "Truck" },
-      { "backend_code": "COLD_CHAIN_ALERT", "human_label": "Temp Alert - Under Review", "variant": "error", "icon": "ThermometerSnowflake" },
-      { "backend_code": "KYB_UNDER_REVIEW", "human_label": "Verification Under Review", "variant": "warning", "icon": "FileSearch" },
-      { "backend_code": "KYB_CORRECTION_REQUIRED", "human_label": "Action Needed on Documents", "variant": "error", "icon": "AlertTriangle" },
-      { "backend_code": "KYB_VERIFIED", "human_label": "Business Verified", "variant": "success", "icon": "ShieldCheck" }
-    ],
-    "entity_vocabulary_mapping": [
-      { "internal_term": "Requirement / RFQ", "buyer_facing": "Flower Request", "supplier_facing": "Buyer Demand / Request" },
-      { "internal_term": "Quotation", "buyer_facing": "Supplier Offer", "supplier_facing": "Price Quote" },
-      { "internal_term": "Award", "buyer_facing": "Select & Confirm Offer", "supplier_facing": "Order Awarded" },
-      { "internal_term": "Inventory Lot", "buyer_facing": "Flower Batch / Lot", "supplier_facing": "My Supply Lot" },
-      { "internal_term": "Claim", "buyer_facing": "Report Quality / Delivery Issue", "supplier_facing": "Issue Ticket" },
-      { "internal_term": "Inspection", "buyer_facing": "Quality Inspection", "supplier_facing": "Hub QC Audit" }
-    ]
-  },
-  "component_inventory_and_specifications": {
-    "AppShell": "Layout wrapper managing org switching, navigation, breadcrumbs, user profile, and shell switcher.",
-    "WorkspaceSwitcher": "Header dropdown showing current active organization, role badge, and fast switch list.",
-    "ActionCenter": "Prioritized action panel showing pending quotes, orders arriving, and document corrections.",
-    "PrimaryActionCard": "Bold 14px radius card with primary background/border and single high-visibility CTA.",
-    "OfferComparison": "Desktop 4-column spec comparison table with stem length, bloom stage, grade, price, freight, and match rating; transforms to stacked cards on mobile.",
-    "OrderTimeline": "Plain-language step list showing past completed milestones, active state, and expected future steps with owner tag.",
-    "EvidenceGallery": "Grid of thumbnail images with zoom modal, timestamp overlay, and defect tagging pins for QC/Claims.",
-    "ProgressStepper": "Multi-step progress indicator for KYB and Quick Request with clear numbers, titles, and completed checkmarks.",
-    "SearchableSelect": "Accessible search-as-you-type dropdown with clear zero-results state and multi-script keyboard navigation.",
-    "DataTable": "Clean non-bordered internal desktop table with sort headers, sticky column actions, and mobile MobileDataCard fallback."
-  },
-  "responsive_and_breakpoint_behavior_rules": {
-    "tables": "Desktop displays full multi-column grid with sticky right actions. Mobile converts every row into an actionable MobileDataCard with primary metric highlighted.",
-    "drawers_and_modals": "Desktop uses right-hand SideSheet drawer (480px) for contextual details. Mobile uses bottom slide-up Drawer with drag handle and safe-area padding.",
-    "forms": "Desktop uses 2-column or 3-column structured form grid with max-width 768px. Mobile uses single column form with fixed bottom sticky submit bar.",
-    "camera_intake": "Mobile camera integration launches native capture with live crop grid and photo thumbnail queue. Desktop provides drag-and-drop file uploader."
-  },
-  "motion_and_micro_interactions": {
-    "duration_fast": "150ms ease-out (button active states, tooltip fade)",
-    "duration_normal": "250ms cubic-bezier(0.16, 1, 0.3, 1) (drawer slide, modal overlay, accordion expansion)",
-    "duration_slow": "350ms ease-in-out (progress bar fill, step transitions)",
-    "prefers_reduced_motion": "All motion transitions disabled automatically when prefers-reduced-motion: reduce is set; falls back to instant opacity toggle."
-  },
-  "accessibility_and_wcag22_checklist": {
-    "keyboard_navigation": "All interactive buttons, cards, and inputs reachable via Tab / Shift+Tab. Focus ring is 2px solid #183D33 with 2px offset.",
-    "touch_targets": "All mobile buttons, chips, tabs, and list items have minimum hit target of 44x44px.",
-    "test_attributes": "Every interactive element MUST include data-testid attribute in kebab-case format (e.g., data-testid='quick-request-submit-button').",
-    "screen_readers": "Icons marked with aria-hidden='true'. Dynamic status changes announced via aria-live='polite' region."
-  },
-  "kyb_redesign_specification": {
-    "external_wizard": {
-      "steps": ["Business Details", "GST & PAN", "Registered Address", "Identity & Documents", "Bank Settlement"],
-      "progress_header": "Step 3 of 5 - Registered Address (60% Complete)",
-      "status_banner": "Human readable status indicator with exact reason if correction is requested by Ops."
-    },
-    "internal_reviewer_console": {
-      "layout": "Split-screen layout (50% Organization & Doc Metadata | 50% Interactive PDF/Image Document Viewer)",
-      "decision_bar": "Sticky bottom bar with three explicit actions: [Approve Organization] [Request Document Correction] [Reject Verification]",
-      "audit_trail": "Immutable chronological timeline of all verification actions, document uploads, and staff notes."
-    }
-  },
-  "structured_text_wireframes_13_screens": {
-    "1_buyer_home": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ FloraSetu [Org: Orchid Gardens Ltd ▼] [Role: Buyer Admin]              [🔔 2] [Profile]  │\n├──────────────┬───────────────────────────────────────────────────────────────────────────┤\n│ 🌿 Home      │ WELCOME BACK, SARAH                                                      │\n│ 🌸 Flowers   │ ───────────────────────────────────────────────────────────────────────── │\n│ 📅 Events    │ [ GET FLOWERS TODAY ]                     [ PLAN AN EVENT / WEDDING ]    │\n│ 📦 Orders    │ (Quick 1-min RFQ Request)                 (BOM & Ceremony Timeline)      │\n│ 🏢 KYB Verified───────────────────────────────────────────────────────────────────────── │\n│              │ 🚨 ACTION NEEDED (2)                                                      │\n│              │ ┌───────────────────────────────────────────────────────────────────────┐ │\n│              │ │ 🌸 Dutch Rose - Red Naomi (500 Stems) | 3 Offers Ready for Review      │ │\n│              │ │ Needed by: Tomorrow 6:00 AM | Lowest Offer: ₹42/stem | [Compare Offers]│ │\n│              │ └───────────────────────────────────────────────────────────────────────┘ │\n│              │ RECENT ORDERS                                      RECENT EVENTS          │\n│              │ ┌───────────────────────────────┐                  ┌────────────────────┐ │\n│              │ │ #FS-8921 | Dispatch in Transit│                  │ Royal Grand Wedding│ │\n│              │ │ 1,200 Stems (Carnations & Lilies)│                │ Dec 12 | 82% Sourced│ │\n│              │ └───────────────────────────────┘                  └────────────────────┘ │\n└──────────────┴───────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ 🌿 FloraSetu        [Orchid Gardens ▼] │\n├────────────────────────────────────────┤\n│ 👋 Hello Sarah!                        │\n│ ┌────────────────────────────────────┐ │\n│ │ 🌸 GET FLOWERS    │ 📅 PLAN EVENT │ │\n│ └────────────────────────────────────┘ │\n│ 🚨 ACTION NEEDED                       │\n│ ┌────────────────────────────────────┐ │\n│ │ Red Naomi Roses (500 Stems)        │ │\n│ │ 3 Offers Received • ₹42/stem       │ │\n│ │ [ View & Compare Offers ]          │ │\n│ └────────────────────────────────────┘ │\n│ 📦 ACTIVE ORDERS                       │\n│ ┌────────────────────────────────────┐ │\n│ │ #FS-8921 • In Transit              │ │\n│ │ Arriving Today, 4:30 PM            │ │\n│ └────────────────────────────────────┘ │\n├────────────────────────────────────────┤\n│ [🏠Home] [🌸Offers] [📦Orders] [📅Events]│\n└────────────────────────────────────────┘"
-    },
-    "2_quick_request": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ Create Flower Request > Step 1: Requirements                                              │\n├──────────────────────────────────────────────────────────────────────────────────────────┤\n│ Flower Type: [ Dutch Rose ▼ ]    Variety: [ Red Naomi ▼ ]   Grade: [ A1 Premium ▼ ]       │\n│ Quantity (Stems): [ 500       ]  Target Stem Length: [ 60 cm ▼ ]  Bloom Stage: [ Tight/2 ▼]│\n│ Needed By Date:   [ 2026-07-20] Needed By Time:   [ 06:00 AM ▼ ] Delivery: [ Door Delivery]│\n│ ────────── MORE SPECIFICATIONS (Optional Progressive Disclosure) ────────────────────── │\n│ Packaging: [ Standard Bundles ▼ ] Substitution Allowed: [ Yes - Same Color/Grade ▼ ]      │\n│ Special Instructions: [ Cold chain mandatory. Deliver in clean water buckets.          ] │\n│                                                                                          │\n│ [ Cancel ]                                                  [ Submit & Get Offers (1-Min) ]│\n└──────────────────────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ← Quick Flower Request                 │\n├────────────────────────────────────────┤\n│ Select Flower                          │\n│ [ Dutch Rose - Red Naomi            ▼] │\n│ Quantity (Stems)                       │\n│ [ 500                                ] │\n│ Needed By                              │\n│ [ Tomorrow, 6:00 AM                 ▼] │\n│ Delivery Address                       │\n│ [ Main Hub - MG Road, Blr           ▼] │\n│                                        │\n│ + Add More Specifications (Optional)   │\n│ ────────────────────────────────────── │\n│ [ SUBMIT & GET OFFERS ]                │\n└────────────────────────────────────────┘"
-    },
-    "3_event_workspace": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ Events > Royal Grand Wedding (Dec 12, 2026) | Overall Coverage: 82% Sourced              │\n├──────────────────────────────────────────────────────────────────────────────────────────┤\n│ Ceremonies Timeline: [ Sangeet (Dec 11) ] [ Mandap (Dec 12) ] [ Reception (Dec 12) ]     │\n│ ──────────────────────────────────────────────────────────────────────────────────────── │\n│ FLOWER BILL OF MATERIALS (BOM)                                                           │\n│ Item                 Qty Req   Sourced   Status              Est Cost    Action           │\n│ 🌹 Red Naomi Roses   2,000     2,000     [Fully Awarded]     ₹84,000     [View Order]     │\n│ 🌸 White Asiatic Lily 800       500       [Partial - 300 left]₹40,000     [Get Offers]     │\n│ 🌿 Baby Breath (Gyps) 30 Bundles 0        [Unassigned]        ₹12,000     [Request Quotes] │\n└──────────────────────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ← Royal Grand Wedding                  │\n│ Dec 12 • 82% Covered                   │\n├────────────────────────────────────────┤\n│ CEREMONIES                             │\n│ [ Mandap ]  [ Sangeet ]  [ Reception ] │\n│ ────────────────────────────────────── │\n│ FLOWER BOM (3 ITEMS)                   │\n│ 🌹 Red Naomi Rose                      │\n│    2000 / 2000 Stems • Sourced         │\n│ 🌸 White Lily                          │\n│    500 / 800 Stems • 300 Needed        │\n│    [ Get Offers for 300 Stems ]        │\n│ 🌿 Baby Breath                         │\n│    0 / 30 Bundles • Unsourced          │\n│    [ Create Request ]                  │\n└────────────────────────────────────────┘"
-    },
-    "4_offer_comparison": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ Offers for Request #FS-REQ-402 (500 Red Naomi Roses)                                     │\n├──────────────────────────────────────────────────────────────────────────────────────────┤\n│ Feature            │ Offer A (Ooty Flora)   │ Offer B (Bangalore Hub)│ Offer C (Pune Farm)│\n│ Total Price        │ ₹21,000 (₹42/stem) ★   │ ₹22,500 (₹45/stem)     │ ₹23,000 (₹46/stem) │\n│ Supplier Rating    │ 4.9 ★ (Verified)       │ 4.7 ★ (Verified)       │ 4.8 ★ (Verified)   │\n│ Stem Length        │ 60 cm (Exact)          │ 65 cm (+5 cm)          │ 60 cm (Exact)      │\n│ Delivery Commitment│ Tomorrow 5:30 AM       │ Tomorrow 6:00 AM       │ Tomorrow 8:00 AM   │\n│ Freight / Coldchain│ Included (Reefer)      │ Included (Standard)    │ +₹500 Extra        │\n│ Action             │ [ Accept Offer A ]     │ [ Accept Offer B ]     │ [ Accept Offer C ] │\n└────────────────────┴────────────────────────┴────────────────────────┴────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ← Compare Offers (3)                   │\n│ Request: 500 Red Naomi Roses           │\n├────────────────────────────────────────┤\n│ 🏆 BEST VALUE OFFER                    │\n│ Ooty Flora Farms • 4.9 ★               │\n│ Total: ₹21,000 (₹42/stem)              │\n│ Spec: 60cm • Delivery: Tomorrow 5:30AM │\n│ Freight: Cold Chain Reefer Included    │\n│ [ SELECT THIS OFFER ]                  │\n│ ────────────────────────────────────── │\n│ OFFER 2                                │\n│ Bangalore Hub • 4.7 ★                  │\n│ Total: ₹22,500 (₹45/stem)              │\n│ [ Select Offer 2 ]                     │\n└────────────────────────────────────────┘"
-    },
-    "5_order_tracking": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ Order #FS-ORD-8921 | Dutch Rose Red Naomi (500 Stems) | Total: ₹21,000                   │\n├──────────────────────────────────────────────────────────────────────────────────────────┤\n│ TIMELINE & FULFILLMENT PROGRESS                                                          │\n│ [✓ Order Placed] ──> [✓ QC Passed (Ooty)] ──> [● In Transit (Reefer #KA-04-E-1234)] ──> [ Delivery ]\n│                                                                                          │\n│ CURRENT STATUS: In Transit • Estimated Arrival: Today, 4:30 PM                           │\n│ Driver: Ramesh Kumar (+91 98765 43210) | Temp Sensor: 4.2°C (Optimal Cold Chain)         │\n│ ──────────────────────────────────────────────────────────────────────────────────────── │\n│ QC INSPECTION REPORT (Ooty Hub)                                                           │\n│ Inspected: Today 10:15 AM | Stem Length: 60cm | Defects: 0% | Result: PASSED             │\n│ [ View QC Evidence Photos (4) ]                     [ Report Delivery Issue ]            │\n└──────────────────────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ← Order #FS-ORD-8921                   │\n│ Status: ON THE WAY (In Transit)        │\n├────────────────────────────────────────┤\n│ 🚚 Arriving Today, 4:30 PM             │\n│ Temp: 4.2°C • Cold Chain Active        │\n│ Driver: Ramesh (+91 98765 43210)       │\n│ ────────────────────────────────────── │\n│ TIMELINE                               │\n│ ✓ 10:00 AM - Harvest & Packed          │\n│ ✓ 10:15 AM - QC Passed at Ooty Hub     │\n│ ● 01:30 PM - Dispatched on Reefer      │\n│ ○ 04:30 PM - Expected Delivery         │\n│ ────────────────────────────────────── │\n│ [ VIEW QC PHOTOS ]  [ REPORT ISSUE ]   │\n└────────────────────────────────────────┘"
-    },
-    "6_supplier_home": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ FloraSetu [Org: Ooty Floral Farms ▼] [Role: Supplier Admin]            [🔔 4] [Profile] │\n├──────────────┬───────────────────────────────────────────────────────────────────────────┤\n│ 🏠 Dashboard │ WHAT NEEDS YOUR ATTENTION TODAY                                           │\n│ 📥 Requests  │ ┌─────────────────────────┐ ┌───────────────────────┐ ┌─────────────────┐ │\n│ 🌿 My Supply │ │ 3 New Requests Due     │ │ 2 Orders To Dispatch  │ │ ₹1,42,000       │ │\n│ 📦 Orders    │ │ [ Review & Quote ]      │ │ [ Prepare Shipping ]  │ │ Pending Payout  │ │\n│ 💳 Payments  │ └─────────────────────────┘ └───────────────────────┘ └─────────────────┘ │\n│              │ RECENT BUYER REQUESTS                                                     │\n│              │ Request             Qty      Needed By        Target Price   Action        │\n│              │ Red Naomi Roses     500 Stems Tomorrow 6:00 AM ₹40-45/stem    [ Quote Now ] │\n│              │ White Asiatic Lily  300 Stems Dec 11           ₹80/stem       [ Quote Now ] │\n└──────────────┴───────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ 🌿 FloraSetu        [Ooty Farms ▼]     │\n├────────────────────────────────────────┤\n│ TODAY'S TASKS                          │\n│ ┌────────────────────────────────────┐ │\n│ │ 📥 3 New Requests Pending Quotes   │ │\n│ │ 📦 2 Orders Ready for Packing      │ │\n│ └────────────────────────────────────┘ │\n│ QUICK ACTIONS                          │\n│ [ + ADD NEW SUPPLY LOT ] [ VIEW REQS ] │\n│ ────────────────────────────────────── │\n│ NEW REQUEST                            │\n│ Red Naomi Roses (500 Stems)            │\n│ Needed: Tomorrow 6:00 AM               │\n│ [ SUBMIT OFFER NOW ]                   │\n├────────────────────────────────────────┤\n│ [🏠Home] [📥Requests] [🌿Supply] [📦Orders] │\n└────────────────────────────────────────┘"
-    },
-    "7_supplier_request_detail": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ Buyer Request #REQ-402 | Dutch Rose - Red Naomi | 500 Stems                              │\n├──────────────────────────────────────────────────────────────────────────────────────────┤\n│ SPECIFICATIONS REQUIRED BY BUYER                                                         │\n│ • Stem Length: 60 cm  • Bloom Stage: Stage 2 (Tight)  • Grade: A1 Premium                 │\n│ • Needed By: Tomorrow, 6:00 AM  • Delivery: Buyer Main Hub, MG Road Bangalore             │\n│ ──────────────────────────────────────────────────────────────────────────────────────── │\n│ [ SUBMIT QUOTE / OFFER ]           [ ASK BUYER A QUESTION ]          [ DECLINE REQUEST ] │\n└──────────────────────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ← Request #REQ-402                     │\n├────────────────────────────────────────┤\n│ 🌹 Red Naomi Roses                     │\n│ Quantity: 500 Stems                    │\n│ Grade: A1 Premium • Length: 60cm       │\n│ Needed: Tomorrow, 6:00 AM              │\n│ Delivery: MG Road Hub, Bangalore       │\n│ ────────────────────────────────────── │\n│ [ CREATE QUOTE / OFFER ]               │\n│ [ ASK QUESTION ]  [ DECLINE ]          │\n└────────────────────────────────────────┘"
-    },
-    "8_quote_builder": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ Submit Quote for Request #REQ-402 (500 Red Naomi Roses)                                  │\n├──────────────────────────────────────────────────────────────────────────────────────────┤\n│ Supply Source Lot:  [ Lot #OTY-2026-08 (800 stems available) ▼ ]                          │\n│ Price Per Stem:     [ ₹ 42.00     ]  Total Flower Base: ₹21,000                            │\n│ Freight Option:     [ Included - Direct Reefer Logistics ▼ ]                              │\n│ Delivery Guarantee: [ Guaranteed by Tomorrow 5:30 AM ▼ ]                                 │\n│ Substitution Note:  [ Exact match - no substitutions needed.                          ] │\n│                                                                                          │\n│ [ Save Draft ]                                                  [ Submit Final Offer ]    │\n└──────────────────────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ← Submit Price Quote                   │\n├────────────────────────────────────────┤\n│ Select Available Lot                   │\n│ [ Lot #OTY-2026-08 (800 avail)      ▼] │\n│ Your Offer Price / Stem                │\n│ [ ₹ 42.00                            ] │\n│ Freight & Transport                    │\n│ [ Freight Included In Price         ▼] │\n│ Estimated Delivery Time                │\n│ [ Tomorrow, 5:30 AM                 ▼] │\n│ ────────────────────────────────────── │\n│ Total Offer Value: ₹21,000             │\n│ [ SUBMIT OFFER TO BUYER ]              │\n└────────────────────────────────────────┘"
-    },
-    "9_supply_lot_capture": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ Add New Supply Lot > Step 1: Camera Photo & Harvest Details                              │\n├──────────────────────────────────────────────────────────────────────────────────────────┤\n│ Drop Lot Photos Here or [ Browse Files ]  (Upload harvest photos for QC grade match)     │\n│ ┌────────────┐ ┌────────────┐ ┌────────────┐                                              │\n│ │ [Photo 1]  │ │ [Photo 2]  │ │ [Photo 3]  │ (3 Photos Attached)                           │\n│ └────────────┘ └────────────┘ └────────────┘                                              │\n│ Flower: [ Red Naomi Rose ▼ ]  Variety: [ Dutch ▼ ]  Quantity (Stems): [ 1000        ]     │\n│ Harvest Date/Time: [ 2026-07-19 06:00 AM ]  Stem Length: [ 60 cm ▼ ] Grade: [ A1 ▼ ]    │\n│                                                                                          │\n│ [ Cancel ]                                                      [ Publish Supply Lot ]   │\n└──────────────────────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ← Add Supply Lot (Camera First)       │\n├────────────────────────────────────────┤\n│ 📷 TAKE LOT PHOTOS                     │\n│ ┌────────────────────────────────────┐ │\n│ │    [ 📷 TAP TO OPEN CAMERA ]       │ │\n│ └────────────────────────────────────┘ │\n│ Photos Added (2): [Thumb1] [Thumb2]    │\n│ ────────────────────────────────────── │\n│ Flower Type                            │\n│ [ Dutch Rose - Red Naomi            ▼] │\n│ Quantity (Stems)                       │\n│ [ 1000                               ] │\n│ Stem Length & Grade                    │\n│ [ 60 cm                             ▼] │ [ A1 Premium ▼ ]\n│ ────────────────────────────────────── │\n│ [ PUBLISH SUPPLY LOT ]                 │\n└────────────────────────────────────────┘"
-    },
-    "10_qc_inspection": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ QC Inspection Queue > Lot #OTY-2026-08 (Ooty Flora Farms)                                │\n├──────────────────────────────────────┬───────────────────────────────────────────────────┤\n│ LOT DETAILS                          │ FIELD QC VERDICT                                  │\n│ Flower: Red Naomi Rose (500 Stems)   │ Accepted Quantity:  [ 480 Stems ]                 │\n│ Declared Grade: A1 (60cm)            │ Rejected Quantity:  [ 20 Stems  ]                 │\n│ Cold Chain Arrival Temp: 4.5°C       │ Primary Defect:     [ Petal Bruising ▼ ]          │\n│ ──────────────────────────────────── │ 📷 QC Evidence Photos (Mandatory for Rejections)  │\n│ PHOTO EVIDENCE AT INTAKE             │ [ 📷 Take Defect Photo ] [Defect1.jpg]            │\n│ [ Photo 1 ] [ Photo 2 ]              │ Notes: Slight bruising on outer petals of 20 stems│\n│                                      │ [ PASS FULL LOT ]   [ APPROVE 480 / REJECT 20 ]  │\n└──────────────────────────────────────┴───────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ← QC Inspection (Ooty Hub)             │\n├────────────────────────────────────────┤\n│ Lot #OTY-2026-08 • Red Naomi (500)     │\n│ Declared: A1 Grade • 60cm              │\n│ ────────────────────────────────────── │\n│ INSPECTION RESULTS                     │\n│ Passed Stems: [ 480 ]                  │\n│ Rejected Stems: [ 20 ]                 │\n│ Defect Type: [ Petal Bruising       ▼] │\n│ 📷 TAKE EVIDENCE PHOTO                 │\n│ [ 📷 OPEN CAMERA FOR DEFECT PHOTO ]    │\n│ ────────────────────────────────────── │\n│ [ SUBMIT QC INSPECTION REPORT ]        │\n└────────────────────────────────────────┘"
-    },
-    "11_operations_home": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ FloraSetu [Ops Control Tower]                                           [🔔 5] [Admin]   │\n├──────────────┬───────────────────────────────────────────────────────────────────────────┤\n│ 🚨 Exceptions│ EXCEPTION QUEUES (REQUIRE IMMEDIATE OPS INTERVENTION)                     │\n│ 📥 RFQs      │ ┌────────────────────────┐ ┌────────────────────────┐ ┌────────────────┐ │\n│ 📦 Deliveries│ │ 2 Supply Shortages     │ │ 1 Temp Excursion Alert │ │ 3 Claims Open  │ │\n│ 🛡️ KYB (4)   │ │ [ Re-Route Sourcing ]  │ │ [ Contact Driver ]     │ │ [ Review Evidence]│\n│ 💳 Finance   │ └────────────────────────┘ └────────────────────────┘ └────────────────┘ │\n│              │ LIVE FULFILLMENT MONITOR                                                  │\n│              │ Order ID     Buyer          Supplier      Status         Risk     Action   │\n│              │ #FS-8921     Orchid Gardens Ooty Flora    In Transit     None     [ Track] │\n│              │ #FS-8925     Grand Hyat     Pune Growers  QC Hold (Temp) HIGH     [ Intervene]│\n└──────────────┴───────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ⚙️ Ops Control Tower                   │\n├────────────────────────────────────────┤\n│ 🚨 ACTIVE EXCEPTIONS (6)               │\n│ ┌────────────────────────────────────┐ │\n│ │ 🚨 Temp Excursion Alert (4.8°C -> 9°C)│ │\n│ │ Order #FS-8925 • Truck #KA-04-E-1234 │ │\n│ │ [ INTERVENE NOW ]                  │ │\n│ └────────────────────────────────────┘ │\n│ ┌────────────────────────────────────┐ │\n│ │ ⚠️ Supply Shortage (300 Lilies)    │ │\n│ │ Order #FS-8930 • Event in 24 Hours   │ │\n│ │ [ RE-ROUTE SUPPLIER ]              │ │\n│ └────────────────────────────────────┘ │\n├────────────────────────────────────────┤\n│ [🚨Alerts] [📦Orders] [🛡️KYB] [💳Claims]│\n└────────────────────────────────────────┘"
-    },
-    "12_kyb_reviewer": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ KYB Governance > Review Submission: Floral Traders Pvt Ltd (GST: 29ABCDE1234F1ZH)         │\n├──────────────────────────────────────────┬───────────────────────────────────────────────┤\n│ ORGANIZATION METADATA & CLAIMS           │ DOCUMENT EVIDENCE VIEWER                      │\n│ Entity Type: Private Limited             │ Document: GST Registration Certificate.pdf    │\n│ PAN: ABCDE1234F [ Verified ✓ ]           │ ┌───────────────────────────────────────────┐ │\n│ GST: 29ABCDE1234F1ZH [ Match ✓ ]         │ │ [ PDF VIEWER: GOVT OF INDIA GST CERT ]    │ │\n│ Bank A/C: 9876543210 (HDFC) [Penny Drop ✓]│ │ Trade Name: Floral Traders Pvt Ltd        │ │\n│ Address: 45 Commercial Street, Blr       │ └───────────────────────────────────────────┘ │\n│ ──────────────────────────────────────── │ IMMUTABLE AUDIT LOG                           │\n│ DECISION ACTIONS                         │ • 10:00 AM - Submitted by User (Rajesh)       │\n│ [ ✓ APPROVE BUSINESS ]                   │ • 10:05 AM - Penny Drop Auto-Verified         │\n│ [ ⚠️ REQUEST DOCUMENT CORRECTION ]       │                                               │\n│ [ ❌ REJECT APPLICATION ]                │                                               │\n└──────────────────────────────────────────┴───────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ← KYB Review: Floral Traders           │\n├────────────────────────────────────────┤\n│ VERIFICATION STATUS: UNDER REVIEW      │\n│ GST: 29ABCDE1234F1ZH [ Matches Gov ]   │\n│ Bank A/C: Penny Drop Verified ✓        │\n│ ────────────────────────────────────── │\n│ DOCUMENT ATTACHMENTS                   │\n│ 📄 GST_Certificate.pdf [ View Document ]│\n│ 📄 Bank_Cancelled_Cheque.jpg [ View ]  │\n│ ────────────────────────────────────── │\n│ DECISION ACTIONS                       │\n│ [ APPROVE BUSINESS VERIFICATION ]      │\n│ [ REQUEST CORRECTION ] [ REJECT ]      │\n└────────────────────────────────────────┘"
-    },
-    "13_platform_admin_home": {
-      "desktop": "┌──────────────────────────────────────────────────────────────────────────────────────────┐\n│ Platform Governance & Control Plane                                                      │\n├──────────────┬───────────────────────────────────────────────────────────────────────────┤\n│ 🏢 Orgs      │ SYSTEM CONTROL PLANE OVERVIEW                                             │\n│ 🛡️ KYB       │ Active Orgs: 420 | Active Users: 1,850 | System Status: Healthy (99.99%) │\n│ 👥 Users/RBAC│ ───────────────────────────────────────────────────────────────────────── │\n│ 📚 Catalog   │ GOVERNANCE MODULES                                                        │\n│ 🚩 Flags     │ ┌───────────────────────────┐ ┌─────────────────────────────────────────┐ │\n│ 📜 Audit Logs│ │ 🏢 Organization Registry │ │ 👥 Roles & Permissions (RBAC)           │ │\n│              │ │ Manage Orgs, KYB Status   │ │ Define Granular Shell & Queue Access    │ │\n│              │ └───────────────────────────┘ └─────────────────────────────────────────┘ │\n│              │ ┌───────────────────────────┐ ┌─────────────────────────────────────────┐ │\n│              │ │ 📚 Botanical Standards    │ │ 🚩 Feature Flags & Rules Engine         │ │\n│              │ │ Grades, Stem Lengths, Variety│ │ Control Dynamic RFQ & Offer Match Rules │ │\n│              │ └───────────────────────────┘ └─────────────────────────────────────────┘ │\n└──────────────┴───────────────────────────────────────────────────────────────────────────┘",
-      "mobile": "┌────────────────────────────────────────┐\n│ ⚙️ Platform Governance                 │\n├────────────────────────────────────────┤\n│ SYSTEM STATUS: ALL SYSTEMS NORMAL      │\n│ ────────────────────────────────────── │\n│ GOVERNANCE MODULES                     │\n│ 🏢 Organization Registry               │\n│ 👥 Roles & Access Controls             │\n│ 📚 Botanical Catalog Standards         │\n│ 🚩 Feature Flags & System Config       │\n│ 📜 Security & Audit Logs               │\n├────────────────────────────────────────┤\n│ [🏢Orgs] [👥Users] [📚Catalog] [📜Audit]│\n└────────────────────────────────────────┘"
-    }
+  "image_urls": {
+    "hero_white_lilies": "https://images.unsplash.com/photo-1567428051128-5f09a0200655?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "event_arrangements": "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "supplier_workers": "https://images.pexels.com/photos/38552007/pexels-photo-38552007.jpeg?auto=compress&cs=tinysrgb",
+    "lot_evidence": "https://images.pexels.com/photos/17301401/pexels-photo-17301401.jpeg?auto=compress&cs=tinysrgb"
   },
   "instructions_to_main_agent": [
-    "You are the main execution agent responsible for realizing the FloraSetu redesign.",
-    "Do not change business logic, backend APIs, authorization rules, or domain entity models.",
-    "Use Javascript (.js / .jsx) components as configured in the workspace.",
-    "Implement the 5 role shells (/buyer, /supplier, /partner, /ops, /admin) with distinct color accents, clear navigation bars, and active organization header switchers.",
-    "All interactive elements MUST have data-testid attributes for automated testing.",
-    "Use Lucide React icons for all status badges and navigation icons.",
-    "Use Sonner for toast notifications and inline feedback banners.",
-    "Ensure all forms use single-column mobile layouts with sticky bottom submit bars.",
-    "Never use generic placeholder images or lorem ipsum text in transaction screens."
+    "Ensure PublicHomePage uses the elegant white lilies hero photo specified.",
+    "Ensure Logo.tsx renders the exact 3-petal + detached arc geometry with plum central petal and green side petals/arc.",
+    "Maintain all data-testid attributes for automated testing compatibility.",
+    "Ensure two-tone serif wordmark is styled with 'Flora' in deep botanical green and 'Setu' in plum.",
+    "No external dependencies or unvetted libraries needed; pure CSS tokens + SVG geometry in React."
   ],
   "UNIVERSAL GUIDELINES FOR MAIN AGENT": {
     "spacing": "Maintain 2-3x generous spacing across cards and layout containers to avoid cramped UI.",
     "testing_attribute": "Every interactive button, input, link, tab, and card MUST include data-testid='kebab-case-id'.",
-    "theme": "Use light mode warm ivory (#F8F8F5) with deep botanical green (#183D33) as primary accent.",
-    "typography": "Use Inter font family with tabular numeric alignment for all price and stem count values.",
-    "components": "Reuse pre-existing Shadcn js primitives in /src/components/ui/."
+    "theme": "Use light mode warm ivory (#F8F8F5) with deep botanical green (#183D33) and plum (#76518F).",
+    "typography": "Use Fraunces / Cormorant Garamond for display headlines & wordmark; Inter for body text.",
+    "components": "Reuse pre-existing components in src/components/ and design tokens."
   }
 }

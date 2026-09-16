@@ -1,15 +1,32 @@
 import { Link } from 'react-router-dom';
+import {
+  ShieldCheck, ClipboardList, Camera, Truck,
+  Zap, ArrowLeftRight, CalendarRange, Images, Route, Building2,
+  ArrowRight, Play, Check
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { PublicHeader, PublicFooter, useDocumentTitle } from '../components/PublicChrome';
 import '../design/public.css';
 
-// Public logged-out homepage (Phase 3 Part B; brand polish pass). Authenticated users
-// never see this — App routes them through the WorkspaceRouter instead.
-const HERO_IMG = 'https://images.unsplash.com/photo-1766682946500-adb9964777e8?crop=entropy&cs=srgb&fm=jpg&q=85';
+// Public logged-out homepage (Phase 3 Part B; brand board 2026-09 restyle). Authenticated
+// users never see this — App routes them through the WorkspaceRouter instead.
+const HERO_IMG = 'https://images.pexels.com/photos/38909719/pexels-photo-38909719.jpeg?auto=compress&cs=tinysrgb';
+const BAND_IMG = 'https://images.pexels.com/photos/13256146/pexels-photo-13256146.jpeg?auto=compress&cs=tinysrgb';
+const BUYERS_IMG = 'https://images.pexels.com/photos/7156456/pexels-photo-7156456.jpeg?auto=compress&cs=tinysrgb';
+const SUPPLIERS_IMG = 'https://images.unsplash.com/photo-1629730538660-2d5d2a0c8e98?crop=entropy&cs=srgb&fm=jpg&q=85';
+const LOGISTICS_IMG = 'https://images.pexels.com/photos/17301401/pexels-photo-17301401.jpeg?auto=compress&cs=tinysrgb';
 const EVENT_IMG = 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?crop=entropy&cs=srgb&fm=jpg&q=85';
 const SUPPLIER_IMG = 'https://images.pexels.com/photos/38552007/pexels-photo-38552007.jpeg?auto=compress&cs=tinysrgb';
-const EVIDENCE_IMG = 'https://images.pexels.com/photos/17301401/pexels-photo-17301401.jpeg?auto=compress&cs=tinysrgb';
+const LOT_IMG = 'https://images.unsplash.com/photo-1623500139994-7c8ebf254a80?crop=entropy&cs=srgb&fm=jpg&q=85';
 const srcset = (base: string): string =>
   `${base}&w=640 640w, ${base}&w=1200 1200w, ${base}&w=1800 1800w`;
+
+const STRIP: [LucideIcon, string, string][] = [
+  [ShieldCheck, 'Verified business network', 'Trade with verified organizations and authorized users.'],
+  [ClipboardList, 'Clear flower specifications', 'Keep variety, quantity, grade/specification, pack and delivery needs structured.'],
+  [Camera, 'Actual lot visibility', 'See supplier-submitted photos, lot details and fulfilment evidence.'],
+  [Truck, 'Delivery clarity', 'Follow pickup, dispatch, transit and delivery status.']
+];
 
 const STEPS: [string, string][] = [
   ['Tell us what you need', 'Choose flowers, quantity, required date and delivery location.'],
@@ -19,13 +36,13 @@ const STEPS: [string, string][] = [
   ['Track delivery', 'Follow packing, logistics, delivery and receipt.']
 ];
 
-const FEATURES: [string, string][] = [
-  ['Quick flower requests', 'A simple request in about a minute — we handle the sourcing workflow.'],
-  ['Comparable offers', 'Price, specification, quantity coverage, delivery and validity side by side.'],
-  ['Events & planned demand', 'Ceremonies, delivery milestones and flower lists in one event plan.'],
-  ['Actual lot evidence', 'Supplier-declared details with real photos and optional video of the lot.'],
-  ['Order & delivery timeline', 'From offer selection to delivery and receipt — one clear timeline.'],
-  ['Organization workspaces', 'Teams, roles and permissions for real businesses.']
+const FEATURES: [LucideIcon, string, string][] = [
+  [Zap, 'Quick flower requests', 'A simple request in about a minute — we handle the sourcing workflow.'],
+  [ArrowLeftRight, 'Comparable offers', 'Price, specification, quantity coverage, delivery and validity side by side.'],
+  [CalendarRange, 'Events & planned demand', 'Ceremonies, delivery milestones and flower lists in one event plan.'],
+  [Images, 'Actual lot evidence', 'Supplier-declared details with real photos and optional video of the lot.'],
+  [Route, 'Order & delivery timeline', 'From offer selection to delivery and receipt — one clear timeline.'],
+  [Building2, 'Organization workspaces', 'Teams, roles and permissions for real businesses.']
 ];
 
 export function PublicHomePage(): JSX.Element {
@@ -44,8 +61,12 @@ export function PublicHomePage(): JSX.Element {
               fulfilment partners — from request and offers to actual lot visibility, logistics and delivery.
             </p>
             <div style={{ display: 'flex', gap: 'var(--fs-space-3)', flexWrap: 'wrap' }}>
-              <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-hero-cta">Get started</Link>
-              <a href="#how-it-works" className="pub-btn pub-btn--ghost" data-testid="public-hero-secondary">See how FloraSetu works</a>
+              <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-hero-cta">
+                Get started <ArrowRight size={16} />
+              </Link>
+              <a href="#how-it-works" className="pub-btn pub-btn--ghost" data-testid="public-hero-secondary">
+                <Play size={15} /> See how FloraSetu works
+              </a>
             </div>
             <p className="fs-pub__supporting">
               Built for florists, event planners, hotels, wholesalers, growers and professional flower businesses.
@@ -55,34 +76,31 @@ export function PublicHomePage(): JSX.Element {
             <img
               src={`${HERO_IMG}&w=1200`}
               srcSet={srcset(HERO_IMG)}
-              sizes="(max-width: 900px) 100vw, 45vw"
+              sizes="(max-width: 900px) 100vw, 42vw"
               width="1200"
               height="1500"
-              alt="Premium roses ready for the wholesale flower trade"
+              alt="Elegant white lilies — premium cut flowers for the professional trade"
               loading="eager"
               {...{ fetchpriority: 'high' }}
             />
           </div>
+          <p className="fs-pub__hero-words" aria-hidden="true" data-testid="public-hero-words">
+            <span>People</span>
+            <span>Flowers</span>
+            <span>Progress</span>
+            <span>Together</span>
+          </p>
         </section>
 
         <section className="fs-pub__strip" aria-label="Why FloraSetu">
           <div className="fs-pub__wrap fs-pub__strip-grid">
-            <div>
-              <h3>Verified business network</h3>
-              <p>Trade with verified organizations and authorized users.</p>
-            </div>
-            <div>
-              <h3>Clear flower specifications</h3>
-              <p>Keep variety, quantity, grade/specification, pack and delivery needs structured.</p>
-            </div>
-            <div>
-              <h3>Actual lot visibility</h3>
-              <p>See supplier-submitted photos, lot details and fulfilment evidence.</p>
-            </div>
-            <div>
-              <h3>Delivery clarity</h3>
-              <p>Follow pickup, dispatch, transit and delivery status.</p>
-            </div>
+            {STRIP.map(([Icon, title, body]) => (
+              <div key={title}>
+                <span className="pub-strip-ico" aria-hidden="true"><Icon size={20} /></span>
+                <h3>{title}</h3>
+                <p>{body}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -92,14 +110,16 @@ export function PublicHomePage(): JSX.Element {
           <ol className="pub-steps">
             {STEPS.map(([title, body], i) => (
               <li key={title}>
-                <span className="pub-step-no">{String(i + 1).padStart(2, '0')}</span>
+                <span className="pub-step-no">{i + 1}</span>
                 <h3>{title}</h3>
                 <p>{body}</p>
               </li>
             ))}
           </ol>
           <div style={{ marginTop: 'var(--fs-space-8)' }}>
-            <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-how-cta">Get flowers</Link>
+            <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-how-cta">
+              Get flowers <ArrowRight size={16} />
+            </Link>
           </div>
         </section>
 
@@ -109,22 +129,31 @@ export function PublicHomePage(): JSX.Element {
             <p className="pub-sub">Buyers, suppliers and logistics partners each get a workspace built for their work.</p>
             <div className="pub-cards-3">
               <article>
-                <p className="pub-aud-label">BUYERS</p>
-                <h3>Source with less uncertainty.</h3>
-                <p>For florists, event planners, hotels, wholesalers and professional buyers.</p>
-                <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-audience-buyers">Find flowers</Link>
+                <img className="pub-card-img" src={`${BUYERS_IMG}&w=800`} alt="Florists selecting fresh flowers for their buyers" loading="lazy" />
+                <div className="pub-card-body">
+                  <p className="pub-aud-label">BUYERS</p>
+                  <h3>Source with less uncertainty.</h3>
+                  <p>For florists, event planners, hotels, wholesalers and professional buyers.</p>
+                  <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-audience-buyers">Find flowers</Link>
+                </div>
               </article>
               <article id="suppliers">
-                <p className="pub-aud-label">SUPPLIERS</p>
-                <h3>Turn available flowers into reliable business.</h3>
-                <p>For growers, wholesalers and importers.</p>
-                <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-audience-suppliers">Join as a supplier</Link>
+                <img className="pub-card-img" src={`${SUPPLIERS_IMG}&w=800`} alt="Rows of fresh cut flowers growing under a greenhouse roof" loading="lazy" />
+                <div className="pub-card-body">
+                  <p className="pub-aud-label">SUPPLIERS</p>
+                  <h3>Turn available flowers into reliable business.</h3>
+                  <p>For growers, wholesalers and importers.</p>
+                  <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-audience-suppliers">Join as a supplier</Link>
+                </div>
               </article>
               <article>
-                <p className="pub-aud-label">LOGISTICS PARTNERS</p>
-                <h3>Connect flower supply to its destination.</h3>
-                <p>Support pickup, transport, parcel movement and proof of delivery.</p>
-                <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-audience-logistics">Partner with FloraSetu</Link>
+                <img className="pub-card-img" src={`${LOGISTICS_IMG}&w=800`} alt="Fresh roses packed and ready for dispatch" loading="lazy" />
+                <div className="pub-card-body">
+                  <p className="pub-aud-label">LOGISTICS PARTNERS</p>
+                  <h3>Connect flower supply to its destination.</h3>
+                  <p>Support pickup, transport, parcel movement and proof of delivery.</p>
+                  <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-audience-logistics">Partner with FloraSetu</Link>
+                </div>
               </article>
             </div>
           </div>
@@ -134,8 +163,9 @@ export function PublicHomePage(): JSX.Element {
           <h2>Built for real flower trade — not just listings.</h2>
           <p className="pub-sub">The workflows a professional flower business actually runs, end to end.</p>
           <div className="pub-cards-6">
-            {FEATURES.map(([title, body]) => (
+            {FEATURES.map(([Icon, title, body]) => (
               <article key={title}>
+                <span className="pub-feat-ico" aria-hidden="true"><Icon size={19} /></span>
                 <h3>{title}</h3>
                 <p>{body}</p>
               </article>
@@ -143,19 +173,30 @@ export function PublicHomePage(): JSX.Element {
           </div>
         </section>
 
-        <section className="fs-pub__section fs-pub__section--alt" id="about">
-          <div className="fs-pub__wrap">
-            <h2>Built for businesses, not casual flower shopping.</h2>
-            <p className="pub-sub">
-              FloraSetu is designed around organizations, teams and commercial workflows. Buyers, suppliers
-              and partners work through verified business profiles, role-based access and traceable
-              transactions — while the experience stays simple for the person doing the work.
-            </p>
-            <ul className="pub-checks">
-              <li>Organization-based accounts</li>
-              <li>Role-based permissions</li>
-              <li>Traceable commercial actions</li>
-            </ul>
+        <section className="fs-pub__section pub-orgband" id="about">
+          <div className="fs-pub__wrap pub-split">
+            <div>
+              <h2>Built for businesses, not casual flower shopping.</h2>
+              <p className="pub-sub">
+                FloraSetu is designed around organizations, teams and commercial workflows. Buyers, suppliers
+                and partners work through verified business profiles, role-based access and traceable
+                transactions — while the experience stays simple for the person doing the work.
+              </p>
+              <ul className="pub-checks">
+                <li><span className="pub-check" aria-hidden="true"><Check size={13} /></span>Organization-based accounts</li>
+                <li><span className="pub-check" aria-hidden="true"><Check size={13} /></span>Role-based permissions</li>
+                <li><span className="pub-check" aria-hidden="true"><Check size={13} /></span>Traceable commercial actions</li>
+              </ul>
+            </div>
+            <img
+              src={`${BAND_IMG}&w=1200`}
+              srcSet={srcset(BAND_IMG)}
+              sizes="(max-width: 900px) 100vw, 45vw"
+              width="1200"
+              height="800"
+              alt="White lilies against a dark botanical backdrop"
+              loading="lazy"
+            />
           </div>
         </section>
 
@@ -215,12 +256,12 @@ export function PublicHomePage(): JSX.Element {
               </p>
             </div>
             <img
-              src={`${EVIDENCE_IMG}&w=1200`}
-              srcSet={srcset(EVIDENCE_IMG)}
+              src={`${LOT_IMG}&w=1200`}
+              srcSet={srcset(LOT_IMG)}
               sizes="(max-width: 900px) 100vw, 50vw"
               width="1200"
               height="900"
-              alt="Fresh roses packed in containers ready for dispatch"
+              alt="Fresh market flowers packed on a wooden crate"
               loading="lazy"
             />
           </div>

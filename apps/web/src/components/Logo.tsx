@@ -5,18 +5,21 @@ interface LogoProps {
   testId?: string;
 }
 
-// Canonical FloraSetu mark (final approved geometry): a restrained flower — central plum
-// petal with two botanical side petals — rising from the crown of a broad botanical-green
-// bridge arc ("Setu"). All three petal paths terminate at the crown junction (y=34);
-// nothing crosses or protrudes below the bridge. One geometry for every size/variant.
-const ARC = 'M8 52 A28 18 0 0 1 56 52';
-const PETAL_LEFT = 'M32 34 C27 32 20 28 17 20 C25 21 31 27 32 34 Z';
-const PETAL_RIGHT = 'M32 34 C37 32 44 28 47 20 C39 21 33 27 32 34 Z';
-const BLOOM = 'M32 34 C39 27 40 17 32 10 C24 17 25 27 32 34 Z';
+// FloraSetu brand mark (brand board, 2026-09): a central plum petal flanked by two
+// green side petals, rising ABOVE a detached green bridge arc ("Setu"). The petal
+// junction at (32,31) sits just over the arc crown — nothing crosses below the arc.
+const ARC = 'M7 54 A25 20 0 0 1 57 54';
+const PETAL_LEFT = 'M32 31 C27 30 18 27 13 17 C21 17 29 22 32 31 Z';
+const PETAL_RIGHT = 'M32 31 C37 30 46 27 51 17 C43 17 35 22 32 31 Z';
+const BLOOM = 'M32 31 C38.5 25 38.5 15 32 7 C25.5 15 25.5 25 32 31 Z';
+const GREEN = '#0F3D2E';
+const PLUM = '#6F4B8B';
+const GREEN_LIGHT = '#F8F8F5';
+const PLUM_LIGHT = '#D9C2E3';
 
 function Mark({ light, size }: { light: boolean; size: number }): JSX.Element {
-  const structure = light ? 'var(--fs-bg)' : 'var(--fs-primary)';
-  const bloom = light ? 'var(--fs-accent-tint)' : 'var(--fs-accent)';
+  const structure = light ? GREEN_LIGHT : GREEN;
+  const bloom = light ? PLUM_LIGHT : PLUM;
   return (
     <svg
       width={size}
@@ -26,7 +29,7 @@ function Mark({ light, size }: { light: boolean; size: number }): JSX.Element {
       aria-label="FloraSetu"
       data-testid="logo-mark-svg"
     >
-      <path d={ARC} fill="none" stroke={structure} strokeWidth="6" strokeLinecap="round" />
+      <path d={ARC} fill="none" stroke={structure} strokeWidth="7" strokeLinecap="round" />
       <path d={PETAL_LEFT} fill={structure} />
       <path d={PETAL_RIGHT} fill={structure} />
       <path d={BLOOM} fill={bloom} />
