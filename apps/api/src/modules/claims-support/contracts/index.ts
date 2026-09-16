@@ -5,6 +5,8 @@ export interface ClaimsSupportService {
   contextKey(): 'claims-support';
   hasOpenClaim(orderId: string): Promise<boolean>;
   pilotExceptions(): Promise<Record<string, unknown[]>>;
+  // ADR-013 (Phase 6): staff claim search — reference-first, no raw UUID workflows.
+  searchClaims(q: string): Promise<{ id: string; ref: string; orderId: string | null; status: string; category: string }[]>;
 }
 
 export const ClaimsSupport_SERVICE = 'ClaimsSupport_SERVICE';

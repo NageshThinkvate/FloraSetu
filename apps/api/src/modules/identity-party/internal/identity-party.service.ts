@@ -57,6 +57,15 @@ export class IdentityPartyServiceImpl implements IdentityPartyService {
     return r.rows.map((o) => ({ orgId: o.id, name: o.name, ref: o.ref, type: o.type, kybStatus: o.kyb_status }));
   }
 
+  // ADR-013 (Phase 6): staff org search for the control tower (public-safe fields only).
+  async searchOrgsByName(q: string): Promise<OrgPublicProfile[]> {
+    const r = await this.db.query<{ id: string; name: string; ref: string; type: string; kyb_status: string }>(
+      `SELECT id, name, ref, type, kyb_status FROM identity.organizations
+       WHERE name ILIKE $1 OR ref ILIKE $1 ORDER BY name LIMIT 10`,
+      [`%${q}%`]);
+    return r.rows.map((o) => ({ orgId: o.id, name: o.name, ref: o.ref, type: o.type, kybStatus: o.kyb_status }));
+  }
+
   // ADR-012: driver assignment eligibility — ACTIVE membership AND ACTIVE user account.
   async isActiveMember(orgId: string, userId: string): Promise<boolean> {
     const r = await this.db.query(

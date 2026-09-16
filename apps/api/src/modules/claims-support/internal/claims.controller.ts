@@ -15,13 +15,13 @@ export class ClaimsController {
   }
 
   @Get()
-  @RequirePermission('claim.create')
+  // ADR-013: claim.create (own-org) or claim.read/claim.manage (staff) — enforced in service.
   listMine() {
     return this.claims.listMine();
   }
 
   @Get(':id')
-  @RequirePermission('claim.create')
+  // ADR-013: claim.create (own-org) or claim.read/claim.manage (staff) — enforced in service.
   get(@Param('id') id: string) {
     return this.claims.get(id);
   }

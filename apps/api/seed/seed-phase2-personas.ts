@@ -20,7 +20,8 @@ const PERSONAS: { ref: string; email: string; password: string; name: string }[]
   { ref: 'USR-2026-000109', email: 'demo.multi@florasetu.dev', password: 'Demo-Multi-2026', name: 'Demo Multi Org' },
   { ref: 'USR-2026-000110', email: 'demo.logistics@florasetu.dev', password: 'Demo-Logistics-2026', name: 'Demo Logistics Admin' },
   { ref: 'USR-2026-000111', email: 'demo.driver@florasetu.dev', password: 'Demo-Driver-2026', name: 'Demo Driver' },
-  { ref: 'USR-2026-000112', email: 'demo.driver2@florasetu.dev', password: 'Demo-Driver2-2026', name: 'Demo Driver Two' }
+  { ref: 'USR-2026-000112', email: 'demo.driver2@florasetu.dev', password: 'Demo-Driver2-2026', name: 'Demo Driver Two' },
+  { ref: 'USR-2026-000113', email: 'demo.support@florasetu.dev', password: 'Demo-Support-2026', name: 'Demo Support Agent' }
 ];
 
 async function main(): Promise<void> {
@@ -99,6 +100,8 @@ async function main(): Promise<void> {
     await role('USR-2026-000111', 'ORG-2026-000103', 'MEMBER');
     await member('USR-2026-000112', 'ORG-2026-000103');
     await role('USR-2026-000112', 'ORG-2026-000103', 'MEMBER');
+    // Phase 6 (ADR-013): discipline-separated support persona for control-tower acceptance.
+    await role('USR-2026-000113', 'ORG-2026-000000', 'SUPPORT_AGENT');
 
     // E/F/G/H on the platform org
     await member('USR-2026-000105', 'ORG-2026-000000');
@@ -133,7 +136,7 @@ async function main(): Promise<void> {
 
     await client.query(`
       INSERT INTO core.reference_counters (entity, year, next_value) VALUES
-        ('USR', 2026, 113), ('ORG', 2026, 104)
+        ('USR', 2026, 114), ('ORG', 2026, 104)
       ON CONFLICT (entity, year) DO UPDATE
         SET next_value = GREATEST(core.reference_counters.next_value, EXCLUDED.next_value);
     `);

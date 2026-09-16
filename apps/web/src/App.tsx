@@ -34,14 +34,17 @@ import { BuyerOrderPage } from './pages/BuyerOrderPage';
 import { SupplierOrdersPage } from './pages/SupplierOrdersPage';
 import { LotsPage } from './pages/LotsPage';
 import { LotDetailPage } from './pages/LotDetailPage';
-import { QcQueuePage } from './pages/QcQueuePage';
+import { OpsOrdersPage } from './pages/OpsOrdersPage';
+import { OpsLogisticsPage } from './pages/OpsLogisticsPage';
 import { PartnerJobsPage } from './pages/PartnerJobsPage';
 import { PartnerJobDetailPage } from './pages/PartnerJobDetailPage';
 import { PartnerHomePage } from './pages/PartnerHomePage';
 import { ControlTowerPage } from './pages/ControlTowerPage';
-import { FinancePage } from './pages/FinancePage';
 import { ClaimsPage } from './pages/ClaimsPage';
 import { ClaimDetailPage } from './pages/ClaimDetailPage';
+import { OpsClaimsPage } from './pages/OpsClaimsPage';
+import { OpsClaimDetailPage } from './pages/OpsClaimDetailPage';
+import { OpsFinancePage } from './pages/OpsFinancePage';
 import { DesignSystemPreviewPage } from './pages/DesignSystemPreviewPage';
 
 const BuyerShell = lazy(() => import('./shell/BuyerShell'));
@@ -151,24 +154,16 @@ export default function App(): JSX.Element {
               <Route path="/ops" element={<Suspense fallback={<ShellLoading />}><OpsShell /></Suspense>}>
                 <Route index element={<Navigate to="exceptions" replace />} />
                 <Route path="exceptions" element={<ControlTowerPage />} />
-                <Route path="sourcing" element={<OpsDeskPage />} />
-                <Route path="quality" element={<QcQueuePage />} />
-                <Route
-                  path="logistics"
-                  element={
-                    <PlaceholderPage
-                      overline="Operations"
-                      title="Logistics"
-                      description="Shipment and excursion workspaces arrive with the Operations console phase."
-                      actionLabel="Open exceptions"
-                      actionTo="/ops/exceptions"
-                      testId="ops-logistics"
-                    />
-                  }
-                />
-                <Route path="claims" element={<ClaimsPage />} />
-                <Route path="claims/:id" element={<ClaimDetailPage />} />
-                <Route path="finance" element={<FinancePage />} />
+                <Route path="procurement" element={<OpsDeskPage />} />
+                <Route path="orders" element={<OpsOrdersPage />} />
+                <Route path="logistics" element={<OpsLogisticsPage />} />
+                <Route path="claims" element={<OpsClaimsPage />} />
+                <Route path="claims/:id" element={<OpsClaimDetailPage />} />
+                <Route path="finance" element={<OpsFinancePage />} />
+                {/* Phase 6 (ADR-013): legacy ops paths merged into the new IA;
+                    the physical QC queue is retired from Ops (ADR-011). */}
+                <Route path="sourcing" element={<Navigate to="/ops/procurement" replace />} />
+                <Route path="quality" element={<Navigate to="/ops/exceptions" replace />} />
               </Route>
 
               <Route path="/admin" element={<Suspense fallback={<ShellLoading />}><AdminShell /></Suspense>}>
@@ -262,8 +257,10 @@ export default function App(): JSX.Element {
               <Route path="/supply/orders" element={<Navigate to="/supplier/orders" replace />} />
               <Route path="/supply/lots" element={<Navigate to="/supplier/supply" replace />} />
               <Route path="/supply/lots/:id" element={<LegacyRedirect to="/supplier/supply/:id" />} />
-              <Route path="/ops/desk" element={<Navigate to="/ops/sourcing" replace />} />
-              <Route path="/ops/qc" element={<Navigate to="/ops/quality" replace />} />
+              <Route path="/ops/desk" element={<Navigate to="/ops/procurement" replace />} />
+              <Route path="/ops/sourcing" element={<Navigate to="/ops/procurement" replace />} />
+              <Route path="/ops/qc" element={<Navigate to="/ops/exceptions" replace />} />
+              <Route path="/ops/quality" element={<Navigate to="/ops/exceptions" replace />} />
               <Route path="/ops/tower" element={<Navigate to="/ops/exceptions" replace />} />
               <Route path="/ops/finance" element={<Navigate to="/ops/finance" replace />} />
               <Route path="/account" element={<AccountRedirect />} />

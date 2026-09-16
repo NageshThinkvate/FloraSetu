@@ -19,6 +19,18 @@ export class ClaimsSupportServiceImpl implements ClaimsSupportService {
     return (r.rowCount ?? 0) > 0;
   }
 
+  // ADR-013 (Phase 6): staff claim search — reference-first, no raw UUID workflows.
+  async searchClaims(q: string): Promise<{ id: string; ref: string; orderId: string | null; status: string; category: string }[]> {
+    const rows = await this.db.query<Record<string, unknown>>(
+      `SELECT id, ref, order_id, status, category FROM claims.claims
+       WHERE deleted_at IS NULL AND ref ILIKE $1 ORDER BY created_at DESC LIMIT 10`,
+      [`%${q}%`]);
+    return rows.rows.map((c) => ({
+      id: c.id as string, ref: c.ref as string, orderId: (c.order_id as string | null) ?? null,
+      status: c.status as string, category: c.category as string
+    }));
+  }
+
   async pilotExceptions(): Promise<Record<string, unknown[]>> {
     const open = await this.db.query(
       `SELECT id, ref, order_id, category, status, created_at FROM claims.claims

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../../common/database/database.service';
 import { ApiException } from '../../../common/errors/error-envelope';
-import { AwardSnapshot, DemandRfqService } from '../contracts';
+import { AwardSnapshot, DemandRfqService, SourcingRiskRow } from '../contracts';
 
 @Injectable()
 export class DemandRfqServiceImpl implements DemandRfqService {
@@ -9,6 +9,78 @@ export class DemandRfqServiceImpl implements DemandRfqService {
 
   contextKey(): 'demand-rfq' {
     return 'demand-rfq';
+  }
+
+  // ADR-013 (Phase 6): sourcing risk feed for the staff control tower.
+  async sourcingRisks(): Promise<SourcingRiskRow[]> {
+    const [needsSourcing, deadlineRfqs, uncovered] = await Promise.all([
+      this.db.query<Record<string, unknown>>(
+        `SELECT r.id, r.ref, r.title, r.mode, r.org_id, r.created_at
+         FROM demand.requirements r
+         WHERE r.status = 'SUBMITTED'
+           AND NOT EXISTS (SELECT 1 FROM demand.rfqs q WHERE q.requirement_id = r.id AND q.status IN ('DRAFT','PUBLISHED'))
+         ORDER BY r.created_at LIMIT 50`),
+      this.db.query<Record<string, unknown>>(
+        `SELECT q.id, q.ref, q.title, q.org_id, q.quote_deadline, q.published_at,
+                (SELECT count(*)::int FROM demand.rfq_invitations i WHERE i.rfq_id = q.id AND i.status <> 'DECLINED') AS invited,
+                (SELECT count(*)::int FROM demand.quotations qt WHERE qt.rfq_id = q.id AND qt.status = 'ACTIVE') AS quotes
+         FROM demand.rfqs q WHERE q.status = 'PUBLISHED'
+           AND q.quote_deadline IS NOT NULL AND q.quote_deadline < now() + interval '48 hours'
+         ORDER BY q.quote_deadline LIMIT 50`),
+      this.db.query<Record<string, unknown>>(
+        `SELECT r.id, r.ref, r.title, r.status, r.org_id, r.created_at,
+                SUM(rl.quantity - COALESCE(aw.total, 0)) AS remaining_qty
+         FROM demand.requirements r
+         JOIN demand.requirement_versions rv ON rv.requirement_id = r.id AND rv.version_no = r.current_version_no
+         JOIN demand.requirement_lines rl ON rl.requirement_version_id = rv.id
+         LEFT JOIN (
+           SELECT al.requirement_line_id, SUM(al.awarded_qty) AS total
+           FROM demand.award_lines al JOIN demand.awards a ON a.id = al.award_id
+           WHERE a.status = 'FINAL' GROUP BY al.requirement_line_id
+         ) aw ON aw.requirement_line_id = rl.id
+         WHERE r.status IN ('QUOTING','CLARIFICATION','EVALUATION','PARTIALLY_AWARDED')
+         GROUP BY r.id, r.ref, r.title, r.status, r.org_id, r.created_at
+         HAVING SUM(rl.quantity - COALESCE(aw.total, 0)) > 0
+         LIMIT 50`)
+    ]);
+    const risks: SourcingRiskRow[] = [];
+    for (const r of needsSourcing.rows) {
+      risks.push({
+        kind: 'NEEDS_SOURCING', id: r.id as string, ref: r.ref as string, title: r.title as string,
+        orgId: r.org_id as string, mode: (r.mode as string | null) ?? null, status: 'SUBMITTED',
+        deadline: null, detectedAt: r.created_at as string, remainingQty: null, invited: null, quotes: null
+      });
+    }
+    for (const r of deadlineRfqs.rows) {
+      risks.push({
+        kind: 'RFQ_DEADLINE_RISK', id: r.id as string, ref: r.ref as string, title: r.title as string,
+        orgId: r.org_id as string, mode: null, status: 'PUBLISHED',
+        deadline: (r.quote_deadline as string | null) ?? null,
+        detectedAt: (r.published_at as string) ?? new Date().toISOString(), remainingQty: null,
+        invited: Number(r.invited ?? 0), quotes: Number(r.quotes ?? 0)
+      });
+    }
+    for (const r of uncovered.rows) {
+      risks.push({
+        kind: 'UNCOVERED', id: r.id as string, ref: r.ref as string, title: r.title as string,
+        orgId: r.org_id as string, mode: null, status: r.status as string,
+        deadline: null, detectedAt: r.created_at as string,
+        remainingQty: r.remaining_qty === null ? null : Number(r.remaining_qty),
+        invited: null, quotes: null
+      });
+    }
+    return risks;
+  }
+
+  async searchRequirements(q: string): Promise<{ id: string; ref: string; title: string; status: string; orgId: string }[]> {
+    const rows = await this.db.query<Record<string, unknown>>(
+      `SELECT id, ref, title, status, org_id FROM demand.requirements
+       WHERE ref ILIKE $1 OR title ILIKE $1 ORDER BY created_at DESC LIMIT 10`,
+      [`%${q}%`]);
+    return rows.rows.map((r) => ({
+      id: r.id as string, ref: r.ref as string, title: r.title as string,
+      status: r.status as string, orgId: r.org_id as string
+    }));
   }
 
   async requirementExists(requirementId: string): Promise<boolean> {

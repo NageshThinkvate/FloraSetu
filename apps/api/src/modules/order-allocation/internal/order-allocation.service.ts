@@ -3,7 +3,7 @@ import { PoolClient } from 'pg';
 import { DatabaseService } from '../../../common/database/database.service';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { ApiException } from '../../../common/errors/error-envelope';
-import { OrderAllocationService, OrderSnapshot } from '../contracts';
+import { OrderAllocationService, OpsOrderRow, OrderSnapshot } from '../contracts';
 import { assertLineTransition, assertOrderTransition } from './order-policies';
 
 @Injectable()
@@ -129,6 +129,47 @@ export class OrderAllocationServiceImpl implements OrderAllocationService {
       id: l.id, orderId: l.order_id, allocationId: l.allocation_id, supplierOrgId: l.supplier_org_id,
       awardedQty: Number(l.awarded_qty), uomId: l.uom_id, fulfilmentStatus: l.fulfilment_status,
       allocatedQty: Number(sums.rows[0].allocated), packedQty: Number(sums.rows[0].packed)
+    };
+  }
+
+  // ADR-013 (Phase 6): staff control-tower monitor — cross-org read composition only.
+  async opsMonitor(): Promise<OpsOrderRow[]> {
+    const rows = await this.db.query<Record<string, unknown>>(
+      `SELECT o.id, o.ref, o.status, o.buyer_org_id, o.delivery_destination, o.created_at, o.updated_at,
+              o.accepted_qty, o.disputed_qty,
+              COALESCE((SELECT array_agg(DISTINCT sa.supplier_org_id) FROM ordering.supplier_allocations sa
+                WHERE sa.order_id = o.id), '{}') AS supplier_org_ids
+       FROM ordering.orders o
+       WHERE o.deleted_at IS NULL AND o.status NOT IN ('CLOSED','CANCELLED')
+       ORDER BY o.updated_at DESC LIMIT 200`);
+    return rows.rows.map((o) => this.mapOpsRow(o));
+  }
+
+  async searchOrders(q: string): Promise<OpsOrderRow[]> {
+    const rows = await this.db.query<Record<string, unknown>>(
+      `SELECT o.id, o.ref, o.status, o.buyer_org_id, o.delivery_destination, o.created_at, o.updated_at,
+              o.accepted_qty, o.disputed_qty,
+              COALESCE((SELECT array_agg(DISTINCT sa.supplier_org_id) FROM ordering.supplier_allocations sa
+                WHERE sa.order_id = o.id), '{}') AS supplier_org_ids
+       FROM ordering.orders o
+       WHERE o.deleted_at IS NULL AND (o.ref ILIKE $1 OR o.delivery_destination ILIKE $1)
+       ORDER BY o.created_at DESC LIMIT 10`,
+      [`%${q}%`]);
+    return rows.rows.map((o) => this.mapOpsRow(o));
+  }
+
+  private mapOpsRow(o: Record<string, unknown>): OpsOrderRow {
+    return {
+      id: o.id as string,
+      ref: o.ref as string,
+      status: o.status as string,
+      buyerOrgId: o.buyer_org_id as string,
+      deliveryDestination: (o.delivery_destination as string | null) ?? null,
+      createdAt: o.created_at as string,
+      updatedAt: o.updated_at as string,
+      acceptedQty: o.accepted_qty === null ? null : Number(o.accepted_qty),
+      disputedQty: o.disputed_qty === null ? null : Number(o.disputed_qty),
+      supplierOrgIds: (o.supplier_org_ids as string[] | null) ?? []
     };
   }
 

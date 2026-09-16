@@ -6,23 +6,28 @@ import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { NotificationBell } from './NotificationBell';
 import { NavList, BottomNav, NavItem } from './ShellNav';
 
-// Role-filtered Operations navigation (§9): no universal ops menu, and
-// PLATFORM_ADMIN alone never grants Operations (UX-ADR-002).
+// Role-filtered Operations navigation (§9, ADR-013): no universal ops menu, and
+// PLATFORM_ADMIN alone never grants Operations (UX-ADR-002). The physical QC queue
+// is retired from Ops (ADR-011) — no Quality entry exists here by design.
 function opsNav(roles: string[]): NavItem[] {
   const items: NavItem[] = [{ to: '/ops/exceptions', label: 'Exceptions', testId: 'ops-nav-exceptions' }];
-  if (roles.includes('PROCUREMENT_OPS')) {
-    items.push(
-      { to: '/ops/sourcing', label: 'Sourcing', testId: 'ops-nav-sourcing' },
-      { to: '/ops/logistics', label: 'Logistics', testId: 'ops-nav-logistics' }
-    );
+  const isProc = roles.includes('PROCUREMENT_OPS');
+  const isSupport = roles.includes('SUPPORT_AGENT');
+  const isFinance = roles.includes('FINANCE_OPS');
+  if (isProc) {
+    items.push({ to: '/ops/procurement', label: 'Procurement', testId: 'ops-nav-procurement' });
   }
-  if (roles.includes('QC_AGENT')) {
-    items.push({ to: '/ops/quality', label: 'Quality', testId: 'ops-nav-quality' });
+  if (isProc || isSupport || isFinance) {
+    items.push({ to: '/ops/orders', label: 'Orders', testId: 'ops-nav-orders' });
   }
-  if (roles.includes('SUPPORT_AGENT')) {
+  // Logistics is monitor/support only (ADR-012) — execution stays with the partner.
+  if (isProc || isSupport) {
+    items.push({ to: '/ops/logistics', label: 'Logistics', testId: 'ops-nav-logistics' });
+  }
+  if (isProc || isSupport || isFinance) {
     items.push({ to: '/ops/claims', label: 'Claims', testId: 'ops-nav-claims' });
   }
-  if (roles.includes('FINANCE_OPS')) {
+  if (isFinance) {
     items.push({ to: '/ops/finance', label: 'Finance', testId: 'ops-nav-finance' });
   }
   return items;

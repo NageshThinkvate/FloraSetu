@@ -36,6 +36,16 @@ export interface OrderAllocationService {
     awardedQty: number; uomId: string; fulfilmentStatus: string; allocatedQty: number; packedQty: number;
   } | null>;
   pilotExceptions(): Promise<Record<string, unknown[]>>;
+  // ADR-013 (Phase 6): staff control-tower monitor — cross-org read composition only;
+  // never a mutation surface. Source state stays authoritative here.
+  opsMonitor(): Promise<OpsOrderRow[]>;
+  searchOrders(q: string): Promise<OpsOrderRow[]>;
+}
+
+export interface OpsOrderRow {
+  id: string; ref: string; status: string; buyerOrgId: string;
+  deliveryDestination: string | null; createdAt: string; updatedAt: string;
+  acceptedQty: number | null; disputedQty: number | null; supplierOrgIds: string[];
 }
 
 export const OrderAllocation_SERVICE = 'OrderAllocation_SERVICE';

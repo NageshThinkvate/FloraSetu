@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DatabaseService } from '../../../common/database/database.service';
 import { MediaService } from '../../../common/media/media.service';
 import {
-  LogisticsColdchainService, PackEvidence, PodSnapshot, ShipmentEvidence
+  LogisticsColdchainService, OpsShipmentRow, PackEvidence, PodSnapshot, ShipmentEvidence
 } from '../contracts';
 
 @Injectable()
@@ -43,6 +43,75 @@ export class LogisticsColdchainServiceImpl implements LogisticsColdchainService 
          AND (e.blocks_buyer_acceptance OR e.blocks_supplier_settlement) LIMIT 1`,
       [orderId]);
     return (r.rowCount ?? 0) > 0;
+  }
+
+  // ADR-013 (Phase 6): staff logistics monitor — read-only composition (monitor + support,
+  // never execution; ADR-012 operational denials unchanged).
+  async opsMonitor(): Promise<OpsShipmentRow[]> {
+    const rows = await this.db.query<Record<string, unknown>>(
+      `SELECT s.id, s.ref, s.order_id, s.status, s.mode, s.logistics_org_id, s.origin_text, s.destination_text,
+              s.carrier_name, s.transport_ref, s.parcel_awb_ref, s.package_count, s.temp_controlled,
+              s.pickup_at, s.etd, s.eta, s.job_accepted_at, s.arrived_pickup_at, s.arrived_delivery_at,
+              s.dispatched_at, s.actual_arrival_at, s.created_at,
+              (s.driver_user_id IS NOT NULL) AS driver_assigned,
+              (SELECT count(*)::int FROM logistics.shipment_exceptions e
+                WHERE e.shipment_id = s.id AND e.status = 'OPEN') AS open_exceptions,
+              COALESCE((SELECT array_agg(e.type) FROM logistics.shipment_exceptions e
+                WHERE e.shipment_id = s.id AND e.status = 'OPEN'), '{}') AS open_exception_types,
+              EXISTS (SELECT 1 FROM logistics.pod_records p WHERE p.shipment_id = s.id) AS has_pod
+       FROM logistics.shipments s
+       ORDER BY s.created_at DESC LIMIT 200`);
+    return rows.rows.map((s) => this.mapOpsShipment(s));
+  }
+
+  async searchShipments(q: string): Promise<OpsShipmentRow[]> {
+    const rows = await this.db.query<Record<string, unknown>>(
+      `SELECT s.id, s.ref, s.order_id, s.status, s.mode, s.logistics_org_id, s.origin_text, s.destination_text,
+              s.carrier_name, s.transport_ref, s.parcel_awb_ref, s.package_count, s.temp_controlled,
+              s.pickup_at, s.etd, s.eta, s.job_accepted_at, s.arrived_pickup_at, s.arrived_delivery_at,
+              s.dispatched_at, s.actual_arrival_at, s.created_at,
+              (s.driver_user_id IS NOT NULL) AS driver_assigned,
+              (SELECT count(*)::int FROM logistics.shipment_exceptions e
+                WHERE e.shipment_id = s.id AND e.status = 'OPEN') AS open_exceptions,
+              COALESCE((SELECT array_agg(e.type) FROM logistics.shipment_exceptions e
+                WHERE e.shipment_id = s.id AND e.status = 'OPEN'), '{}') AS open_exception_types,
+              EXISTS (SELECT 1 FROM logistics.pod_records p WHERE p.shipment_id = s.id) AS has_pod
+       FROM logistics.shipments s
+       WHERE s.ref ILIKE $1 OR s.parcel_awb_ref ILIKE $1 OR s.transport_ref ILIKE $1 OR s.carrier_name ILIKE $1
+       ORDER BY s.created_at DESC LIMIT 10`,
+      [`%${q}%`]);
+    return rows.rows.map((s) => this.mapOpsShipment(s));
+  }
+
+  private mapOpsShipment(s: Record<string, unknown>): OpsShipmentRow {
+    return {
+      id: s.id as string,
+      ref: s.ref as string,
+      orderId: s.order_id as string,
+      status: s.status as string,
+      mode: (s.mode as string | null) ?? null,
+      logisticsOrgId: (s.logistics_org_id as string | null) ?? null,
+      originText: (s.origin_text as string | null) ?? null,
+      destinationText: (s.destination_text as string | null) ?? null,
+      carrierName: (s.carrier_name as string | null) ?? null,
+      transportRef: (s.transport_ref as string | null) ?? null,
+      parcelAwbRef: (s.parcel_awb_ref as string | null) ?? null,
+      packageCount: s.package_count === null ? null : Number(s.package_count),
+      tempControlled: (s.temp_controlled as boolean | null) ?? null,
+      pickupAt: (s.pickup_at as string | null) ?? null,
+      etd: (s.etd as string | null) ?? null,
+      eta: (s.eta as string | null) ?? null,
+      jobAcceptedAt: (s.job_accepted_at as string | null) ?? null,
+      arrivedPickupAt: (s.arrived_pickup_at as string | null) ?? null,
+      arrivedDeliveryAt: (s.arrived_delivery_at as string | null) ?? null,
+      dispatchedAt: (s.dispatched_at as string | null) ?? null,
+      actualArrivalAt: (s.actual_arrival_at as string | null) ?? null,
+      createdAt: s.created_at as string,
+      driverAssigned: Boolean(s.driver_assigned),
+      openExceptions: Number(s.open_exceptions ?? 0),
+      openExceptionTypes: (s.open_exception_types as string[] | null) ?? [],
+      hasPod: Boolean(s.has_pod)
+    };
   }
 
   async pilotExceptions(): Promise<Record<string, unknown[]>> {

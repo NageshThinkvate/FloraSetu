@@ -251,6 +251,7 @@ export class ClaimsService {
     return { id: row.rows[0].id };
   }
 
+  // ADR-013: claim.read grants staff read-only visibility; decisions stay claim.manage.
   async get(id: string): Promise<unknown> {
     const ctx = RequestContext.get();
     const claim = await this.db.query(
@@ -259,7 +260,10 @@ export class ClaimsService {
       throw new ApiException(404, 'NOT_FOUND', 'Claim not found');
     }
     const c = claim.rows[0];
-    const ops = ctx.permissions.includes('claim.manage');
+    const ops = ctx.permissions.includes('claim.manage') || ctx.permissions.includes('claim.read');
+    if (!ops && !ctx.permissions.includes('claim.create')) {
+      throw new ApiException(403, 'FORBIDDEN', 'Missing required permission', { missing: ['claim.create'] });
+    }
     if (ctx.orgId !== c.org_id && ctx.orgId !== c.supplier_org_id && !ops) {
       throw new ApiException(404, 'NOT_FOUND', 'Claim not found');
     }
@@ -273,7 +277,11 @@ export class ClaimsService {
   async listMine(): Promise<{ items: unknown[] }> {
     const ctx = RequestContext.get();
     const orgId = RequestContext.requireOrgId();
-    const ops = ctx.permissions.includes('claim.manage');
+    // ADR-013: claim.read grants staff read-only visibility across organizations.
+    const ops = ctx.permissions.includes('claim.manage') || ctx.permissions.includes('claim.read');
+    if (!ops && !ctx.permissions.includes('claim.create')) {
+      throw new ApiException(403, 'FORBIDDEN', 'Missing required permission', { missing: ['claim.create'] });
+    }
     const rows = await this.db.query(
       `SELECT id, ref, order_id, category, claim_type, status, disputed_qty, created_at, response_at
        FROM claims.claims

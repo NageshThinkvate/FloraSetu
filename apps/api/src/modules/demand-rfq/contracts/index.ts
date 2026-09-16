@@ -11,6 +11,16 @@ export interface DemandRfqService {
   markRequirementConverted(requirementId: string, orderId: string): Promise<void>;
   // Control tower: FINAL awards awaiting conversion (§24 "award not converted" queue).
   listFinalAwards(): Promise<{ id: string; ref: string; buyerOrgId: string; createdAt: string }[]>;
+  // ADR-013 (Phase 6): sourcing risk feed + staff search for the control tower.
+  sourcingRisks(): Promise<SourcingRiskRow[]>;
+  searchRequirements(q: string): Promise<{ id: string; ref: string; title: string; status: string; orgId: string }[]>;
+}
+
+export interface SourcingRiskRow {
+  kind: 'NEEDS_SOURCING' | 'RFQ_DEADLINE_RISK' | 'UNCOVERED';
+  id: string; ref: string; title: string; orgId: string;
+  mode: string | null; status: string; deadline: string | null; detectedAt: string;
+  remainingQty: number | null; invited: number | null; quotes: number | null;
 }
 
 export interface AwardSnapshotLine {

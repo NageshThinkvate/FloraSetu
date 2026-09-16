@@ -26,6 +26,8 @@ export interface IdentityPartyService {
   listActiveMembers(orgId: string): Promise<OrgMemberSummary[]>;
   // ADR-012: display names for execution timeline / assignment history actors.
   getUserDisplayNames(userIds: string[]): Promise<{ userId: string; displayName: string }[]>;
+  // ADR-013 (Phase 6): staff org search for the control tower (public-safe fields only).
+  searchOrgsByName(q: string): Promise<OrgPublicProfile[]>;
 }
 
 export const IdentityParty_SERVICE = 'IdentityParty_SERVICE';

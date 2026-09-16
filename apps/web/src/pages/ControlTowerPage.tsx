@@ -1,245 +1,318 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { inr } from '../lib/api/demand';
-import {
-  completeSettlement, convertAward, fmtDate, resolveShipmentException,
-  TowerExceptions, towerExceptions, verifyPayment, verifySettlement
-} from '../lib/api/fulfilment';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { BoardItem, SearchHit, towerBoard, towerBoardExport, towerSearch } from '../lib/api/tower';
+import { completeSettlement, convertAward, resolveShipmentException, verifyPayment, verifySettlement } from '../lib/api/fulfilment';
+import { PageHeader } from '../components/PageHeader';
+import { StatusPill } from '../components/StatusPill';
+import { SkeletonLoader } from '../components/SkeletonLoader';
+import { EmptyState } from '../components/EmptyState';
+import { InlineAlert } from '../components/InlineAlert';
+import { SideSheet } from '../components/SideSheet';
+import { useToast } from '../lib/toast';
 
-// Operations Pilot Control Tower (§24): read-only exception queues aggregated across
-// contexts through public contracts, plus the minimal ops actions to clear them.
+const LANE_LABEL: Record<BoardItem['discipline'], string> = {
+  PROCUREMENT: 'Procurement',
+  ORDERS: 'Orders',
+  LOGISTICS: 'Logistics',
+  CLAIMS: 'Claims & support',
+  FINANCE: 'Finance'
+};
+
+// Severity is communicated with text, never colour alone (§22/§32).
+const SEV_LABEL: Record<BoardItem['severity'], string> = {
+  CRITICAL: 'Critical',
+  URGENT: 'Urgent',
+  ATTENTION: 'Attention',
+  INFO: 'Info'
+};
+
+const ageLabel = (iso: string): string => {
+  const h = (Date.now() - new Date(iso).getTime()) / 3600e3;
+  if (h < 1) {
+    return `${Math.max(1, Math.round(h * 60))} min ago`;
+  }
+  if (h < 24) {
+    return `${Math.round(h)} hrs ago`;
+  }
+  return `${Math.round(h / 24)} days ago`;
+};
+
+const dueLabel = (iso: string): string => {
+  const h = (new Date(iso).getTime() - Date.now()) / 3600e3;
+  if (h < 0) {
+    const oh = Math.round(-h);
+    return oh < 24 ? `overdue by ${oh} hrs` : `overdue by ${Math.round(-h / 24)} days`;
+  }
+  return h < 24 ? `due in ${Math.max(1, Math.round(h))} hrs` : `due in ${Math.round(h / 24)} days`;
+};
+
+// ADR-013: the board renders backend-computed allowedActions only — authority is never
+// decided in the frontend. Domain state changes still happen through the domain endpoints.
 export function ControlTowerPage(): JSX.Element {
-  const [tower, setTower] = useState<TowerExceptions | null>(null);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const lane = params.get('lane') ?? 'all';
+  const [items, setItems] = useState<BoardItem[] | null>(null);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
+  const [selected, setSelected] = useState<BoardItem | null>(null);
+  const [resolution, setResolution] = useState('');
+  const [query, setQuery] = useState('');
+  const [hits, setHits] = useState<SearchHit[]>([]);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = async (): Promise<void> => setTower(await towerExceptions());
-  useEffect(() => {
-    void load().catch((err) => setError(err instanceof Error ? err.message : 'Control tower unavailable'));
+  const load = useCallback((): void => {
+    setItems(null);
+    towerBoard()
+      .then((r) => setItems(r.items))
+      .catch(() => setError("We couldn't load the exception board. Try again."));
   }, []);
+  useEffect(load, [load]);
 
-  const act = async (fn: () => Promise<unknown>, ok: string): Promise<void> => {
-    setError(''); setNotice(''); setBusy(true);
+  const onSearch = (v: string): void => {
+    setQuery(v);
+    if (searchTimer.current) {
+      clearTimeout(searchTimer.current);
+    }
+    if (v.trim().length < 2) {
+      setHits([]);
+      return;
+    }
+    searchTimer.current = setTimeout(() => {
+      towerSearch(v).then((r) => setHits(r.items)).catch(() => setHits([]));
+    }, 300);
+  };
+
+  const runAction = async (item: BoardItem, key: string): Promise<void> => {
+    setBusy(true);
+    setError('');
     try {
-      await fn();
-      setNotice(ok);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Action failed');
+      switch (key) {
+        case 'convert-award':
+          await convertAward(item.objectId);
+          toast('Order created from award');
+          break;
+        case 'resolve-exception':
+          if (!resolution.trim()) {
+            setError('Add a resolution note before resolving.');
+            return;
+          }
+          await resolveShipmentException(item.objectId, resolution.trim());
+          toast('Issue resolved');
+          setResolution('');
+          break;
+        case 'verify-payment':
+          await verifyPayment(item.objectId);
+          toast('Payment verified');
+          break;
+        case 'verify-settlement':
+          await verifySettlement(item.objectId);
+          toast('Settlement verified');
+          break;
+        case 'complete-settlement':
+          await completeSettlement(item.objectId);
+          toast('Settlement completed');
+          break;
+        case 'open-procurement':
+          navigate('/ops/procurement');
+          return;
+        default:
+          return;
+      }
+      setSelected(null);
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'That action could not be completed. Check your permissions and the record state.');
     } finally {
       setBusy(false);
     }
   };
 
-  const resolveException = async (exceptionId: string, e: FormEvent): Promise<void> => {
-    e.preventDefault();
-    const resolution = String(new FormData(e.target as HTMLFormElement).get('resolution') ?? '');
-    await act(() => resolveShipmentException(exceptionId, resolution), 'Exception resolved — hold released.');
-  };
-
-  if (error && !tower) {
-    return (
-      <main className="app-shell" data-testid="tower-denied">
-        <header className="shell-header"><h1>Pilot control tower</h1></header>
-        <p className="form-error" data-testid="tower-error">{error}</p>
-      </main>
-    );
-  }
-  if (!tower) {
-    return <main className="app-shell" data-testid="tower-loading"><p className="hint">Loading…</p></main>;
-  }
+  const shown = (items ?? []).filter((i) => lane === 'all' || i.discipline === lane);
+  const lanes = Object.entries(LANE_LABEL) as [BoardItem['discipline'], string][];
 
   return (
-    <main className="app-shell" data-testid="tower-page">
-      <header className="shell-header"><h1>Pilot control tower</h1></header>
-      {error && <p className="form-error" data-testid="tower-error-inline">{error}</p>}
-      {notice && <p className="form-ok" data-testid="tower-notice">{notice}</p>}
-
-      <section className="panel" data-testid="tower-awards">
-        <h2>Awards not converted ({tower.awardNotConverted.length})</h2>
-        <ul className="plain-list">
-          {tower.awardNotConverted.map((a) => (
-            <li key={a.id} data-testid={`tower-award-${a.id}`}>
-              <code>{a.ref ?? a.id.slice(0, 8)}</code>
-              <span className="hint">{a.status ?? 'FINAL'}{a.created_at ? ` · ${fmtDate(a.created_at)}` : ''}</span>
-              <button disabled={busy} data-testid={`tower-convert-${a.id}`}
-                onClick={() => void act(async () => {
-                  const order = await convertAward(a.id);
-                  setNotice(`Order ${order.ref} created.`);
-                }, 'Award converted.')}>Convert to order</button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="panel" data-testid="tower-orders">
-        <h2>Order exceptions</h2>
-        <h3 className="sub-h">Supplier not confirmed &gt;24h ({tower.supplierNotConfirmed.length})</h3>
-        <ul className="plain-list">
-          {tower.supplierNotConfirmed.map((o) => (
-            <li key={o.id} data-testid={`tower-unconfirmed-${o.id}`}>
-              <code>{o.ref}</code><span className="hint">{fmtDate(o.created_at)}</span>
-              <Link to={`/orders/${o.id}`}><button className="ghost-btn">Open</button></Link>
-            </li>
-          ))}
-        </ul>
-        <h3 className="sub-h">Lines short after QC ({tower.orderShortAfterQc.length})</h3>
-        <ul className="plain-list">
-          {tower.orderShortAfterQc.map((l) => (
-            <li key={l.id} data-testid={`tower-short-${l.id}`}>
-              <code>{l.order_ref}</code>
-              <span className="hint">awarded {l.awarded_qty} · allocated {l.allocated_qty}</span>
-              <Link to={`/orders/${l.order_id}`}><button className="ghost-btn">Open</button></Link>
-            </li>
-          ))}
-        </ul>
-        <h3 className="sub-h">Buyer acceptance pending ({tower.buyerAcceptancePending.length})</h3>
-        <ul className="plain-list">
-          {tower.buyerAcceptancePending.map((o) => (
-            <li key={o.id} data-testid={`tower-acceptance-${o.id}`}>
-              <code>{o.ref}</code><span className="hint">{fmtDate(o.updated_at)}</span>
-              <Link to={`/orders/${o.id}`}><button className="ghost-btn">Open</button></Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="panel" data-testid="tower-supply">
-        <h2>Supply & QC exceptions</h2>
-        <h3 className="sub-h">Lots awaiting QC ({tower.lotAwaitingQc.length})</h3>
-        <ul className="plain-list">
-          {tower.lotAwaitingQc.map((l) => (
-            <li key={l.id} data-testid={`tower-qc-${l.id}`}>
-              <span>declared {l.declared_qty}</span><span className="hint">{fmtDate(l.created_at)}</span>
-              <Link to="/ops/qc" data-testid={`tower-qc-open-${l.id}`}><button className="ghost-btn">QC queue</button></Link>
-            </li>
-          ))}
-        </ul>
-        <h3 className="sub-h">Lots on QC hold ({tower.qcHoldOrReject.length})</h3>
-        <ul className="plain-list">
-          {tower.qcHoldOrReject.map((l) => (
-            <li key={l.id} data-testid={`tower-hold-${l.id}`}>
-              <span>held {l.qc_held_qty}</span>
-              <Link to={`/supply/lots/${l.id}`}><button className="ghost-btn">Resolve</button></Link>
-            </li>
-          ))}
-        </ul>
-        <h3 className="sub-h">Packed, awaiting dispatch ({tower.packedAwaitingDispatch.length})</h3>
-        <ul className="plain-list">
-          {tower.packedAwaitingDispatch.map((l) => (
-            <li key={l.id} data-testid={`tower-packed-${l.id}`}>
-              <span>packed {l.packed_qty} · dispatched {l.dispatched_qty}</span>
-              <Link to={`/supply/lots/${l.id}`}><button className="ghost-btn">Lot</button></Link>
-            </li>
-          ))}
-        </ul>
-        <h3 className="sub-h">Open inspections ({tower.openInspections.length})</h3>
-        <ul className="plain-list">
-          {tower.openInspections.map((i) => (
-            <li key={i.id} data-testid={`tower-inspection-${i.id}`}>
-              <span className="hint">lot {i.lot_id.slice(0, 8)}… · {fmtDate(i.created_at)}</span>
-              <Link to="/ops/qc"><button className="ghost-btn">QC queue</button></Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="panel" data-testid="tower-logistics">
-        <h2>Logistics exceptions</h2>
-        <h3 className="sub-h">Dispatch overdue ({tower.dispatchOverdue.length})</h3>
-        <ul className="plain-list">
-          {tower.dispatchOverdue.map((s) => (
-            <li key={s.id} data-testid={`tower-dispatch-${s.id}`}>
-              <code>{s.ref}</code><span className="hint">{fmtDate(s.created_at)}</span>
-              <Link to={`/orders/${s.order_id}`}><button className="ghost-btn">Order</button></Link>
-            </li>
-          ))}
-        </ul>
-        <h3 className="sub-h">ETA overdue ({tower.etaOverdue.length})</h3>
-        <ul className="plain-list">
-          {tower.etaOverdue.map((s) => (
-            <li key={s.id} data-testid={`tower-eta-${s.id}`}>
-              <code>{s.ref}</code><span className="hint">ETA {fmtDate(s.eta)}</span>
-              <Link to={`/orders/${s.order_id}`}><button className="ghost-btn">Order</button></Link>
-            </li>
-          ))}
-        </ul>
-        <h3 className="sub-h">POD missing &gt;24h ({tower.podMissing.length})</h3>
-        <ul className="plain-list">
-          {tower.podMissing.map((s) => (
-            <li key={s.id} data-testid={`tower-pod-${s.id}`}>
-              <code>{s.ref}</code><span className="hint">dispatched {fmtDate(s.dispatched_at)}</span>
-              <Link to={`/orders/${s.order_id}`}><button className="ghost-btn">Order</button></Link>
-            </li>
-          ))}
-        </ul>
-        <h3 className="sub-h">Open shipment exceptions ({tower.openShipmentExceptions.length})</h3>
-        <ul className="plain-list">
-          {tower.openShipmentExceptions.map((x) => (
-            <li key={x.id} data-testid={`tower-exception-${x.id}`}>
-              <span className="state-chip frozen">HOLD</span>
-              <span className="hint">
-                {x.blocks_buyer_acceptance ? 'blocks acceptance' : ''}{x.blocks_supplier_settlement ? ' blocks settlement' : ''}
-              </span>
-              <form className="inline-form" onSubmit={(e) => void resolveException(x.id, e)} data-testid={`tower-resolve-form-${x.id}`}>
-                <input name="resolution" data-testid={`tower-resolution-${x.id}`} placeholder="Resolution note" required />
-                <button type="submit" disabled={busy} data-testid={`tower-resolve-${x.id}`}>Resolve & release hold</button>
-              </form>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="panel" data-testid="tower-finance">
-        <h2>Finance exceptions</h2>
-        <h3 className="sub-h">Payments awaiting verification ({tower.paymentUnverified.length})</h3>
-        <ul className="plain-list">
-          {tower.paymentUnverified.map((p) => (
-            <li key={p.id} data-testid={`tower-payment-${p.id}`}>
-              <code>{p.ref}</code>
-              <span>{inr(p.amount_minor)}</span>
-              <button className="ghost-btn" disabled={busy} data-testid={`tower-payment-verify-${p.id}`}
-                onClick={() => void act(() => verifyPayment(p.id), 'Payment verified.')}>Verify</button>
-              <Link to={`/orders/${p.order_id}`}><button className="ghost-btn">Order</button></Link>
-            </li>
-          ))}
-        </ul>
-        <h3 className="sub-h">Settlements pending ({tower.settlementPending.length})</h3>
-        <ul className="plain-list">
-          {tower.settlementPending.map((s) => (
-            <li key={s.id} data-testid={`tower-settlement-${s.id}`}>
-              <code>{s.ref}</code>
-              <span>net {inr(s.net_minor)}</span>
-              <span className="state-chip">{s.status}</span>
-              {s.status === 'RECORDED' && (
-                <button className="ghost-btn" disabled={busy} data-testid={`tower-settlement-verify-${s.id}`}
-                  onClick={() => void act(() => verifySettlement(s.id), 'Settlement verified.')}>Verify</button>
-              )}
-              {s.status === 'VERIFIED' && (
-                <button className="ghost-btn" disabled={busy} data-testid={`tower-settlement-complete-${s.id}`}
-                  onClick={() => void act(() => completeSettlement(s.id), 'Settlement completed.')}>Complete</button>
-              )}
-              <Link to={`/orders/${s.order_id}`}><button className="ghost-btn">Order</button></Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="panel" data-testid="tower-claims">
-        <h2>Open claims ({tower.claimOpen.length})</h2>
-        <ul className="plain-list">
-          {tower.claimOpen.map((c) => (
-            <li key={c.id} data-testid={`tower-claim-${c.id}`}>
-              <code>{c.ref}</code>
-              <span className="state-chip">{c.status}</span>
-              <span>{c.category}</span>
-              <span className="hint">{fmtDate(c.created_at)}</span>
-              <Link to={`/claims/${c.id}`}><button className="ghost-btn">Open</button></Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </main>
+    <div data-testid="ops-exceptions-page">
+      <PageHeader
+        overline="Operations"
+        title="What needs attention now"
+        testId="ops-exceptions-header"
+        actions={
+          <button
+            className="fs-btn fs-btn--secondary fs-btn--sm"
+            data-testid="ops-board-export"
+            onClick={() => void towerBoardExport().catch(() => setError('Export failed. Try again.'))}
+          >
+            Export CSV
+          </button>
+        }
+      />
+      <div className="fs-field" style={{ maxWidth: 420 }} data-testid="ops-search-wrap">
+        <label className="fs-field__label" htmlFor="ops-search">Search orders, references, claims, organizations</label>
+        <input
+          id="ops-search"
+          className="fs-input"
+          data-testid="ops-search"
+          placeholder="e.g. ORD-2026, REQ-…, claim or organization name"
+          value={query}
+          onChange={(e) => onSearch(e.target.value)}
+        />
+        {hits.length > 0 && (
+          <div className="fs-card" style={{ marginTop: 'var(--fs-space-1)' }} data-testid="ops-search-results">
+            {hits.map((h) => (
+              <button
+                key={`${h.type}:${h.id}`}
+                type="button"
+                className="fs-btn fs-btn--ghost fs-btn--sm"
+                style={{ display: 'block', width: '100%', textAlign: 'left' }}
+                data-testid={`ops-search-hit-${h.type}-${h.id.slice(0, 8)}`}
+                onClick={() => {
+                  setHits([]);
+                  setQuery('');
+                  navigate(h.href);
+                }}
+              >
+                {h.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      {error && (
+        <InlineAlert variant="error" testId="ops-board-error">
+          {error}
+          <button className="fs-btn fs-btn--ghost fs-btn--sm" data-testid="ops-board-retry" onClick={() => { setError(''); load(); }}>
+            Retry
+          </button>
+        </InlineAlert>
+      )}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--fs-space-2)', margin: 'var(--fs-space-3) 0' }} data-testid="ops-board-lanes">
+        <button
+          type="button"
+          className={`fs-btn fs-btn--sm ${lane === 'all' ? '' : 'fs-btn--ghost'}`}
+          aria-pressed={lane === 'all'}
+          data-testid="ops-lane-all"
+          onClick={() => { const next = new URLSearchParams(params); next.delete('lane'); setParams(next, { replace: true }); }}
+        >
+          All
+        </button>
+        {lanes.map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={`fs-btn fs-btn--sm ${lane === key ? '' : 'fs-btn--ghost'}`}
+            aria-pressed={lane === key}
+            data-testid={`ops-lane-${key.toLowerCase()}`}
+            onClick={() => { const next = new URLSearchParams(params); next.set('lane', key); setParams(next, { replace: true }); }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {items === null && !error && <SkeletonLoader variant="card" count={4} testId="ops-board-loading" />}
+      {items !== null && shown.length === 0 && (
+        <EmptyState
+          title="No exceptions need attention"
+          hint="When procurement, order, logistics, claim or finance work needs FloraSetu staff, it will appear here."
+          testId="ops-board-empty"
+        />
+      )}
+      <div className="fs-md-stack" data-testid="ops-board-list">
+        {shown.map((i) => (
+          <button
+            key={i.id}
+            type="button"
+            className="fs-card fs-md-card"
+            style={{ textAlign: 'left', cursor: 'pointer', width: '100%' }}
+            data-testid={`board-item-${i.id}`}
+            onClick={() => { setSelected(i); setResolution(''); setError(''); }}
+          >
+            <div className="fs-task-card__top">
+              <span className="fs-md-card__primary">{i.title}</span>
+              <span className="fs-body" data-testid={`board-severity-${i.id}`}>{SEV_LABEL[i.severity]}</span>
+            </div>
+            <div className="fs-md-card__fields">
+              <div>
+                <div className="fs-md-card__field-label">Reference</div>
+                <div className="fs-md-card__field-value">{i.ref}</div>
+              </div>
+              <div>
+                <div className="fs-md-card__field-label">Area</div>
+                <div className="fs-md-card__field-value">{LANE_LABEL[i.discipline]}</div>
+              </div>
+              <div>
+                <div className="fs-md-card__field-label">Organization</div>
+                <div className="fs-md-card__field-value">{i.orgName ?? '—'}</div>
+              </div>
+              <div>
+                <div className="fs-md-card__field-label">Next action owner</div>
+                <div className="fs-md-card__field-value" data-testid={`board-owner-${i.id}`}>{i.nextOwner}</div>
+              </div>
+            </div>
+            <p className="fs-body" style={{ margin: 0 }}>
+              {ageLabel(i.detectedAt)}{i.dueAt ? ` · ${dueLabel(i.dueAt)}` : ''}
+              {i.allowedActions.length > 0 ? ` · You can: ${i.allowedActions.map((a) => a.label).join(', ')}` : ''}
+            </p>
+          </button>
+        ))}
+      </div>
+      <SideSheet
+        open={selected !== null}
+        onClose={() => setSelected(null)}
+        title={selected ? selected.title : ''}
+        testId="ops-board-sheet"
+      >
+        {selected && (
+          <div className="fs-md-stack" data-testid="ops-board-sheet-body">
+            <div className="fs-task-card__top">
+              <span className="fs-md-card__primary">{selected.ref}</span>
+              <StatusPill status={selected.state} label={selected.state === 'FINAL' ? 'Ready to convert' : undefined} />
+            </div>
+            <div className="fs-md-card__fields">
+              <div><div className="fs-md-card__field-label">Area</div><div className="fs-md-card__field-value">{LANE_LABEL[selected.discipline]}</div></div>
+              <div><div className="fs-md-card__field-label">Severity</div><div className="fs-md-card__field-value">{SEV_LABEL[selected.severity]}</div></div>
+              <div><div className="fs-md-card__field-label">Organization</div><div className="fs-md-card__field-value">{selected.orgName ?? '—'}</div></div>
+              <div><div className="fs-md-card__field-label">Next action owner</div><div className="fs-md-card__field-value">{selected.nextOwner}</div></div>
+              <div><div className="fs-md-card__field-label">Detected</div><div className="fs-md-card__field-value">{ageLabel(selected.detectedAt)}</div></div>
+              {selected.dueAt && <div><div className="fs-md-card__field-label">Deadline</div><div className="fs-md-card__field-value">{dueLabel(selected.dueAt)}</div></div>}
+            </div>
+            {selected.allowedActions.some((a) => a.key === 'resolve-exception') && (
+              <div className="fs-field">
+                <label className="fs-field__label" htmlFor="ops-resolution">Resolution note</label>
+                <input
+                  id="ops-resolution"
+                  className="fs-input"
+                  data-testid="ops-resolution-input"
+                  value={resolution}
+                  onChange={(e) => setResolution(e.target.value)}
+                />
+              </div>
+            )}
+            {selected.allowedActions.map((a) => (
+              <button
+                key={a.key}
+                className="fs-btn"
+                disabled={busy}
+                data-testid={`board-action-${a.key}`}
+                onClick={() => void runAction(selected, a.key)}
+              >
+                {a.label}
+              </button>
+            ))}
+            <button
+              className="fs-btn fs-btn--ghost"
+              data-testid="board-open-workspace"
+              onClick={() => navigate(selected.href)}
+            >
+              Open in workspace
+            </button>
+            <p className="fs-body" style={{ margin: 0 }}>
+              Resolving this item never changes the underlying business record — domain state moves only through the responsible party's own workflow.
+            </p>
+          </div>
+        )}
+      </SideSheet>
+    </div>
   );
 }
