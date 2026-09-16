@@ -115,6 +115,18 @@ async function main(): Promise<void> {
     await member('USR-2026-000109', 'ORG-2026-000101');
     await role('USR-2026-000109', 'ORG-2026-000101', 'ORG_ADMIN');
 
+    // Managed sourcing (QUICK auto-publish) matches suppliers via catalog capabilities —
+    // grant the demo supplier orgs capability for every demo variety.
+    await client.query(
+      `INSERT INTO catalog.supplier_product_capabilities (org_id, variety_id, status, created_by)
+       SELECT o.id, v.id, 'ACTIVE', u.id
+       FROM identity.organizations o
+       CROSS JOIN catalog.varieties v
+       CROSS JOIN LATERAL (SELECT id FROM identity.users WHERE email = 'demo.supplier@florasetu.dev') u
+       WHERE o.ref IN ('ORG-2026-000002', 'ORG-2026-000101')
+       ON CONFLICT (org_id, variety_id) DO NOTHING`
+    );
+
     await client.query(`
       INSERT INTO core.reference_counters (entity, year, next_value) VALUES
         ('USR', 2026, 112), ('ORG', 2026, 104)

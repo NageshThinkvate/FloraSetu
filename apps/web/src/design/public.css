@@ -15,7 +15,7 @@
   min-height: 100vh;
 }
 .fs-pub h1, .fs-pub h2, .fs-pub .pub-serif { font-family: var(--fs-font-brand); font-weight: 600; }
-.fs-pub a { color: inherit; }
+.fs-pub a:not(.pub-btn) { color: inherit; }
 .fs-pub__wrap { max-width: 1120px; margin: 0 auto; padding: 0 var(--fs-space-5); }
 
 .fs-pub__header {
@@ -44,7 +44,7 @@
   text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: transform 0.15s ease, background-color 0.15s ease;
 }
 .pub-btn:hover { transform: translateY(-1px); }
-.pub-btn--primary { background: var(--pub-green); color: #fff; }
+.fs-pub .pub-btn--primary { background: var(--pub-green); color: #fff; }
 .pub-btn--primary:hover { background: var(--pub-green-soft); }
 .pub-btn--ghost { border-color: var(--pub-green); color: var(--pub-green); background: transparent; }
 .pub-btn--light { background: #fff; color: var(--pub-green); }

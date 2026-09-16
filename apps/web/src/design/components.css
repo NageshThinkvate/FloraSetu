@@ -184,6 +184,8 @@
 .fs-sticky-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; background: var(--fs-surface); border-top: 1px solid var(--fs-border); box-shadow: var(--fs-shadow-float); padding: var(--fs-space-3) var(--fs-space-4) calc(var(--fs-space-3) + env(safe-area-inset-bottom)); display: flex; gap: var(--fs-space-2); }
 .fs-sticky-bar > * { flex: 1; }
 @media (min-width: 768px) { .fs-sticky-bar { display: none; } }
+.fs-desktop-only { display: none; }
+@media (min-width: 768px) { .fs-desktop-only { display: flex; } }
 
 /* ---------- form sections ---------- */
 .fs-form-section { border: none; border-top: 1px solid var(--fs-border); padding: var(--fs-space-5) 0; margin: 0; display: flex; flex-direction: column; gap: var(--fs-space-3); max-width: var(--fs-form-max); }

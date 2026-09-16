@@ -21,6 +21,7 @@ const SUBSTITUTIONS: [string, string][] = [
 ];
 
 interface Draft {
+  productId: string | null;
   quantity: string; uomId: string; neededAt: string; destination: string;
   colour: string; stemMin: string; stemMax: string; bloomStage: string; notes: string;
 }
@@ -69,6 +70,7 @@ export function GetFlowersPage(): JSX.Element {
     }).catch(() => undefined);
     const d = loadDraft<Draft>(draftOrg, draftWs, 'quick-request');
     if (d && !copyId) {
+      setProductId(d.productId ?? null);
       setQuantity(d.quantity ?? ''); setUomId(d.uomId ?? ''); setNeededAt(d.neededAt ?? '');
       setDestination(d.destination ?? ''); setColour(d.colour ?? ''); setStemMin(d.stemMin ?? '');
       setStemMax(d.stemMax ?? ''); setBloomStage(d.bloomStage ?? ''); setNotes(d.notes ?? '');
@@ -101,11 +103,11 @@ export function GetFlowersPage(): JSX.Element {
   useEffect(() => {
     if (dirty && !done) {
       DirtyForms.register('quick-request');
-      saveDraft(draftOrg, draftWs, 'quick-request', { quantity, uomId, neededAt, destination, colour, stemMin, stemMax, bloomStage, notes });
+      saveDraft(draftOrg, draftWs, 'quick-request', { productId, quantity, uomId, neededAt, destination, colour, stemMin, stemMax, bloomStage, notes });
     } else {
       DirtyForms.unregister('quick-request');
     }
-  }, [dirty, done, quantity, uomId, neededAt, destination, colour, stemMin, stemMax, bloomStage, notes, draftOrg, draftWs]);
+  }, [dirty, done, productId, quantity, uomId, neededAt, destination, colour, stemMin, stemMax, bloomStage, notes, draftOrg, draftWs]);
 
   const product = useMemo(() => products.find((p) => p.id === productId) ?? null, [products, productId]);
   const uom = units.find((u) => u.id === uomId);
@@ -296,6 +298,24 @@ export function GetFlowersPage(): JSX.Element {
             </div>
           </div>
         )}
+
+        {/* Desktop/tablet CTA — the sticky bar is mobile-only (hidden ≥768px). */}
+        <div className="fs-desktop-only" style={{ gap: 'var(--fs-space-3)', marginTop: 'var(--fs-space-5)' }}>
+          {!reviewing ? (
+            <button type="button" className="fs-btn" disabled={!valid}
+              data-testid="get-flowers-review-btn-desktop" onClick={() => setReviewing(true)}>
+              Review request
+            </button>
+          ) : (
+            <>
+              <button type="button" className="fs-btn fs-btn--ghost" data-testid="get-flowers-edit-btn-desktop"
+                onClick={() => setReviewing(false)}>Edit</button>
+              <button type="submit" className="fs-btn" disabled={busy} data-testid="get-flowers-submit-desktop">
+                {busy ? 'Sending…' : 'Get offers'}
+              </button>
+            </>
+          )}
+        </div>
 
         <StickyMobileActionBar>
           {!reviewing ? (

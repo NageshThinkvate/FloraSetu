@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Headers, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { RbacGuard, RequirePermission } from '../../../common/authz/rbac.guard';
 import { RfqsService } from './rfqs.service';
 import { QuotesService } from './quotes.service';
@@ -107,13 +107,13 @@ export class RfqsController {
 
   @Get('quotes/:id')
   @RequirePermission('quote.read')
-  getQuote(@Param('id') id: string) {
+  getQuote(@Param('id', ParseUUIDPipe) id: string) {
     return this.quotes.get(id);
   }
 
   @Post('quotes/:id/revise')
   @RequirePermission('quote.submit')
-  reviseQuote(@Param('id') id: string, @Body() dto: ReviseQuotationDto, @Headers('idempotency-key') idemKey?: string) {
+  reviseQuote(@Param('id', ParseUUIDPipe) id: string, @Body() dto: ReviseQuotationDto, @Headers('idempotency-key') idemKey?: string) {
     return this.quotes.revise(id, dto, idemKey);
   }
 
