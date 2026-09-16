@@ -10,16 +10,15 @@ import '../design/public.css';
 
 // Public logged-out homepage (Phase 3 Part B; brand board 2026-09 restyle). Authenticated
 // users never see this — App routes them through the WorkspaceRouter instead.
-const HERO_IMG = 'https://images.pexels.com/photos/38909719/pexels-photo-38909719.jpeg?auto=compress&cs=tinysrgb';
-const BAND_IMG = 'https://images.pexels.com/photos/13256146/pexels-photo-13256146.jpeg?auto=compress&cs=tinysrgb';
-const BUYERS_IMG = 'https://images.pexels.com/photos/7156456/pexels-photo-7156456.jpeg?auto=compress&cs=tinysrgb';
-const SUPPLIERS_IMG = 'https://images.unsplash.com/photo-1629730538660-2d5d2a0c8e98?crop=entropy&cs=srgb&fm=jpg&q=85';
-const LOGISTICS_IMG = 'https://images.pexels.com/photos/17301401/pexels-photo-17301401.jpeg?auto=compress&cs=tinysrgb';
-const EVENT_IMG = 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?crop=entropy&cs=srgb&fm=jpg&q=85';
-const SUPPLIER_IMG = 'https://images.pexels.com/photos/38552007/pexels-photo-38552007.jpeg?auto=compress&cs=tinysrgb';
-const LOT_IMG = 'https://images.unsplash.com/photo-1623500139994-7c8ebf254a80?crop=entropy&cs=srgb&fm=jpg&q=85';
-const srcset = (base: string): string =>
-  `${base}&w=640 640w, ${base}&w=1200 1200w, ${base}&w=1800 1800w`;
+// All marketing imagery is self-hosted under /public/images — no third-party CDN dependency.
+const HERO_IMG = '/images/hero-lilies.jpg';
+const BAND_IMG = '/images/band-lilies-dark.jpg';
+const BUYERS_IMG = '/images/solutions-buyers.jpg';
+const SUPPLIERS_IMG = '/images/solutions-suppliers.jpg';
+const LOGISTICS_IMG = '/images/solutions-logistics.jpg';
+const EVENT_IMG = '/images/event-flowers.jpg';
+const SUPPLIER_IMG = '/images/supplier-facility.jpg';
+const LOT_IMG = '/images/lot-evidence.jpg';
 
 const STRIP: [LucideIcon, string, string][] = [
   [ShieldCheck, 'Verified business network', 'Trade with verified organizations and authorized users.'],
@@ -74,9 +73,7 @@ export function PublicHomePage(): JSX.Element {
           </div>
           <div className="fs-pub__hero-img">
             <img
-              src={`${HERO_IMG}&w=1200`}
-              srcSet={srcset(HERO_IMG)}
-              sizes="(max-width: 900px) 100vw, 42vw"
+              src={HERO_IMG}
               width="1200"
               height="1500"
               alt="Elegant white lilies — premium cut flowers for the professional trade"
@@ -129,7 +126,7 @@ export function PublicHomePage(): JSX.Element {
             <p className="pub-sub">Buyers, suppliers and logistics partners each get a workspace built for their work.</p>
             <div className="pub-cards-3">
               <article>
-                <img className="pub-card-img" src={`${BUYERS_IMG}&w=800`} alt="Florists selecting fresh flowers for their buyers" loading="lazy" />
+                <img className="pub-card-img" src={BUYERS_IMG} alt="Florists selecting fresh flowers for their buyers" loading="lazy" />
                 <div className="pub-card-body">
                   <p className="pub-aud-label">BUYERS</p>
                   <h3>Source with less uncertainty.</h3>
@@ -138,7 +135,7 @@ export function PublicHomePage(): JSX.Element {
                 </div>
               </article>
               <article id="suppliers">
-                <img className="pub-card-img" src={`${SUPPLIERS_IMG}&w=800`} alt="Rows of fresh cut flowers growing under a greenhouse roof" loading="lazy" />
+                <img className="pub-card-img" src={SUPPLIERS_IMG} alt="Rows of fresh cut flowers growing under a greenhouse roof" loading="lazy" />
                 <div className="pub-card-body">
                   <p className="pub-aud-label">SUPPLIERS</p>
                   <h3>Turn available flowers into reliable business.</h3>
@@ -147,7 +144,7 @@ export function PublicHomePage(): JSX.Element {
                 </div>
               </article>
               <article>
-                <img className="pub-card-img" src={`${LOGISTICS_IMG}&w=800`} alt="Fresh roses packed and ready for dispatch" loading="lazy" />
+                <img className="pub-card-img" src={LOGISTICS_IMG} alt="Fresh roses packed and ready for dispatch" loading="lazy" />
                 <div className="pub-card-body">
                   <p className="pub-aud-label">LOGISTICS PARTNERS</p>
                   <h3>Connect flower supply to its destination.</h3>
@@ -189,9 +186,7 @@ export function PublicHomePage(): JSX.Element {
               </ul>
             </div>
             <img
-              src={`${BAND_IMG}&w=1200`}
-              srcSet={srcset(BAND_IMG)}
-              sizes="(max-width: 900px) 100vw, 45vw"
+              src={BAND_IMG}
               width="1200"
               height="800"
               alt="White lilies against a dark botanical backdrop"
@@ -212,9 +207,7 @@ export function PublicHomePage(): JSX.Element {
               <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-event-cta">Plan an event</Link>
             </div>
             <img
-              src={`${EVENT_IMG}&w=1200`}
-              srcSet={srcset(EVENT_IMG)}
-              sizes="(max-width: 900px) 100vw, 50vw"
+              src={EVENT_IMG}
               width="1200"
               height="900"
               alt="Elegant wedding ceremony flower arrangements"
@@ -226,9 +219,7 @@ export function PublicHomePage(): JSX.Element {
         <section className="fs-pub__section fs-pub__section--alt">
           <div className="fs-pub__wrap pub-split">
             <img
-              src={`${SUPPLIER_IMG}&w=1200`}
-              srcSet={srcset(SUPPLIER_IMG)}
-              sizes="(max-width: 900px) 100vw, 50vw"
+              src={SUPPLIER_IMG}
               width="1200"
               height="900"
               alt="Workers sorting fresh roses at a flower facility"
@@ -256,9 +247,7 @@ export function PublicHomePage(): JSX.Element {
               </p>
             </div>
             <img
-              src={`${LOT_IMG}&w=1200`}
-              srcSet={srcset(LOT_IMG)}
-              sizes="(max-width: 900px) 100vw, 50vw"
+              src={LOT_IMG}
               width="1200"
               height="900"
               alt="Fresh market flowers packed on a wooden crate"
