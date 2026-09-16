@@ -1,0 +1,74 @@
+{
+  "summary": "Phase 8 FINAL UAT resume run — completed all pending items from iteration_21 with proper pacing and per-role batching (no rate-limit hits this round). VERIFIED GREEN (live): (1) Service worker now registers on the preview — navigator.serviceWorker.getRegistration() returns an active registration with scope '/' and navigator.serviceWorker.controller is set; /sw.js still serves 200; no SW console errors during load. (2) Bottom-nav data-testids resolve to exactly 1 element at 390px — buyer-bottomnav=1 (as demo.buyer) and ops-bottomnav=1 (as demo.procops). (3) Retired-route redirects with correct roles: as demo.procops, /ops/sourcing→/ops/procurement and /ops/quality→/ops/exceptions; ops sidebar has NO 'Quality' entry (shows Exceptions/Procurement/Orders/Logistics/Claims only). As a partner (see credentials note below), /partner/qc→/partner/logistics, partner sidebar has NO 'QC' entry (shows Home/Jobs/Delivered only). (4) Role isolation friendly-denial screens across all three combos requested — demo.buyer→/admin/overview and /ops/exceptions both render the human 'You don't have access to …' card with a Return-to-my-workspace link (not raw JSON/403 page); demo.procops→/admin/overview same friendly deny card; partner→/buyer/home same friendly deny card. (5) Supplier Capabilities as demo.supplier — product select populates variety select on change (e.g. Anthurium → 'Red Success · RED'), Add creates a new capability that appears in the list with a human status pill ('Active'), and there is NO raw UUID input anywhere on the page (only selects + non-UUID free text search input). (6) Admin Catalog Version history as demo.admin — picking 'Grade profiles' and clicking Load renders rows as human one-line summaries ('A · v1 · active · from 16/9/2026') with no raw JSON braces anywhere in the rendered rows. (7) Buyer catalog Validated label — Dendrobium Orchid card shows the 'Validated' badge (not 'Demo — not for production buying'). (8) Keyboard-only a11y — login tab order is email → password → submit (activeElement.type transitions email→password→(BUTTON 'Sign in')); visible focus ring is a 2px solid green outline (rgb(24,61,51)); buyer home reaches interactive controls with Tab; SideSheet on /ops/exceptions (ops-board-sheet) opens on board-item click, focus moves inside the dialog, Escape closes it and dialog count returns to 0; bottom nav at 390px is reachable by Tab (focus reached data-testid=ops-nav-exceptions-bottom after ~21 tabs). (9) Upload rejection UX — as demo.buyer on /buyer/org KYB form, injecting an 'evil.txt' File via DataTransfer and submitting produced a clear human error banner: 'Unsupported or mismatched media type. Allowed: JPEG, PNG, WebP, PDF, MP4'. No stack trace, no success. (10) Empty-state / skeleton spot checks — demo.finance /ops/finance renders 'Nothing awaiting finance action' empty card; demo.support /ops/claims renders 'No claims in this view — Claims raised by buyers will appear here for support triage'; demo.admin /admin/users search for 'zzzznonsense' renders 'No users match — Adjust the search or status filter'. PARTIAL: Offline shell fallback — SW is active AND controlling the page, but on the Vite-dev preview the shell HTML is served from cache while the module scripts (@vite/client, /src/main.tsx) do not hydrate offline, so the page renders as a blank body. Consistent with the review-request note that a partial result is acceptable for preview. NOT FULLY EXERCISED: buyer requirement-workspace publish-RFQ form — the buyer 'get flowers' wizard was completed successfully (Premium/Dutch Rose · 300 STEM · Bangalore, request sent), but neither /buyer/home nor /buyer/offers exposes any link to a /buyer/requests/:id detail page in this seed (only /buyer/requests/new). The RequirementDetailPage route + component exist and were statically verified in iteration_21 (no supplier-UUID input, product/variety selects, deadline input) — same live-seed limitation as before.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Buyer requirement detail workspace (publish RFQ)",
+        "issue": "No /buyer/requests/:id link is surfaced in the dev seed from /buyer/home or /buyer/offers after a wizard submission (only /buyer/requests/new). RequirementDetailPage code path could not be exercised end-to-end. This is a seed/nav gap, not a code defect — the route exists in App.tsx and the page was statically OK in iteration_21.",
+        "affected_selectors": ["/buyer/requests/:id"]
+      },
+      {
+        "flow": "Offline shell fallback on Vite-dev preview",
+        "issue": "Service worker is active + controlling the page and /sw.js is correct, but Vite dev module scripts do not survive an offline navigation, so the offline shell renders as an empty document body. Acceptable per review-request note; would need to be validated against a production build to fully green.",
+        "affected_selectors": ["navigator.serviceWorker.controller"]
+      }
+    ],
+    "design_issues": []
+  },
+  "verified_rulings_resume": {
+    "sw_registers_on_preview_with_scope_root_and_controller_set": true,
+    "sw_js_serves_200": true,
+    "buyer_bottomnav_testid_resolves_1_at_390": true,
+    "ops_bottomnav_testid_resolves_1_at_390": true,
+    "procops_ops_sourcing_redirects_to_ops_procurement": true,
+    "procops_ops_quality_redirects_to_ops_exceptions": true,
+    "ops_nav_has_no_quality_entry": true,
+    "partner_partner_qc_redirects_to_partner_logistics": true,
+    "partner_nav_has_no_qc_entry": true,
+    "buyer_ops_exceptions_friendly_denied": true,
+    "buyer_admin_overview_friendly_denied": true,
+    "procops_admin_overview_friendly_denied": true,
+    "partner_buyer_home_friendly_denied": true,
+    "supplier_capabilities_product_variety_cascade_and_add_with_human_status_no_uuid_input": true,
+    "admin_catalog_grade_profiles_version_history_human_summaries_no_json_braces": true,
+    "buyer_catalog_dendrobium_orchid_validated_label_visible": true,
+    "login_tab_order_email_password_submit_with_visible_focus_ring": true,
+    "buyer_home_keyboard_reachable": true,
+    "ops_exceptions_sidesheet_opens_focus_moves_inside_esc_closes": true,
+    "bottom_nav_390_keyboard_reachable": true,
+    "upload_reject_txt_kyb_shows_human_error_no_stack_trace": true,
+    "finance_ops_finance_shows_empty_state": true,
+    "support_ops_claims_shows_empty_state": true,
+    "admin_users_search_zzzznonsense_empty_state": true,
+    "offline_shell_partial_on_vite_dev_preview_sw_active_but_bundle_not_hydrated": true
+  },
+  "critical_code_review_comments": [
+    "Positive: iteration_21 P3 findings are both closed on preview — (a) SW registration now runs on preview (import.meta.env.MODE !== 'test' guard in main.tsx works, active registration + controller confirmed), and (b) BottomNav container now carries data-testid so both buyer-bottomnav and ops-bottomnav resolve to exactly 1 element at 390px.",
+    "Positive: Admin Catalog version history renders as human strings — 'A · v1 · active · from 16/9/2026' — no raw JSON braces. Meets the Phase-8 human-copy requirement.",
+    "Positive: KYB upload MIME rejection produces a human error banner ('Unsupported or mismatched media type. Allowed: JPEG, PNG, WebP, PDF, MP4') with no stack trace — meets Phase-8 upload UX AC.",
+    "Positive: Role-isolation friendly denial screen is consistent across roles/routes (You don't have access to <workspace> · Return to my workspace).",
+    "P3: The credential 'demo.partner@florasetu.dev / Demo-Partner-2026' listed in the review request does NOT exist in the current dev seed — login returns 401 'Invalid email or password'. The partner-scope acceptance ran against demo.logistics@florasetu.dev / Demo-Logistics-2026 (which per /app/memory/test_credentials.md is the partner-admin persona). Either add the demo.partner alias to seed or update the release-candidate credential list to reflect logistics/qc/driver.",
+    "P3: Preview is still Vite dev (not a prod bundle), so the offline-shell AC is only partially validatable here — SW is active but Vite module scripts don't survive an offline navigation. Consider building a production bundle for the final release-candidate acceptance to fully close this AC.",
+    "P3: Buyer wizard completion routes to /buyer/offers 'Request sent' page but never exposes a link to /buyer/requests/:id in the current seed — the RequirementDetailPage workspace (lines / actions / version history / publish RFQ) therefore cannot be reached from the buyer UI without knowing an id up-front. Static review in iteration_21 confirmed the page shape is correct; consider surfacing a 'View requirement' link on the Request-sent screen or a 'My requirements' list under /buyer/home."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Add demo.partner@florasetu.dev seed (or update RC credential list) so the partner-scope AC row can be run with the exact credentials in the review request.",
+    "Surface a link to /buyer/requests/:id from the buyer wizard 'Request sent' screen or from /buyer/home so RequirementDetailPage (lines/actions/version history/publish RFQ) is reachable from the UI in the dev seed.",
+    "For the final release-candidate acceptance run, deploy a production build of apps/web so the offline-shell AC can be validated end-to-end (Vite dev bundle is not hydratable offline).",
+    "Optional: consider adding a 'View requirement' data-testid entry point on the request-sent confirmation screen for automation."
+  ],
+  "updated_files": [],
+  "success_rate": {
+    "backend": "n/a (not retested per request — backend was gated green at 27 suites / 307 tests before this iteration)",
+    "frontend": "All 11 acceptance items from the review request exercised — 9 fully GREEN, 1 PARTIAL (offline shell on Vite-dev preview, acceptable per request), 1 NOT-FULLY-EXERCISED (buyer requirement detail workspace publish-RFQ form — same seed-data limitation as iteration_21). No new frontend defects."
+  },
+  "test_credentials": "demo.buyer, demo.supplier, demo.procops, demo.finance, demo.support, demo.admin all logged in successfully. demo.partner@florasetu.dev / Demo-Partner-2026 (as listed in the review request) returned 401 'Invalid email or password' — partner-scope AC was run with demo.logistics@florasetu.dev / Demo-Logistics-2026 instead (the partner admin persona per /app/memory/test_credentials.md).",
+  "seed_data_creation": "Created one buyer request via /buyer/requests/new wizard as demo.buyer (Premium/Dutch Rose · 300 STEM · Bangalore, required 23/9/2026 10:00) — 'Request sent'. Added one supplier capability as demo.supplier (Anthurium — Red Success), now visible in /supplier/capabilities list with 'Active' status.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "This is the RC-final acceptance run. All items from iteration_21's not_verified list are now closed (either GREEN or documented PARTIAL/NOT-FULLY-EXERCISED with clear reason). The only outstanding items are non-code: (a) demo.partner alias missing from seed, (b) buyer wizard doesn't link to /buyer/requests/:id, (c) preview is Vite dev so full offline-shell needs a prod bundle. No P0/P1 issues found. Rate-limiting on Cloudflare was not encountered this run — the >=4s pacing + per-role session batching from the review-request instructions worked cleanly.",
+  "rca_of_the_issue": "n/a — no new defects. The three remaining P3 notes are seed / preview-environment concerns and are documented under action_items."
+}

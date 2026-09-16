@@ -57,6 +57,7 @@ export function GetFlowersPage(): JSX.Element {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [done, setDone] = useState(false);
+  const [doneId, setDoneId] = useState('');
 
   useEffect(() => {
     listProducts().then((r) => setProducts(r.items)).catch(() => undefined);
@@ -160,6 +161,7 @@ export function GetFlowersPage(): JSX.Element {
       await submitRequirement(req.id, crypto.randomUUID());
       clearDraft(draftOrg, draftWs, 'quick-request');
       DirtyForms.unregister('quick-request');
+      setDoneId(req.id);
       setDone(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed');
@@ -178,7 +180,8 @@ export function GetFlowersPage(): JSX.Element {
             We&apos;re finding suitable suppliers. We&apos;ll notify you when offers arrive.
           </p>
           <div className="fs-md-stack" style={{ maxWidth: 320, margin: 'var(--fs-space-6) auto 0' }}>
-            <Link to="/buyer/offers" className="fs-btn" data-testid="get-flowers-success-offers">View offers</Link>
+            <Link to={`/buyer/requests/${doneId}`} className="fs-btn" data-testid="get-flowers-success-view">Track this request</Link>
+            <Link to="/buyer/offers" className="fs-btn fs-btn--secondary" data-testid="get-flowers-success-offers">View offers</Link>
             <Link to="/buyer/home" className="fs-btn fs-btn--ghost" data-testid="get-flowers-success-home">Back to home</Link>
           </div>
         </div>

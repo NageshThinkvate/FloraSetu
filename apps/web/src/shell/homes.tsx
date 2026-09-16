@@ -154,9 +154,14 @@ export function BuyerHome(): JSX.Element {
                 meta={[`${r.line_count} flower${r.line_count === 1 ? '' : 's'}`]}
                 age={fmtDate(r.created_at)}
                 footer={
-                  <Link className="fs-btn fs-btn--sm" data-testid={`buyer-again-open-${r.ref}`} to={`/buyer/requests/new?copy=${r.id}`}>
-                    Buy again
-                  </Link>
+                  <span style={{ display: 'flex', gap: 'var(--fs-space-2)' }}>
+                    <Link className="fs-btn fs-btn--sm" data-testid={`buyer-again-track-${r.ref}`} to={`/buyer/requests/${r.id}`}>
+                      Track
+                    </Link>
+                    <Link className="fs-btn fs-btn--sm fs-btn--ghost" data-testid={`buyer-again-open-${r.ref}`} to={`/buyer/requests/new?copy=${r.id}`}>
+                      Buy again
+                    </Link>
+                  </span>
                 }
               />
             ))}
