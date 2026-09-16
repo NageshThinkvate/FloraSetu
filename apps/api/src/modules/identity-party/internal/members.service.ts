@@ -3,7 +3,7 @@ import { DatabaseService } from '../../../common/database/database.service';
 import { AuditService } from '../../../common/audit/audit.service';
 import { ApiException } from '../../../common/errors/error-envelope';
 import { RequestContext } from '../../../common/request-context';
-import { assertOrgAccess, maskEmail, ORG_ASSIGNABLE_ROLES } from './policies';
+import { assertOrgAccess, assertOrgAccessOrPlatform, maskEmail, ORG_ASSIGNABLE_ROLES } from './policies';
 
 @Injectable()
 export class MembersService {
@@ -13,9 +13,11 @@ export class MembersService {
   ) {}
 
   async list(orgId: string): Promise<{ items: unknown[] }> {
-    assertOrgAccess(RequestContext.get(), orgId);
+    // ADR-014: platform-privileged roles (Admin Control Plane) may read membership
+    // governance views cross-org; marketplace callers remain own-org only.
+    assertOrgAccessOrPlatform(RequestContext.get(), orgId);
     const result = await this.db.query(
-      `SELECT m.id AS membership_id, m.status, u.id AS user_id, u.ref AS user_ref, u.display_name,
+      `SELECT m.id AS membership_id, m.status, u.id AS user_id, u.ref AS user_ref, u.display_name, u.email,
               COALESCE(array_agg(ro.name) FILTER (WHERE ro.name IS NOT NULL), '{}') AS roles
        FROM identity.org_memberships m
        JOIN identity.users u ON u.id = m.user_id

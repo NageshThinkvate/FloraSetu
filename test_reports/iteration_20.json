@@ -1,0 +1,111 @@
+{
+  "summary": "Phase 7 Admin Control Plane (ADR-014) — frontend-only E2E run against the public preview. 14/15 of the required Phase 7 flows verified GREEN on the UI (nav 10 items, /admin→/admin/overview redirect, Overview 5 metrics + activity, Organizations search + suspend/reactivate, KYB queue + correction/approve + Correction-requested label, Users list + self/other suspend guard, Roles read-only + MFA-required, Config save + reset, Feature flag toggle + confirm + cancel + note, Security page, Audit page with events + CSV export, denial screens for procops/buyer, mobile 390px shell). One CRITICAL frontend bug found that affects every admin action returning 204 No Content (KYB decisions, org suspend/reactivate, user suspend/reactivate) — the API client always calls res.json() so users see an alert `Failed to execute 'json' on 'Response': Unexpected end of JSON input` even though the backend successfully applied the change. Confirmed via server-side API checks that state DOES transition (KYB REJECTED→CORRECTION_REQUIRED→IN_REVIEW→VERIFIED, org suspended, config/flag updates, audit rows written). A few minor issues also noted below.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "lib/api/client.ts `call()` (used by reviewKyb, suspendUser, reactivateUser, restrictOrg, liftOrg — any 204-returning admin action)",
+        "issue": "On success, `call()` unconditionally does `await res.json()`. Backend returns 204 No Content for these endpoints, so JSON.parse throws SyntaxError and the caller renders an InlineAlert reading `Failed to execute 'json' on 'Response': Unexpected end of JSON input`. The action itself DOES persist (verified via GET /api/admin/kyb-queue and /api/admin/audit). Fix: `if (res.status === 204) return undefined as T;` before `res.json()`, or check content-length/content-type. Reproduced on: KYB Approve, KYB Reject, KYB Request-correction, Org Suspend (Dev Buyer Co), Org Reactivate, User Suspend (Dev Buyer).",
+        "selector": "admin-kyb-review-error-inline, admin-notice(on org page)",
+        "priority": "HIGH"
+      },
+      {
+        "component": "AdminAuditPage",
+        "issue": "`data-testid=\"admin-audit-search\"` is on the Search *button*, not on any input. The task hint said 'search with action=org.kyb.review returns matching events only' — the correct input is the unlabelled `Action (e.g. org.kyb.review)` field. Consider putting the data-testid on the Action input (e.g. `admin-audit-action`) so E2Es targeting `admin-audit-search` as the query input work. Also, date filters use native HTML `<input type=datetime-local>` (mm/dd/yyyy) rather than the platform's design system calendar.",
+        "selector": "admin-audit-search",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "AdminUsersPage — search input",
+        "issue": "Typing `demo.admin` into `admin-users-search` did not filter the users list (all 16 users remained). Either the search input has no onChange wiring, or it requires a submit click. `admin-users-search-form` exists suggesting submit-on-Enter; but without a submit affordance the value doesn't apply on input. Please debounce-filter on input, or add a Search button/testid.",
+        "selector": "admin-users-search",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "AdminUsersPage — self-suspend guard",
+        "issue": "The user sheet for demo.admin (viewed by demo.admin) still renders the `admin-user-suspend` button. Server-side guard likely exists (per ADR ruling) but the frontend never hides/disables the control on the acting user. Also, clicking Suspend on self showed the same JSON parse alert rather than a friendly 'You cannot suspend yourself' message. Recommend hiding the suspend form when `user.id === currentUserId`.",
+        "selector": "admin-user-suspend",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "AdminOrgDetailPage — Recent administrative changes",
+        "issue": "After suspending Dev Buyer Co and reactivating it, `admin-org-audit` still shows `No administrative events for this organization.` Audit events for org.suspend/org.lift do not appear in the per-org history section (though they ARE in the global /admin/audit page). The section title implies per-org audit trail — needs backend join or client filter fix.",
+        "selector": "admin-org-audit",
+        "priority": "MEDIUM"
+      }
+    ],
+    "integration_issues": [
+      {
+        "flow": "KYB decision submit (approve / reject / request-correction)",
+        "issue": "Frontend shows red error alert on every successful decision because of the 204+json() bug. UX-wise the reviewer thinks the decision failed and often re-clicks. Fortunately backend enforces state-machine so the second click returns 409 (also surfaced as JSON-parse). The state DOES transition on the first click.",
+        "affected_selectors": ["admin-kyb-submit-decision", "admin-kyb-review-error-inline"]
+      },
+      {
+        "flow": "Org suspend / user suspend",
+        "issue": "Same 204+json() bug — success looks like failure in the UI.",
+        "affected_selectors": ["admin-org-suspend", "admin-org-lift", "admin-user-suspend"]
+      }
+    ],
+    "design_issues": [
+      {"screen": "AdminAuditPage", "issues": ["Uses browser-default datetime-local pickers instead of a design-system calendar; low visual consistency with rest of admin."]}
+    ]
+  },
+  "verified_rulings": {
+    "admin_nav_has_exactly_10_labels": true,
+    "admin_root_redirects_to_overview": true,
+    "overview_five_metrics_present_admin-metric-freeze_included": true,
+    "orgs_search_and_type_status_kyb_chips_render": true,
+    "org_detail_all_sections_present": true,
+    "org_suspend_requires_reason_disabled_without_it": true,
+    "org_suspend_backend_transitions_state_despite_json_alert": true,
+    "org_reactivate_transitions_back_despite_json_alert": true,
+    "kyb_queue_four_filter_chips_and_empty_state": true,
+    "kyb_review_page_claims_docs_history_decision_all_present": true,
+    "kyb_documents_use_signed_urls_with_sig_query_param": true,
+    "kyb_correction_reason_forced_to_CORRECTION_REQUIRED_note_mandatory": true,
+    "kyb_correction_without_note_backend_returns_400_with_friendly_error": true,
+    "kyb_correction_row_label_renders_Correction_requested_not_Rejected": true,
+    "kyb_approve_transitions_org_to_VERIFIED": true,
+    "users_list_and_side_sheet_show_human_role_labels_and_mfa_state": true,
+    "user_suspend_requires_reason_disabled_without_it": true,
+    "roles_page_readonly_note_visible_no_create_edit_delete_buttons": true,
+    "roles_platform_admin_card_shows_MFA_required": true,
+    "config_LOT_EVIDENCE_MIN_PHOTOS_save_and_reset_flow_works_with_success_notice": true,
+    "flag_INDEPENDENT_INSPECTION_ENABLED_toggle_confirm_cancel_flip_back_all_work": true,
+    "security_page_privileged_grants_events_sections_render": true,
+    "audit_page_events_render_immutability_note_visible": true,
+    "audit_export_csv_downloads_file": true,
+    "procops_denied_admin_with_friendly_screen_not_403_json": true,
+    "buyer_denied_admin_with_friendly_screen_not_403_json": true,
+    "no_raw_uuids_on_orgs_list_only_ORG-2026-refs": true,
+    "mobile_390_bottom_nav_and_stacked_metrics_render": true
+  },
+  "critical_code_review_comments": [
+    "CRITICAL: `apps/web/src/lib/api/client.ts:85` — `return (await res.json()) as T;` will throw on any 204/empty backend response. Multiple Phase-7 admin action endpoints return 204, causing spurious error alerts and misleading users into believing decisions failed. Guard with `if (res.status === 204 || res.headers.get('content-length') === '0') return undefined as T;` before `res.json()`.",
+    "AdminUsersPage.tsx: the search input appears to not filter on change; add debounce-driven refetch or ensure form submit on Enter triggers `load()`.",
+    "AdminUsersPage.tsx / AdminUsersSheet: no client-side guard against self-suspend — the ADR says the backend blocks it, but the UI should hide/disable the suspend form when `user.id === currentUserId`.",
+    "AdminOrgDetailPage.tsx `admin-org-audit`: expected per-org admin activity (suspend/lift, config changes affecting the org) is not populated. Either fetch scoped audit rows for this org or remove the section.",
+    "AdminAuditPage.tsx: `data-testid=\"admin-audit-search\"` is on the submit button while the actual query input has no testid — inconsistent naming. Native datetime-local pickers deviate from platform calendar component.",
+    "Positive: AdminKybReviewPage correctly forces reasonCode=CORRECTION_REQUIRED for the Request-correction path and requires a note; StatusPill correctly overrides REJECTED→'Correction requested' label when reason_code is CORRECTION_REQUIRED; signed document URLs contain `sig=`.",
+    "Positive: AdminShell.NAV contains exactly the 10 required entries with correct testids; RBAC denial screens are friendly (no JSON 403 leaks); Roles page renders read-only permission matrix with no mutating buttons."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Fix apps/web/src/lib/api/client.ts to handle 204/empty responses — this alone eliminates the false-error alerts on KYB decisions, org suspend/lift, and user suspend/reactivate.",
+    "Wire up `admin-users-search` input to actually filter (debounced) or add explicit submit handling.",
+    "Hide/disable the suspend form on the acting admin's own user sheet (self-suspend guard).",
+    "Populate `admin-org-audit` with the org's admin action history (org.restrict / org.lift / org.suspend events).",
+    "Move `data-testid=\"admin-audit-search\"` to the Action input (or add `admin-audit-action`) and consider a shadcn-style calendar for the date filters."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (not retested per request)", "frontend": "~86% (5 UX regressions in an otherwise complete Phase-7 shell; backend state transitions all correct)"},
+  "test_credentials": "demo.admin@florasetu.dev / Demo-Admin-2026 ✓; demo.supplier@florasetu.dev / Demo-Supplier-2026 ✓ (used to submit KYB three times); demo.procops@florasetu.dev / Demo-ProcOps-2026 ✓ (denied as expected); demo.buyer@florasetu.dev / Demo-Buyer-2026 ✓ (denied as expected).",
+  "seed_data_creation": "Submitted KYB three times against Dev Supplier Co (org a79da111-8c1c-4ec1-9316-56b1a905d05e) via POST /api/orgs/:orgId/kyb/submit. Final state VERIFIED. Also suspended Dev Buyer Co (org b1a9df3b-603c-422a-8a26-9a3d2245f7b6) and attempted reactivation via UI; final org state was Suspended when I stopped due to the JSON-parse UX bug — main agent may want to reactivate it: `POST /api/admin/orgs/b1a9df3b-603c-422a-8a26-9a3d2245f7b6/lift`. Feature flag INDEPENDENT_INSPECTION_ENABLED toggled on then off (net-zero). Config LOT_EVIDENCE_MIN_PHOTOS 2→3→2 (net-zero).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "The five UX regressions above are the only Phase-7 gaps. Backend behavior (state transitions, audit writes, authorization guards, signed URLs, correction reason forcing) is CORRECT — the phase-7 backend spec is honored. After the client.ts 204-fix, re-run the KYB decision, org suspend/reactivate, and user suspend/reactivate flows to confirm no more spurious error alerts. Dev Buyer Co is currently suspended; reactivate before regressing marketplace tests.",
+  "rca_of_the_issue": "Root cause of the recurring 'Failed to execute json on Response: Unexpected end of JSON input' error is in apps/web/src/lib/api/client.ts's `call<T>` helper: `return (await res.json()) as T;` runs on the success path regardless of body. NestJS handlers for `/api/admin/kyb/:orgId/review`, `/api/admin/orgs/:id/suspend|lift`, `/api/admin/users/:id/suspend|reactivate` respond 204 No Content, so `Response.json()` throws SyntaxError. That error propagates to the calling page's `catch` block, which shows `err.message` in an InlineAlert. Backend state DOES transition (verified via GET /admin/kyb-queue and /admin/audit). Fix: detect 204/empty body before parsing. Reproduction: (1) log in as demo.admin; (2) submit KYB for demo.supplier via `POST /api/orgs/:orgId/kyb/submit`; (3) open /admin/kyb, click the org, click Request correction, add a note, submit — user sees a red error alert, but re-navigating the queue shows the org with the 'Correction requested' label."
+}

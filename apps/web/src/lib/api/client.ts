@@ -82,7 +82,12 @@ async function call<T>(method: string, path: string, body?: unknown, opts?: { id
     const envelope = (await res.json().catch(() => null)) as ErrorEnvelope | null;
     throw new ApiError(res.status, envelope?.error.code ?? 'INTERNAL_ERROR', envelope?.error.message ?? `request failed: ${res.status}`, envelope?.error.details);
   }
-  return (await res.json()) as T;
+  // 204/empty-body success (e.g. NestJS void handlers) has no JSON to parse.
+  if (res.status === 204) {
+    return undefined as T;
+  }
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const apiGet = <T>(path: string): Promise<T> => call<T>('GET', path);

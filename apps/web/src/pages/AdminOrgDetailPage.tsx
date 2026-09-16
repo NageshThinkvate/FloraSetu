@@ -41,7 +41,7 @@ export function AdminOrgDetailPage(): JSX.Element {
     // Independent sections: a denied/empty section never blanks the whole page.
     apiGet<{ items: MemberRow[] }>(`/orgs/${id}/members`).then((r) => setMembers(r.items)).catch(() => setMembers([]));
     apiGet<{ items: KybHistoryItem[] }>(`/orgs/${id}/kyb/history`).then((r) => setHistory(r.items)).catch(() => setHistory([]));
-    apiGet<{ items: AuditItem[] }>(`/admin/audit?orgId=${id}`).then((r) => setAudit(r.items.slice(0, 15))).catch(() => setAudit([]));
+    apiGet<{ items: AuditItem[] }>(`/admin/audit?objectId=${id}`).then((r) => setAudit(r.items.slice(0, 15))).catch(() => setAudit([]));
   };
   useEffect(() => {
     void load().catch(() => setError("We couldn't load this organization."));

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AdminUser, adminUsers, reactivateUser, suspendUser } from '../lib/api/admin';
+import { useAuth } from '../lib/api/auth';
 import { PageHeader } from '../components/PageHeader';
 import { StatusPill } from '../components/StatusPill';
 import { SkeletonLoader } from '../components/SkeletonLoader';
@@ -15,6 +16,7 @@ const STATUS_FILTERS: [string, string][] = [
 // ADR-014: platform user governance. Suspend/reactivate only — no password access,
 // no IAM mutation, no MFA changes. Every action is reasoned and audited.
 export function AdminUsersPage(): JSX.Element {
+  const { me } = useAuth();
   const [params, setParams] = useSearchParams();
   const status = params.get('status') ?? 'all';
   const [users, setUsers] = useState<AdminUser[] | null>(null);
@@ -69,6 +71,7 @@ export function AdminUsersPage(): JSX.Element {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <button type="submit" className="fs-btn fs-btn--sm" data-testid="admin-users-search-btn">Search</button>
       </form>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--fs-space-2)', marginBottom: 'var(--fs-space-4)' }} data-testid="admin-users-filters">
         {STATUS_FILTERS.map(([v, label]) => (
@@ -155,7 +158,7 @@ export function AdminUsersPage(): JSX.Element {
                 {m.orgName} ({m.orgRef}) · {m.roles.map((r) => r.toLowerCase().replace(/_/g, ' ')).join(', ') || 'member'} · {m.membershipStatus.toLowerCase()}
               </p>
             ))}
-            {selected.status === 'ACTIVE' && (
+            {selected.status === 'ACTIVE' && selected.id !== me?.id && (
               <>
                 <div className="fs-field">
                   <label className="fs-field__label" htmlFor="admin-user-reason">Suspension reason (required, audited)</label>
@@ -186,6 +189,9 @@ export function AdminUsersPage(): JSX.Element {
               >
                 Reactivate user
               </button>
+            )}
+            {selected.id === me?.id && (
+              <p className="fs-body" data-testid="admin-user-self-note">This is your own account — you cannot suspend yourself.</p>
             )}
             <p className="fs-body" style={{ margin: 0 }}>
               Suspension blocks login and organization actions but never erases the user's history.
