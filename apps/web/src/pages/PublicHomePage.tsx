@@ -60,7 +60,7 @@ export function PublicHomePage(): JSX.Element {
               height="1500"
               alt="Premium roses ready for the wholesale flower trade"
               loading="eager"
-              fetchPriority="high"
+              {...{ fetchpriority: 'high' }}
             />
           </div>
         </section>

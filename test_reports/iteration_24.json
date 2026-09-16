@@ -1,0 +1,81 @@
+{
+  "summary": "FloraSetu brand identity re-test (iteration 24). Executed frontend-only computed-font verification (as owner mandated) at desktop 1440px, tablet 768px, and mobile 390px for public homepage, /login, /register, /forgot-password, and footer. All BRAND-F1..F7 acceptance targets PASS. The tokens.css utility override on .fs-logo__flora/.fs-logo__setu is fully neutralized by the `font-family: inherit` fix in components.css — both spans now compute to the Fraunces Variable stack at Fraunces 600 with correct two-tone colors, and mark svg sizes fall within the owner's numeric bands at every breakpoint.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "brand_verification_results": {
+    "BRAND-F1_desktop_1440": {
+      "pass": true,
+      "flora_fontFamily": "\"Fraunces Variable\", Fraunces, Georgia, \"Times New Roman\", serif",
+      "setu_fontFamily": "\"Fraunces Variable\", Fraunces, Georgia, \"Times New Roman\", serif",
+      "flora_fontWeight": "600",
+      "setu_fontWeight": "600",
+      "flora_fontSize": "33.6px (target 32-36)",
+      "setu_fontSize": "33.6px (target 32-36)",
+      "flora_color": "rgb(24, 61, 51) == #183D33",
+      "setu_color": "rgb(118, 81, 143) == #76518F",
+      "mark_svg_size": "50x50 (target 46-52)"
+    },
+    "BRAND-F2_mobile_390": {
+      "pass": true,
+      "flora_fontFamily": "Fraunces Variable stack",
+      "wordmark_fontSize": "24.8px (target 24-28)",
+      "mark_svg_size": "40x40 (target 36-42)",
+      "colors_correct": true
+    },
+    "BRAND-F3_tablet_768": {
+      "pass": true,
+      "wordmark_fontSize": "33.6px",
+      "mark_svg_size": "50x50",
+      "no_horizontal_overflow": "scrollWidth==clientWidth==768"
+    },
+    "BRAND-F4_geometry": {
+      "pass": true,
+      "viewBox": "0 0 64 64",
+      "arc_path": "M8 52 A28 18 0 0 1 56 52 — crown apex at y=34 (52-18)",
+      "petal_left": "M32 34 C27 32 20 28 17 20 ... — starts at crown (32,34), rises to y=20",
+      "petal_right": "M32 34 C37 32 44 28 47 20 ... — rises to y=20",
+      "petal_center_bloom": "M32 34 ... y=10 — rises to y=10",
+      "verdict": "All petal control points have y<=34 (i.e., above/at crown). No petal geometry crosses below the arc apex y=34 or below the arc line."
+    },
+    "BRAND-F5_auth_pages": {
+      "pass": true,
+      "login": {"wordmark_ff": "Fraunces Variable stack", "flora_color": "rgb(24,61,51)", "setu_color": "rgb(118,81,143)", "wordmark_size": "24px", "logo_link_href": "/", "back_to_home": "/"},
+      "register": {"wordmark_ff": "Fraunces Variable stack", "size": "24px", "logo_link_href": "/", "back_to_home": "/"},
+      "forgot-password": {"wordmark_ff": "Fraunces Variable stack", "size": "24px", "logo_link_href": "/", "back_to_home": "/"}
+    },
+    "BRAND-F6_footer_dark": {
+      "pass": true,
+      "footer_bg": "rgb(24, 61, 51) — dark botanical green",
+      "flora_color_light": "rgb(248, 248, 245) — ivory",
+      "setu_color_light_plum": "rgb(243, 238, 246) — light plum tint (--fs-accent-tint)",
+      "wordmark_ff": "Fraunces Variable stack",
+      "wordmark_size": "28.8px",
+      "legibility": "adequate contrast against dark green bg"
+    },
+    "BRAND-F7_regression": {
+      "pass": true,
+      "nav_links": "All 7 present with correct hrefs: Buy Flowers → /#audiences, For Suppliers → /#suppliers, How It Works → /#how-it-works, Solutions → /#features, About → /#about, Sign in → /login, Join FloraSetu → /register",
+      "console_errors": "Only a non-blocking React dev warning about lowercase `fetchpriority` attribute on <img> in PublicHomePage (react 18 casing). Not a branding regression."
+    }
+  },
+  "test_report_links": ["/app/test_reports/screenshots_iter24/"],
+  "action_items": [
+    "OPTIONAL (not brand-blocking): fix React dev warning — replace `fetchPriority` prop on <img> with lowercase `fetchpriority` (or gate on React 18+) in /app/apps/web/src/pages/PublicHomePage.tsx to silence console warnings on the public homepage."
+  ],
+  "critical_code_review_comments": [
+    "Fix location is correct: adding `font-family: inherit` to .fs-logo__flora and .fs-logo__setu in components.css defeats the [class^='fs-'] utility in tokens.css cleanly. Consider raising specificity or moving typography reset to a scoped selector to prevent similar overrides on other brand-critical children.",
+    "SVG petal paths are geometrically clean: all three petals originate at (32,34) which is the arc crown apex; all control points have y<=34, so no petal can protrude below the bridge arc — geometry acceptance passes.",
+    "React dev warning: <img fetchPriority=...> should be `fetchpriority` (lowercase) in JSX for React 18. Cosmetic but polluting console on homepage/login/privacy/terms."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100% (7/7 BRAND-F acceptance items)"},
+  "test_credentials": "n/a — public pages",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All computed-font checks recorded above. If asked to re-verify branding, re-run the same page.evaluate getComputedStyle on `.fs-logo__flora`, `.fs-logo__setu`, and `[data-testid=logo-mark-svg]` at 1440/768/390. Expected values are captured under brand_verification_results. Screenshots under /app/test_reports/screenshots_iter24/. Only outstanding item is the cosmetic React fetchPriority casing warning, unrelated to branding."
+}
