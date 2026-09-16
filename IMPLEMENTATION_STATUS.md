@@ -76,3 +76,12 @@ None for Build 0 acceptance.
   legitimate synchronous commercial guards → **RESOLVED BY APPROVED ADR-010** (explicit
   allowlist, contracts-only evidence check, all other cycles still FAIL). PASS.
 - Full gate after remediation: architecture + unit + e2e suites, typecheck, lint, build — all green.
+
+## UI/UX Redesign Phase 5 — Independent Logistics Partner Execution (ADR-012) — PASS 2026-09-16
+- Migration 015 (additive, up/down verified): `logistics.execution_events` (append-only, seq-ordered, immutable trigger, one-time-milestone unique guard), `logistics.driver_assignments` history, shipments +vehicle_ref/+handling_note/+arrived_pickup_at/+arrived_delivery_at, pod_records +pod_ref/+signature_media_object_id, permissions `logistics.execute` + `logistics.assign_driver` (ORG_ADMIN only — platform roles deliberately excluded).
+- ADR-012 enforced server-side: Ops/Admin cannot assign partner drivers (legacy `/shipments/:id/assign` rejects driverUserId → 403 DRIVER_ASSIGNMENT_PARTNER_ONLY) nor record execution milestones; partner managers (`logistics.execute`) or the assigned driver execute; drivers are job-scoped (list + detail 404-on-foreign).
+- New partner endpoints: `jobs/dashboard`, `jobs/eligible-drivers`, `jobs/:id/assign-driver`, `/unassign-driver`, `/arrived-pickup`, `/arrived-delivery`; existing accept/pickup/transit/deliver/exception write execution events in-transaction with transition guards (accept → arrived pickup → pickup → transit → arrived delivery → deliver+POD).
+- Identity contract additions (read-only; ADR-010 unchanged): `isActiveMember`, `listActiveMembers`, `getUserDisplayNames`.
+- Web: PartnerHomePage (7 dashboard buckets; driver sees Today's jobs only), PartnerJobsPage (bucket + mode filters, human labels), PartnerJobDetailPage (pickup/delivery/transport cards, mode-conditional panels, assign panel, execution stepper, POD form with signature photo + reference, exceptions, event timeline), PartnerShell nav Home/Jobs/Delivered.
+- Seed: `scripts/seed-phase5-logistics.sh` — 8 tagged scenarios (road-driver, road-no-driver, bus, rail, air, local pickup, exception, delivered-with-POD) on Nilgiri Fresh Logistics; personas seed gains demo.driver2.
+- Gates: backend 24 suites / 256 tests green (new `phase5-logistics-partner` e2e = 17 tests L1–L17; zz-migrations count updated 14→15); typecheck, lint, web build green; testing agent iteration_18 frontend 100% PASS (1440 desktop + 390 mobile, all acceptance flows, zero terminology violations).
