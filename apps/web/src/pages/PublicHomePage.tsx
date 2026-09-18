@@ -125,7 +125,7 @@ export function PublicHomePage(): JSX.Element {
               </li>
             ))}
           </ol>
-          <div style={{ marginTop: 'var(--fs-space-8)' }}>
+          <div style={{ marginTop: 'var(--fs-space-6)' }}>
             <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-how-cta">
               Get flowers <ArrowRight size={16} />
             </Link>
