@@ -242,6 +242,7 @@
 .fs-logo__setu { color: #6f4b8b; font-family: inherit; }
 .fs-logo--light .fs-logo__flora { color: var(--fs-bg); }
 .fs-logo--light .fs-logo__setu { color: var(--fs-accent-tint); }
+.fs-logo__lockup { height: var(--fs-logo-h, 44px); width: auto; display: block; }
 .fs-shell__body { display: flex; flex: 1; width: 100%; max-width: var(--fs-content-max); margin: 0 auto; }
 .fs-shell__sidebar { width: var(--fs-sidebar-w); border-right: 1px solid var(--fs-border); padding: var(--fs-space-5) var(--fs-space-3); display: none; }
 .fs-shell__content { flex: 1; padding: var(--fs-space-6) var(--fs-space-4) var(--fs-space-16); min-width: 0; }

@@ -2,20 +2,21 @@ import { Link } from 'react-router-dom';
 import {
   ShieldCheck, ClipboardList, Camera, Truck,
   Zap, ArrowLeftRight, CalendarRange, Images, Route, Building2,
-  ArrowRight, Play, Check
+  ArrowRight, Play, BadgeCheck,
+  Store, Leaf, Handshake
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PublicHeader, PublicFooter, useDocumentTitle } from '../components/PublicChrome';
 import '../design/public.css';
+import heroLilies from '../assets/hero-lilies.jpg';
+import gerberas from '../assets/gerberas.jpg';
+import greenhouse from '../assets/greenhouse.jpg';
+import orchids from '../assets/orchids.jpg';
 
-// Public logged-out homepage (Phase 3 Part B; brand board 2026-09 restyle). Authenticated
-// users never see this — App routes them through the WorkspaceRouter instead.
-// All marketing imagery is self-hosted under /public/images — no third-party CDN dependency.
-const HERO_IMG = '/images/hero-lilies.jpg';
-const BAND_IMG = '/images/band-lilies-dark.jpg';
-const BUYERS_IMG = '/images/solutions-buyers.jpg';
-const SUPPLIERS_IMG = '/images/solutions-suppliers.jpg';
-const LOGISTICS_IMG = '/images/solutions-logistics.jpg';
+// Public logged-out homepage — approved design-system restyle (reference codebase 2026-09).
+// White-background botanical photography blends into the ivory page via mix-blend-multiply
+// + gradient masks; copy and data-testids preserved. Authenticated users never see this —
+// App routes them through the WorkspaceRouter instead.
 const EVENT_IMG = '/images/event-flowers.jpg';
 const SUPPLIER_IMG = '/images/supplier-facility.jpg';
 const LOT_IMG = '/images/lot-evidence.jpg';
@@ -33,6 +34,12 @@ const STEPS: [string, string][] = [
   ['Choose your offer', 'Compare price, specification, quantity coverage and delivery.'],
   ['See the actual supply', 'View supplier-declared lot details and actual lot evidence before fulfilment.'],
   ['Track delivery', 'Follow packing, logistics, delivery and receipt.']
+];
+
+const SOLUTIONS: [LucideIcon, string, string, string, string, string, string][] = [
+  [Store, 'BUYERS', 'Source with less uncertainty.', 'For florists, event planners, hotels, wholesalers and professional buyers.', 'Find flowers', gerberas, 'Blush and cream gerbera daisies'],
+  [Leaf, 'SUPPLIERS', 'Turn available flowers into reliable business.', 'For growers, wholesalers and importers.', 'Join as a supplier', greenhouse, 'Bright greenhouse aisle filled with blooms'],
+  [Handshake, 'LOGISTICS PARTNERS', 'Connect flower supply to its destination.', 'Support pickup, transport, parcel movement and proof of delivery.', 'Partner with FloraSetu', orchids, 'White and lilac orchid stems']
 ];
 
 const FEATURES: [LucideIcon, string, string][] = [
@@ -71,31 +78,34 @@ export function PublicHomePage(): JSX.Element {
               Built for florists, event planners, hotels, wholesalers, growers and professional flower businesses.
             </p>
           </div>
-          <div className="fs-pub__hero-img">
+          <div className="fs-pub__hero-visual">
             <img
-              src={HERO_IMG}
-              width="1200"
-              height="1500"
-              alt="Elegant white lilies — premium cut flowers for the professional trade"
+              className="fs-pub__hero-img"
+              src={heroLilies}
+              width={1408}
+              height={1200}
+              alt="White lilies with fresh green foliage"
               loading="eager"
               {...{ fetchpriority: 'high' }}
             />
+            <p className="fs-pub__hero-words" aria-hidden="true" data-testid="public-hero-words">
+              <span>People</span>
+              <span>Flowers</span>
+              <span>Progress</span>
+              <span>Together</span>
+            </p>
           </div>
-          <p className="fs-pub__hero-words" aria-hidden="true" data-testid="public-hero-words">
-            <span>People</span>
-            <span>Flowers</span>
-            <span>Progress</span>
-            <span>Together</span>
-          </p>
         </section>
 
         <section className="fs-pub__strip" aria-label="Why FloraSetu">
           <div className="fs-pub__wrap fs-pub__strip-grid">
             {STRIP.map(([Icon, title, body]) => (
               <div key={title}>
-                <span className="pub-strip-ico" aria-hidden="true"><Icon size={20} /></span>
-                <h3>{title}</h3>
-                <p>{body}</p>
+                <span className="pub-strip-ico" aria-hidden="true"><Icon size={18} /></span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -108,8 +118,10 @@ export function PublicHomePage(): JSX.Element {
             {STEPS.map(([title, body], i) => (
               <li key={title}>
                 <span className="pub-step-no">{i + 1}</span>
-                <h3>{title}</h3>
-                <p>{body}</p>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{body}</p>
+                </div>
               </li>
             ))}
           </ol>
@@ -120,49 +132,44 @@ export function PublicHomePage(): JSX.Element {
           </div>
         </section>
 
-        <section className="fs-pub__section fs-pub__section--alt" id="audiences">
+        <section className="fs-pub__section" id="audiences">
           <div className="fs-pub__wrap">
-            <h2>One network. Different jobs.</h2>
-            <p className="pub-sub">Buyers, suppliers and logistics partners each get a workspace built for their work.</p>
+            <div className="fs-pub__section-head">
+              <h2>One network. Different jobs.</h2>
+              <p className="pub-sub">Buyers, suppliers and logistics partners each get a workspace built for their work.</p>
+            </div>
             <div className="pub-cards-3">
-              <article>
-                <img className="pub-card-img" src={BUYERS_IMG} alt="Florists selecting fresh flowers for their buyers" loading="lazy" />
-                <div className="pub-card-body">
-                  <p className="pub-aud-label">BUYERS</p>
-                  <h3>Source with less uncertainty.</h3>
-                  <p>For florists, event planners, hotels, wholesalers and professional buyers.</p>
-                  <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-audience-buyers">Find flowers</Link>
-                </div>
-              </article>
-              <article id="suppliers">
-                <img className="pub-card-img" src={SUPPLIERS_IMG} alt="Rows of fresh cut flowers growing under a greenhouse roof" loading="lazy" />
-                <div className="pub-card-body">
-                  <p className="pub-aud-label">SUPPLIERS</p>
-                  <h3>Turn available flowers into reliable business.</h3>
-                  <p>For growers, wholesalers and importers.</p>
-                  <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-audience-suppliers">Join as a supplier</Link>
-                </div>
-              </article>
-              <article>
-                <img className="pub-card-img" src={LOGISTICS_IMG} alt="Fresh roses packed and ready for dispatch" loading="lazy" />
-                <div className="pub-card-body">
-                  <p className="pub-aud-label">LOGISTICS PARTNERS</p>
-                  <h3>Connect flower supply to its destination.</h3>
-                  <p>Support pickup, transport, parcel movement and proof of delivery.</p>
-                  <Link to="/register" className="pub-btn pub-btn--primary" data-testid="public-audience-logistics">Partner with FloraSetu</Link>
-                </div>
-              </article>
+              {SOLUTIONS.map(([Icon, label, title, body, cta, image, alt], i) => (
+                <article key={label} {...(i === 1 ? { id: 'suppliers' } : {})}>
+                  <img className="pub-card-img" src={image} alt={alt} loading="lazy" />
+                  <div className="pub-card-body">
+                    <span className="pub-card-ico" aria-hidden="true"><Icon size={16} /></span>
+                    <p className="pub-aud-label">{label}</p>
+                    <h3>{title}</h3>
+                    <p>{body}</p>
+                    <Link
+                      to="/register"
+                      className="pub-cta-link"
+                      data-testid={i === 0 ? 'public-audience-buyers' : i === 1 ? 'public-audience-suppliers' : 'public-audience-logistics'}
+                    >
+                      {cta} <ArrowRight size={14} />
+                    </Link>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         </section>
 
         <section className="fs-pub__wrap fs-pub__section" id="features">
-          <h2>Built for real flower trade — not just listings.</h2>
-          <p className="pub-sub">The workflows a professional flower business actually runs, end to end.</p>
+          <div className="fs-pub__section-head">
+            <h2>Built for real flower trade — not just listings.</h2>
+            <p className="pub-sub">The workflows a professional flower business actually runs, end to end.</p>
+          </div>
           <div className="pub-cards-6">
             {FEATURES.map(([Icon, title, body]) => (
               <article key={title}>
-                <span className="pub-feat-ico" aria-hidden="true"><Icon size={19} /></span>
+                <span className="pub-feat-ico" aria-hidden="true"><Icon size={16} /></span>
                 <h3>{title}</h3>
                 <p>{body}</p>
               </article>
@@ -171,7 +178,7 @@ export function PublicHomePage(): JSX.Element {
         </section>
 
         <section className="fs-pub__section pub-orgband" id="about">
-          <div className="fs-pub__wrap pub-split">
+          <div className="fs-pub__wrap pub-split" style={{ gridTemplateColumns: '1.2fr 0.8fr' }}>
             <div>
               <h2>Built for businesses, not casual flower shopping.</h2>
               <p className="pub-sub">
@@ -180,18 +187,14 @@ export function PublicHomePage(): JSX.Element {
                 transactions — while the experience stays simple for the person doing the work.
               </p>
               <ul className="pub-checks">
-                <li><span className="pub-check" aria-hidden="true"><Check size={13} /></span>Organization-based accounts</li>
-                <li><span className="pub-check" aria-hidden="true"><Check size={13} /></span>Role-based permissions</li>
-                <li><span className="pub-check" aria-hidden="true"><Check size={13} /></span>Traceable commercial actions</li>
+                <li><span className="pub-check" aria-hidden="true"><BadgeCheck size={16} /></span>Organization-based accounts</li>
+                <li><span className="pub-check" aria-hidden="true"><BadgeCheck size={16} /></span>Role-based permissions</li>
+                <li><span className="pub-check" aria-hidden="true"><BadgeCheck size={16} /></span>Traceable commercial actions</li>
               </ul>
             </div>
-            <img
-              src={BAND_IMG}
-              width="1200"
-              height="800"
-              alt="White lilies against a dark botanical backdrop"
-              loading="lazy"
-            />
+            <p className="pub-orgband__words" aria-hidden="true" style={{ textAlign: 'right' }}>
+              Bigger<br />Blooms<br />Brighter<br />Business
+            </p>
           </div>
         </section>
 
@@ -216,7 +219,7 @@ export function PublicHomePage(): JSX.Element {
           </div>
         </section>
 
-        <section className="fs-pub__section fs-pub__section--alt">
+        <section className="fs-pub__section" style={{ background: '#fff', borderTop: '1px solid var(--pub-line)', borderBottom: '1px solid var(--pub-line)' }}>
           <div className="fs-pub__wrap pub-split">
             <img
               src={SUPPLIER_IMG}
@@ -265,7 +268,7 @@ export function PublicHomePage(): JSX.Element {
             </p>
             <div style={{ display: 'flex', gap: 'var(--fs-space-3)', justifyContent: 'center', flexWrap: 'wrap' }}>
               <Link to="/register" className="pub-btn pub-btn--light" data-testid="public-final-cta">Join FloraSetu</Link>
-              <a href="mailto:hello@florasetu.in" className="pub-btn pub-btn--ghost" style={{ borderColor: '#fff', color: '#fff' }} data-testid="public-contact-cta">Talk to our team</a>
+              <a href="mailto:hello@florasetu.in" className="pub-btn pub-btn--ghost" style={{ borderColor: '#fff', color: '#fff', background: 'transparent' }} data-testid="public-contact-cta">Talk to our team</a>
             </div>
           </div>
         </section>

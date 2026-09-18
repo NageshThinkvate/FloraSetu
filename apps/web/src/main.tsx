@@ -5,6 +5,12 @@ import './index.css';
 import '@fontsource-variable/inter';
 import '@fontsource/cormorant-garamond/600.css';
 import '@fontsource-variable/fraunces';
+import '@fontsource/lora/400.css';
+import '@fontsource/lora/500.css';
+import '@fontsource/lora/600.css';
+import '@fontsource/lora/400-italic.css';
+import '@fontsource/lora/500-italic.css';
+import '@fontsource/lora/600-italic.css';
 import './design/tokens.css';
 import './design/components.css';
 
