@@ -34,6 +34,9 @@ function Mark({ light, size }: { light: boolean; size: number }): JSX.Element {
 }
 
 function Wordmark({ light, size }: { light: boolean; size: number }): JSX.Element {
+  // Crop derived from the lockup's internal layout: lettering block occupies x≈26%→100%
+  // of the 1920x640 PNG (1425px wide) — left offset -34.7% of the visible window.
+  // Re-exporting florasetu-primary.png with different padding requires re-deriving these.
   return (
     <span
       role="img"
@@ -72,6 +75,8 @@ export function Logo({
       </span>
     );
   }
+  // Horizontal: full approved lockup; `size` sets display height via --fs-logo-h (CSS),
+  // while width/height attrs only hint the 3:1 intrinsic ratio for layout stability.
   return (
     <span className={`fs-logo${light ? ' fs-logo--light' : ''}`} data-testid={testId}>
       <img

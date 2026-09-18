@@ -1,0 +1,37 @@
+{
+  "summary": "Verified redesign C1-C13 on the public homepage & auth/legal pages. 12 of 13 acceptance criteria pass; C11 (internal shell logo after login) is blocked by an environment-level infra issue unrelated to the frontend redesign — the legacy template FastAPI on :8001 is intercepting /api at the ingress level, so external login returns 404 ('Not Found') and no authenticated shell can be reached from the preview URL. All logo, blend, band, step, card, footer and auth-page assertions pass; no external Pexels/Unsplash image requests; no horizontal overflow at 1440/768/390; no forbidden stats strings ('1,200+', '500+', '300+') anywhere on /.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "/api/auth/login (via preview ingress)", "issue": "Ingress at flora-modular-core.preview.emergentagent.com/api routes to the legacy template FastAPI on port 8001 which returns 404 for /api/auth/login. florasetu-api (the real backend) is not reachable externally, so buyer login from the preview URL fails with 'Failed to fetch'. This blocks C11 internal-shell logo regression testing. Fix requires running bootstrap-infra.sh (per /app/memory/test_credentials.md §Pod restart recovery) or otherwise ensuring florasetu-api owns :8001.", "priority": "HIGH"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/test_reports/screenshots_iter26/c1_desktop_header.jpg",
+    "/app/test_reports/screenshots_iter26/c1_mobile_header.jpg",
+    "/app/test_reports/screenshots_iter26/c9_footer.jpg",
+    "/app/test_reports/screenshots_iter26/c13_mobile_menu.jpg"
+  ],
+  "action_items": [
+    "Restore florasetu-api on :8001 (run bash /app/scripts/bootstrap-infra.sh — the legacy 'backend' supervisor program is currently owning :8001 and answering /api/* with 404, breaking any authenticated flow via the public URL).",
+    "After bootstrap-infra, rerun only C11 (buyer login → internal workspace shell + /workspaces chooser page → confirm the header logo does not render giant/distorted). Nothing else needs re-testing."
+  ],
+  "critical_code_review_comments": [
+    "Logo.tsx 'wordmark' variant crops via 'left: -34.7%' with hard-coded aspectRatio '1425/640' — these numbers are derived from the PNG's internal glyph placement; document them (comment lists mark crop values 22.2/-30.4/474.1/163.7 but not the wordmark's 34.7 offset). Any re-export of florasetu-primary.png with different padding will silently break the crop.",
+    "PublicHomePage.tsx still uses the untyped attribute spread hack {...{ fetchpriority: 'high' }} on the hero <img>. Consider React 19's typed fetchPriority prop for lint cleanliness (functional today, noted in iteration_25 as well).",
+    "Logo horizontal variant sets the raster PNG width/height={1920}/{640} plus a CSS variable --fs-logo-h to control display height; the mixed w/h attrs vs. CSS-driven height is fine but not obvious — a short JSDoc line on the horizontal branch would help future editors."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (auth login blocked by ingress→legacy :8001)", "frontend": "100% for C1-C10, C12, C13 (12/12 verified); C11 not runnable in this env"},
+  "test_credentials": "Read from /app/memory/test_credentials.md — demo.buyer@florasetu.dev / Demo-Buyer-2026 attempted for C11 but blocked by backend 404 (see backend_issues.critical).",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iteration_26 verified full C1-C10, C12, C13 acceptance:\n • C1 header logo: PNG lockup ('/src/assets/florasetu-primary.png', natural 1920x640) rendered at 52px height desktop / 44px height mobile, linking to /.\n • C2 hero: mix-blend-multiply active, mask=radial-gradient(75% 72% at 50% 48%, rgb(0,0,0) 28%, rgba(0,0,0,0.55) 62%, rgba(0,0,0,0) 88%) applied, H1 in Lora, CTA border-radius 8px, decorative words People/Flowers/Progress/Together visible.\n • C3 assurance strip bg rgb(233,240,235) (#e9f0eb) with exactly the 4 approved titles.\n • C4 how-it-works: 5 steps, circle bg rgb(244,238,247) (#f4eef7), numbers rgb(111,75,139) plum, no card boxes.\n • C5 solutions: 3 cards, first .pub-card-img computed mixBlendMode=multiply, mask=linear-gradient(rgb(0,0,0) 62%, rgba(0,0,0,0) 100%). All 3 testids (public-audience-buyers/suppliers/logistics) visible.\n • C6 features: 6 cards.\n • C7 dark org band: bg rgb(15,61,46), h2 'Built for businesses, not casual flower shopping.', 3 BadgeCheck items, right-side 'BiggerBloomsBrighterBusiness' text, zero <img> children.\n • C8 split images: /images/event-flowers.jpg, /images/supplier-facility.jpg, /images/lot-evidence.jpg all natural width 1400 and complete=true.\n • C9 footer: bg rgb(15,61,46), footer logo filter='brightness(0) invert(1)', /privacy and /terms links present.\n • C10 auth pages (/login, /register, /forgot-password): logo visible at height 44px linking to /, all three legal pages return 200 and h1 uses Lora font.\n • C12 network audit: 6 image requests on /, zero from pexels.com or unsplash.com.\n • C13 responsive: scrollWidth == viewportWidth at 1440/768/390; forbidden stats ('1,200+','500+','300+') absent; hamburger (data-testid='public-menu-btn') toggles data-open='true' revealing 6 mobile-nav links including 'Sign in'.\nOnly C11 was not exercised — buyer login fails with 'Failed to fetch' because the preview ingress /api routes to the legacy FastAPI on :8001 (returns 404 JSON detail 'Not Found'). Fix per credentials.md §Pod restart recovery, then only C11 needs a spot-check.",
+  "rca of the issue": "C11 blocked (NOT a redesign regression): supervisor shows both 'backend' (uvicorn on :8001) and 'florasetu-api' running; the kubernetes ingress rewrites /api → :8001, but that port is held by the legacy FastAPI template, so /api/auth/login returns 404. Reproduction: curl -X POST https://flora-modular-core.preview.emergentagent.com/api/auth/login → HTTP 404 {\"detail\":\"Not Found\"}. Mitigation documented in /app/memory/test_credentials.md line 69: run bash /app/scripts/bootstrap-infra.sh which stops the legacy 'backend' program so florasetu-api can bind :8001."
+}
