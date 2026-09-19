@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: florasetu-api
+    runtime: node
+    plan: free
+    buildCommand: yarn --frozen-lockfile && yarn --cwd apps/api build
+    startCommand: node apps/api/dist/main.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: florasetu-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: florasetu-redis
+          property: connectionString
+      - key: JWT_DEV_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: https://florasetu.com,https://www.florasetu.com
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "300"
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+
+databases:
+  - name: florasetu-db
+    plan: free
+    postgresMajorVersion: "15"
+    databaseName: florasetu
+    user: florasetu
+  - name: florasetu-redis
+    plan: free
