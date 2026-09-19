@@ -3,7 +3,7 @@ services:
     name: florasetu-api
     runtime: node
     plan: free
-    buildCommand: yarn --frozen-lockfile && yarn --cwd apps/api build
+    buildCommand: yarn --frozen-lockfile --production=false && yarn --cwd apps/api build
     startCommand: node apps/api/dist/main.js
     healthCheckPath: /api/health
     envVars:
@@ -15,7 +15,7 @@ services:
           property: connectionString
       - key: REDIS_URL
         fromService:
-          type: redis
+          type: keyvalue
           name: florasetu-redis
           property: connectionString
       - key: JWT_DEV_SECRET
@@ -29,11 +29,14 @@ services:
       - key: ADMIN_PASSWORD
         sync: false
 
+  - type: keyvalue
+    name: florasetu-redis
+    plan: free
+    ipAllowList: []
+
 databases:
   - name: florasetu-db
     plan: free
     postgresMajorVersion: "15"
     databaseName: florasetu
     user: florasetu
-  - name: florasetu-redis
-    plan: free
